@@ -4,8 +4,8 @@
 
 **Blocked by:** 04 — Custom Stateful Checklist Nodes
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Left sidebar populates dynamically with tasks extracted from the active Lexical document.
-- [ ] Tasks are grouped logically by state.
-- [ ] Interacting with a task in the sidebar instantly toggles the actual task in the document.
+- [x] Left sidebar populates dynamically with tasks extracted from the active Lexical document.
+- [x] Tasks are grouped logically by state.
+- [x] Interacting with a task in the sidebar instantly toggles the actual task in the document.
