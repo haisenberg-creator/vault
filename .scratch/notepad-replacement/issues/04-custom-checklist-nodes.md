@@ -4,9 +4,9 @@
 
 **Blocked by:** 03 — Lexical Editor Foundation
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Lexical properly parses `[ ]`, `[-]`, `[x]`, `[>]` as a specialized node type.
-- [ ] Interactive UI elements render inside Lexical for these custom tasks.
-- [ ] Clicking toggles state and triggers a document save.
-- [ ] The custom syntax is correctly serialized back to Markdown upon saving.
+- [x] Lexical properly parses `[ ]`, `[-]`, `[x]`, `[>]` as a specialized node type.
+- [x] Interactive UI elements render inside Lexical for these custom tasks.
+- [x] Clicking toggles state and triggers a document save.
+- [x] The custom syntax is correctly serialized back to Markdown upon saving.
