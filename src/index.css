@@ -1,83 +1,45 @@
 @import url("https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&subset=vietnamese&display=swap");
 
-/* Obsidian Slate & Cozy Pixel Design System Tokens (pro-max-design-system) */
+/* Rosé Pine Moon Soho Design System Tokens */
 :root {
-  /* Colors - Obsidian Slate */
-  --bg-base: #0f1115;
-  --bg-surface: #16191e;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --secondary-border: #2a2f37;
-  --text-primary: #f3f4f6;
-  --text-muted: #9ca3af;
-
-  --accent-success: #10b981;
-  --accent-success-bg: rgba(16, 185, 129, 0.15);
-  --accent-warning: #f59e0b;
-  --accent-warning-bg: rgba(245, 158, 11, 0.15);
-  --accent-danger: #ef4444;
-  --accent-danger-bg: rgba(239, 68, 68, 0.15);
-  --accent-info: #3b82f6;
-  --accent-info-bg: rgba(59, 130, 246, 0.15);
-
-  /* Colors & Tokens - Modern Cozy Pixel */
-  --pixel-bg-base: #fafaf9;
-  --pixel-bg-surface: #ffffff;
-  --pixel-primary: #6366f1;
-  --pixel-primary-hover: #4f46e5;
-  --pixel-border-color: #3f3f46;
-  --pixel-border: 2px solid var(--pixel-border-color);
-  --pixel-shadow: 4px 4px 0px var(--pixel-border-color);
-  --pixel-shadow-pressed: 1px 1px 0px var(--pixel-border-color);
-
-  /* Option 1: Cyberpunk Neon Pink & Obsidian */
-  --cyber-bg-base: #0a0a0e;
-  --cyber-bg-surface: #14141e;
-  --cyber-pink: #ff2bd6;
-  --cyber-pink-hover: #d910b7;
-  --cyber-border: 2px solid #ff2bd6;
-  --cyber-shadow: 4px 4px 0px #ff2bd6;
-
-  /* Option 2: Rosé Pine Moon Soho */
+  /* Rosé Pine Moon Soho Core Colors */
   --rose-bg-base: #191724;
   --rose-bg-surface: #1f1d2e;
+  --rose-bg-overlay: #26233a;
+  --rose-text: #e0def4;
+  --rose-subtle: #908caa;
+  --rose-muted: #6e6a86;
+
   --rose-pink: #eb6f92;
   --rose-pink-hover: #d05376;
   --rose-pink-glow: rgba(235, 111, 146, 0.35);
   --rose-gold: #f6c177;
   --rose-foam: #9ccfd8;
   --rose-pine: #31748f;
-  --rose-border: 2px solid #eb6f92;
-  --rose-shadow: 4px 4px 0px #26233a;
+  --rose-iris: #c4a7e7;
+  --rose-rose: #ebbcba;
+  --rose-love: #eb6f92;
 
-  /* Option 3: PICO-8 Retro Arcade */
-  --pico-bg-base: #0a0a0a;
-  --pico-bg-surface: #181818;
-  --pico-pink: #ff77a8;
-  --pico-cyan: #00e5ff;
-  --pico-border: 2px solid #ff77a8;
-  --pico-shadow: 4px 4px 0px #ff77a8;
+  --rose-border-color: rgba(235, 111, 146, 0.25);
+  --rose-border-subtle: 1px solid rgba(110, 106, 134, 0.3);
+  --rose-border-accent: 1px solid var(--rose-pink);
+  --rose-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 
   /* Typography */
-
   --font-ui:
-    "Styrene A", "Styrene B", "Plus Jakarta Sans", -apple-system,
-    BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
   --font-pixel: "Pixelify Sans", cursive, sans-serif;
-  --font-mono: "JetBrains Mono", "Fira Code", "Courier New", monospace;
+  --font-mono: "JetBrains Mono", monospace;
 
-  /* Borders & Shadows */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
-  --border-subtle: 1px solid var(--secondary-border);
-  --shadow-elevation-1:
-    0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
 
   /* Transitions */
-  --transition-fast:
-    color 150ms ease, background-color 150ms ease, border-color 150ms ease,
-    transform 150ms ease, box-shadow 150ms ease;
+  --transition-fast: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -86,21 +48,45 @@
   padding: 0;
 }
 
-body {
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--rose-bg-base);
+  color: var(--rose-text);
   font-family: var(--font-ui);
-  background-color: var(--bg-base);
-  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Animations for Rosé Pine Moon Theme */
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--rose-bg-base);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--rose-bg-overlay);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--rose-pine);
+}
+
+/* Keyframe Animations */
 @keyframes roseGlowPulse {
   0% {
     box-shadow: 0 0 8px rgba(235, 111, 146, 0.2);
   }
   50% {
-    box-shadow: 0 0 22px rgba(235, 111, 146, 0.6);
+    box-shadow: 0 0 22px rgba(235, 111, 146, 0.5);
   }
   100% {
     box-shadow: 0 0 8px rgba(235, 111, 146, 0.2);
@@ -112,7 +98,7 @@ body {
     transform: scale(0.85);
   }
   50% {
-    transform: scale(1.15);
+    transform: scale(1.12);
   }
   100% {
     transform: scale(1);
@@ -120,7 +106,7 @@ body {
 }
 
 .rose-glow-animated {
-  animation: roseGlowPulse 2.5s infinite ease-in-out;
+  animation: roseGlowPulse 3s infinite ease-in-out;
 }
 
 .badge-pop {

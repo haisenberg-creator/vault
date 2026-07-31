@@ -1,7 +1,7 @@
-import Prototype from "./Prototype";
+import DualColumnLayout from "./components/layout/DualColumnLayout";
 
 function App() {
-  return <Prototype />;
+  return <DualColumnLayout />;
 }
 
 export default App;
