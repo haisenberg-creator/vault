@@ -92,7 +92,21 @@ export const ChecklistComponent: React.FC<ChecklistComponentProps> = ({
           bg: "rgba(246, 193, 119, 0.15)",
           color: "#f6c177",
           border: "1px solid rgba(246, 193, 119, 0.4)",
-          icon: "⏳",
+          icon: (
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          ),
           label: "IN PROGRESS",
           shadow: "0 0 8px rgba(246, 193, 119, 0.25)",
         };
@@ -101,7 +115,21 @@ export const ChecklistComponent: React.FC<ChecklistComponentProps> = ({
           bg: "rgba(235, 111, 146, 0.15)",
           color: "#eb6f92",
           border: "1px solid rgba(235, 111, 146, 0.4)",
-          icon: "🚫",
+          icon: (
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+            </svg>
+          ),
           label: "BLOCKED",
           shadow: "0 0 8px rgba(235, 111, 146, 0.25)",
         };
@@ -110,7 +138,20 @@ export const ChecklistComponent: React.FC<ChecklistComponentProps> = ({
           bg: "rgba(49, 116, 143, 0.2)",
           color: "#9ccfd8",
           border: "1px solid rgba(49, 116, 143, 0.4)",
-          icon: "✓",
+          icon: (
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          ),
           label: "DONE",
           shadow: "none",
         };
@@ -120,7 +161,20 @@ export const ChecklistComponent: React.FC<ChecklistComponentProps> = ({
           bg: "rgba(110, 106, 134, 0.15)",
           color: "var(--rose-subtle, #908caa)",
           border: "1px solid rgba(110, 106, 134, 0.3)",
-          icon: "☐",
+          icon: (
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            </svg>
+          ),
           label: "OPEN",
           shadow: "none",
         };
@@ -137,6 +191,7 @@ export const ChecklistComponent: React.FC<ChecklistComponentProps> = ({
       role="button"
       tabIndex={0}
       title={`Click to change state from ${state}`}
+      className="tactile-btn"
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -154,10 +209,12 @@ export const ChecklistComponent: React.FC<ChecklistComponentProps> = ({
         fontFamily: "var(--font-mono, monospace)",
         fontWeight: 600,
         verticalAlign: "middle",
-        transition: "all 150ms ease",
+        transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
       }}
     >
-      <span>{info.icon}</span>
+      <span style={{ display: "inline-flex", alignItems: "center" }}>
+        {info.icon}
+      </span>
       <span>{info.label}</span>
     </span>
   );

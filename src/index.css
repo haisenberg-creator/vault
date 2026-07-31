@@ -113,6 +113,53 @@ body,
   animation: badgePop 250ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+/* Tactile Hover & Scale Effects */
+.tactile-card {
+  transition:
+    transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 200ms ease,
+    border-color 200ms ease,
+    background-color 250ms ease;
+}
+
+.tactile-card:hover {
+  transform: translateY(-1px) scale(1.01);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  border-color: rgba(235, 111, 146, 0.35) !important;
+}
+
+.tactile-card:active {
+  transform: scale(0.98);
+  transition-duration: 100ms;
+}
+
+.tactile-btn {
+  transition:
+    transform 150ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.tactile-btn:hover {
+  transform: translateY(-1px) scale(1.03);
+}
+
+.tactile-btn:active {
+  transform: scale(0.95);
+}
+
+/* Strikethrough & Color Transitions */
+.task-completed-text {
+  text-decoration: line-through;
+  color: var(--rose-subtle) !important;
+  opacity: 0.75;
+  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.task-title-text {
+  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* Lexical Editor Content Styles */
 .lexical-editor-root {
   flex: 1;

@@ -95,4 +95,46 @@ describe("TaskDashboardSidebar Component", () => {
       "No tasks found"
     );
   });
+
+  it("calculates workspace progress meter percentage correctly", () => {
+    // 1 completed out of 4 tasks = 25%
+    const { rerender } = render(<TaskDashboardSidebar tasks={sampleTasks} />);
+
+    expect(screen.getByTestId("workspace-progress-meter")).toHaveTextContent(
+      "25%"
+    );
+    expect(screen.getByTestId("progress-bar-fill")).toHaveStyle({
+      width: "25%",
+    });
+
+    // 2 completed out of 4 tasks = 50%
+    const updatedTasks: TaskItem[] = [
+      ...sampleTasks.slice(0, 3),
+      { ...sampleTasks[3] },
+      {
+        id: "node-5",
+        title: "Fifth task completed",
+        sourceFile: "note.md",
+        state: "completed",
+      },
+    ];
+    rerender(<TaskDashboardSidebar tasks={updatedTasks} />);
+
+    expect(screen.getByTestId("workspace-progress-meter")).toHaveTextContent(
+      "40%"
+    );
+    expect(screen.getByTestId("progress-bar-fill")).toHaveStyle({
+      width: "40%",
+    });
+  });
+
+  it("applies task-completed-text class to completed tasks", () => {
+    render(<TaskDashboardSidebar tasks={sampleTasks} />);
+
+    const openTask = screen.getByText("First task open");
+    const completedTask = screen.getByText("Fourth task completed");
+
+    expect(openTask).toHaveClass("task-title-text");
+    expect(completedTask).toHaveClass("task-completed-text");
+  });
 });

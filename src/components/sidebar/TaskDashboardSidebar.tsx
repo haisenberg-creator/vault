@@ -84,6 +84,11 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
     completed: tasks.filter((t) => t.state === "completed").length,
   };
 
+  const totalCount = tasks.length;
+  const completedCount = counts.completed;
+  const completionPercentage =
+    totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
   return (
     <aside
       style={{
@@ -108,7 +113,24 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "18px" }}>📋</span>
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ color: "var(--rose-pink)" }}
+          >
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+            <path d="M12 11h4" />
+            <path d="M12 16h4" />
+            <path d="M8 11h.01" />
+            <path d="M8 16h.01" />
+          </svg>
           <h2
             style={{
               fontFamily: "var(--font-pixel)",
@@ -132,6 +154,61 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
         </p>
       </div>
 
+      {/* Live Workspace Progress Meter */}
+      <div
+        data-testid="workspace-progress-meter"
+        style={{
+          padding: "10px 16px",
+          borderBottom: "1px solid rgba(110, 106, 134, 0.15)",
+          backgroundColor: "rgba(25, 23, 36, 0.4)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            fontSize: "11px",
+            marginBottom: "6px",
+          }}
+        >
+          <span style={{ color: "var(--rose-subtle)", fontWeight: 500 }}>
+            Workspace Progress
+          </span>
+          <span
+            style={{
+              color: "var(--rose-foam)",
+              fontFamily: "var(--font-mono)",
+              fontWeight: 600,
+            }}
+          >
+            {completionPercentage}%
+          </span>
+        </div>
+        <div
+          style={{
+            height: "6px",
+            width: "100%",
+            backgroundColor: "rgba(38, 35, 58, 0.8)",
+            borderRadius: "3px",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            data-testid="progress-bar-fill"
+            style={{
+              height: "100%",
+              width: `${completionPercentage}%`,
+              background:
+                "linear-gradient(90deg, var(--rose-pine), var(--rose-foam))",
+              borderRadius: "3px",
+              transition: "width 350ms cubic-bezier(0.4, 0, 0.2, 1)",
+              boxShadow: "0 0 8px rgba(156, 207, 216, 0.4)",
+            }}
+          />
+        </div>
+      </div>
+
       {/* Filter Tabs */}
       <div
         style={{
@@ -150,6 +227,7 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
                 key={filter}
                 data-testid={`filter-btn-${filter}`}
                 onClick={() => handleFilterClick(filter)}
+                className="tactile-btn"
                 style={{
                   fontSize: "11px",
                   fontWeight: 600,
@@ -161,7 +239,6 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
                     ? "var(--rose-pink)"
                     : "rgba(38, 35, 58, 0.6)",
                   color: isActive ? "#191724" : "var(--rose-subtle)",
-                  transition: "var(--transition-fast)",
                   textTransform: "capitalize",
                 }}
               >
@@ -190,6 +267,7 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
         ) : (
           filteredTasks.map((task) => {
             const badge = getBadgeStyle(task.state);
+            const isCompleted = task.state === "completed";
             return (
               <div
                 key={task.id}
@@ -198,17 +276,20 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
                 onClick={() => onToggleTask?.(task.id)}
                 role="button"
                 tabIndex={0}
+                className="tactile-card"
                 style={{
                   padding: "10px 12px",
                   borderRadius: "var(--radius-sm)",
                   backgroundColor: "var(--rose-bg-overlay)",
                   border: "1px solid rgba(110, 106, 134, 0.15)",
                   marginBottom: "8px",
-                  transition: "var(--transition-fast)",
                   cursor: "pointer",
                 }}
               >
                 <div
+                  className={
+                    isCompleted ? "task-completed-text" : "task-title-text"
+                  }
                   style={{
                     fontSize: "13px",
                     color: "var(--rose-text)",
@@ -231,9 +312,25 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
                       fontSize: "10px",
                       color: "var(--rose-muted)",
                       fontFamily: "var(--font-mono)",
+                      display: "inline-flex",
+                      alignItems: "center",
                     }}
                   >
-                    📄 {task.sourceFile}
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{ marginRight: "4px" }}
+                    >
+                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                      <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    {task.sourceFile}
                   </span>
                   <span
                     style={{

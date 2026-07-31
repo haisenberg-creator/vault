@@ -71,8 +71,8 @@ describe("DualColumnLayout Integration", () => {
     });
 
     // Check sourceFile badges in sidebar
-    expect(screen.getByText("📄 active-note.md")).toBeInTheDocument();
-    expect(screen.getAllByText("📄 secondary-note.md")).toHaveLength(2);
+    expect(screen.getAllByText("active-note.md").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("secondary-note.md")).toHaveLength(2);
   });
 
   it("toggles task state in editor when clicked in sidebar", async () => {
