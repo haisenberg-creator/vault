@@ -88,12 +88,16 @@ describe("EditorPane with Custom Checklist Nodes", () => {
       expect(screen.queryByText("Loading document...")).not.toBeInTheDocument();
     });
 
-    expect(screen.getByTestId("checklist-node-open")).toBeInTheDocument();
-    expect(
-      screen.getByTestId("checklist-node-in_progress")
-    ).toBeInTheDocument();
-    expect(screen.getByTestId("checklist-node-completed")).toBeInTheDocument();
-    expect(screen.getByTestId("checklist-node-blocked")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("checklist-node-open")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("checklist-node-in_progress")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("checklist-node-completed")
+      ).toBeInTheDocument();
+      expect(screen.getByTestId("checklist-node-blocked")).toBeInTheDocument();
+    });
   });
 
   it("toggles state on click and triggers auto-save with updated markdown", async () => {

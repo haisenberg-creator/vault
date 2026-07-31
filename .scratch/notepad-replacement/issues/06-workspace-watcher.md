@@ -4,8 +4,8 @@
 
 **Blocked by:** 05 — Single-Document Task Dashboard
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Tauri fs/watcher logic can read a whole directory of `.md` files.
-- [ ] The Global Task Dashboard aggregates tasks from multiple distinct notes.
-- [ ] Updates to a note file (or its tasks) trigger a UI update to the global dashboard.
+- [x] Tauri fs/watcher logic can read a whole directory of `.md` files.
+- [x] The Global Task Dashboard aggregates tasks from multiple distinct notes.
+- [x] Updates to a note file (or its tasks) trigger a UI update to the global dashboard.
