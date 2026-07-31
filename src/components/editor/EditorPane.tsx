@@ -13,7 +13,6 @@ import { LinkNode, AutoLinkNode } from "@lexical/link";
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
-  TRANSFORMERS,
 } from "@lexical/markdown";
 import { KEY_DOWN_COMMAND, COMMAND_PRIORITY_HIGH, EditorState } from "lexical";
 
@@ -22,6 +21,8 @@ import {
   writeMarkdownFile,
 } from "../../services/fileService";
 import { theme } from "./LexicalEditorTheme";
+import { ChecklistNode } from "./ChecklistNode";
+import { ALL_TRANSFORMERS } from "./checklistTransformer";
 
 interface EditorPaneProps {
   filename?: string;
@@ -36,6 +37,7 @@ const EDITOR_NODES = [
   CodeHighlightNode,
   LinkNode,
   AutoLinkNode,
+  ChecklistNode,
 ];
 
 // Helper plugin to import markdown when external file content changes
@@ -54,7 +56,7 @@ function MarkdownSyncPlugin({
     if (lastLoadedContentRef.current !== initialContent) {
       lastLoadedContentRef.current = initialContent;
       editor.update(() => {
-        $convertFromMarkdownString(initialContent, TRANSFORMERS);
+        $convertFromMarkdownString(initialContent, ALL_TRANSFORMERS);
       });
     }
   }, [editor, initialContent]);
@@ -62,7 +64,7 @@ function MarkdownSyncPlugin({
   const handleChange = useCallback(
     (editorState: EditorState) => {
       editorState.read(() => {
-        const markdown = $convertToMarkdownString(TRANSFORMERS);
+        const markdown = $convertToMarkdownString(ALL_TRANSFORMERS);
         if (markdown !== lastLoadedContentRef.current) {
           lastLoadedContentRef.current = markdown;
           onMarkdownChange(markdown);
