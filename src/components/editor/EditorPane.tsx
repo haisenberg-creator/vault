@@ -14,18 +14,31 @@ import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
 } from "@lexical/markdown";
-import { KEY_DOWN_COMMAND, COMMAND_PRIORITY_HIGH, EditorState } from "lexical";
+import {
+  KEY_DOWN_COMMAND,
+  COMMAND_PRIORITY_HIGH,
+  EditorState,
+  $nodesOfType,
+  $getNodeByKey,
+} from "lexical";
 
 import {
   readMarkdownFile,
   writeMarkdownFile,
 } from "../../services/fileService";
 import { theme } from "./LexicalEditorTheme";
-import { ChecklistNode } from "./ChecklistNode";
+import {
+  ChecklistNode,
+  $isChecklistNode,
+  getNextTaskState,
+} from "./ChecklistNode";
 import { ALL_TRANSFORMERS } from "./checklistTransformer";
+import { TaskItem } from "../sidebar/TaskDashboardSidebar";
 
-interface EditorPaneProps {
+export interface EditorPaneProps {
   filename?: string;
+  onTasksChange?: (tasks: TaskItem[]) => void;
+  onRegisterToggleTask?: (toggleFn: (nodeKey: string) => void) => void;
 }
 
 const EDITOR_NODES = [
@@ -39,6 +52,76 @@ const EDITOR_NODES = [
   AutoLinkNode,
   ChecklistNode,
 ];
+
+// Plugin to extract ChecklistNode tasks from Lexical AST
+function TaskExtractorPlugin({
+  filename,
+  onTasksChange,
+}: {
+  filename: string;
+  onTasksChange?: (tasks: TaskItem[]) => void;
+}) {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    if (!onTasksChange) return;
+
+    const extractAndEmit = () => {
+      editor.getEditorState().read(() => {
+        const checklistNodes = $nodesOfType(ChecklistNode);
+        const extracted: TaskItem[] = checklistNodes.map((node) => {
+          const key = node.getKey();
+          const parent = node.getParent();
+          const fullText = parent ? parent.getTextContent() : "";
+          const title =
+            fullText.replace(/\[([ x\->])\]/gi, "").trim() || "Untitled Task";
+
+          return {
+            id: key,
+            nodeKey: key,
+            title,
+            sourceFile: filename,
+            state: node.getState(),
+          };
+        });
+        onTasksChange(extracted);
+      });
+    };
+
+    extractAndEmit();
+
+    return editor.registerUpdateListener(() => {
+      extractAndEmit();
+    });
+  }, [editor, filename, onTasksChange]);
+
+  return null;
+}
+
+// Plugin to expose node toggle action to parent components
+function TaskToggleHandlerPlugin({
+  onRegisterToggleTask,
+}: {
+  onRegisterToggleTask?: (toggleFn: (nodeKey: string) => void) => void;
+}) {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    if (!onRegisterToggleTask) return;
+
+    onRegisterToggleTask((nodeKey: string) => {
+      editor.update(() => {
+        const node = $getNodeByKey(nodeKey);
+        if ($isChecklistNode(node)) {
+          const nextState = getNextTaskState(node.getState());
+          node.setState(nextState);
+        }
+      });
+    });
+  }, [editor, onRegisterToggleTask]);
+
+  return null;
+}
 
 // Helper plugin to import markdown when external file content changes
 function MarkdownSyncPlugin({
@@ -104,6 +187,8 @@ function KeyboardSavePlugin({ onSave }: { onSave: () => void }) {
 
 export const EditorPane: React.FC<EditorPaneProps> = ({
   filename = "workspace-note.md",
+  onTasksChange,
+  onRegisterToggleTask,
 }) => {
   const [markdownContent, setMarkdownContent] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -356,6 +441,13 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
                 />
               </div>
               <HistoryPlugin />
+              <TaskExtractorPlugin
+                filename={filename}
+                onTasksChange={onTasksChange}
+              />
+              <TaskToggleHandlerPlugin
+                onRegisterToggleTask={onRegisterToggleTask}
+              />
               <MarkdownSyncPlugin
                 initialContent={markdownContent}
                 onMarkdownChange={handleMarkdownChange}

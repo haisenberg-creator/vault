@@ -2,53 +2,45 @@ import React, { useState } from "react";
 
 export type TaskState = "open" | "in_progress" | "blocked" | "completed";
 
-interface TaskItem {
+export interface TaskItem {
   id: string;
+  nodeKey?: string;
   title: string;
   sourceFile: string;
   state: TaskState;
 }
 
-const DUMMY_TASKS: TaskItem[] = [
-  {
-    id: "1",
-    title: "Set up Dual Column layout shell",
-    sourceFile: "01-core-layout.md",
-    state: "completed",
-  },
-  {
-    id: "2",
-    title: "Integrate Tauri file system commands",
-    sourceFile: "02-markdown-integration.md",
-    state: "in_progress",
-  },
-  {
-    id: "3",
-    title: "Implement Lexical Markdown transformer",
-    sourceFile: "03-lexical-foundation.md",
-    state: "open",
-  },
-  {
-    id: "4",
-    title: "Create custom task node portal renderer",
-    sourceFile: "04-custom-checklist-nodes.md",
-    state: "blocked",
-  },
-  {
-    id: "5",
-    title: "Verify WCAG AA color contrast",
-    sourceFile: "07-ui-polish.md",
-    state: "open",
-  },
-];
+export interface TaskDashboardSidebarProps {
+  tasks?: TaskItem[];
+  activeFilter?: TaskState | "all";
+  onFilterChange?: (filter: TaskState | "all") => void;
+  onToggleTask?: (taskId: string) => void;
+}
 
-export const TaskDashboardSidebar: React.FC = () => {
-  const [activeFilter, setActiveFilter] = useState<TaskState | "all">("all");
+export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
+  tasks = [],
+  activeFilter: propsFilter,
+  onFilterChange,
+  onToggleTask,
+}) => {
+  const [internalFilter, setInternalFilter] = useState<TaskState | "all">(
+    "all"
+  );
+
+  const activeFilter = propsFilter ?? internalFilter;
+
+  const handleFilterClick = (filter: TaskState | "all") => {
+    if (onFilterChange) {
+      onFilterChange(filter);
+    } else {
+      setInternalFilter(filter);
+    }
+  };
 
   const filteredTasks =
     activeFilter === "all"
-      ? DUMMY_TASKS
-      : DUMMY_TASKS.filter((t) => t.state === activeFilter);
+      ? tasks
+      : tasks.filter((t) => t.state === activeFilter);
 
   const getBadgeStyle = (state: TaskState) => {
     switch (state) {
@@ -85,11 +77,11 @@ export const TaskDashboardSidebar: React.FC = () => {
   };
 
   const counts = {
-    all: DUMMY_TASKS.length,
-    open: DUMMY_TASKS.filter((t) => t.state === "open").length,
-    in_progress: DUMMY_TASKS.filter((t) => t.state === "in_progress").length,
-    blocked: DUMMY_TASKS.filter((t) => t.state === "blocked").length,
-    completed: DUMMY_TASKS.filter((t) => t.state === "completed").length,
+    all: tasks.length,
+    open: tasks.filter((t) => t.state === "open").length,
+    in_progress: tasks.filter((t) => t.state === "in_progress").length,
+    blocked: tasks.filter((t) => t.state === "blocked").length,
+    completed: tasks.filter((t) => t.state === "completed").length,
   };
 
   return (
@@ -156,7 +148,8 @@ export const TaskDashboardSidebar: React.FC = () => {
             return (
               <button
                 key={filter}
-                onClick={() => setActiveFilter(filter)}
+                data-testid={`filter-btn-${filter}`}
+                onClick={() => handleFilterClick(filter)}
                 style={{
                   fontSize: "11px",
                   fontWeight: 600,
@@ -181,65 +174,85 @@ export const TaskDashboardSidebar: React.FC = () => {
 
       {/* Task List */}
       <div style={{ flex: 1, overflowY: "auto", padding: "12px" }}>
-        {filteredTasks.map((task) => {
-          const badge = getBadgeStyle(task.state);
-          return (
-            <div
-              key={task.id}
-              style={{
-                padding: "10px 12px",
-                borderRadius: "var(--radius-sm)",
-                backgroundColor: "var(--rose-bg-overlay)",
-                border: "1px solid rgba(110, 106, 134, 0.15)",
-                marginBottom: "8px",
-                transition: "var(--transition-fast)",
-                cursor: "pointer",
-              }}
-            >
+        {filteredTasks.length === 0 ? (
+          <div
+            data-testid="empty-tasks-message"
+            style={{
+              padding: "32px 16px",
+              textAlign: "center",
+              color: "var(--rose-subtle)",
+              fontSize: "12px",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            No tasks found
+          </div>
+        ) : (
+          filteredTasks.map((task) => {
+            const badge = getBadgeStyle(task.state);
+            return (
               <div
+                key={task.id}
+                data-testid={`sidebar-task-item-${task.id}`}
+                data-task-state={task.state}
+                onClick={() => onToggleTask?.(task.id)}
+                role="button"
+                tabIndex={0}
                 style={{
-                  fontSize: "13px",
-                  color: "var(--rose-text)",
-                  fontWeight: 500,
-                  lineHeight: 1.4,
+                  padding: "10px 12px",
+                  borderRadius: "var(--radius-sm)",
+                  backgroundColor: "var(--rose-bg-overlay)",
+                  border: "1px solid rgba(110, 106, 134, 0.15)",
+                  marginBottom: "8px",
+                  transition: "var(--transition-fast)",
+                  cursor: "pointer",
                 }}
               >
-                {task.title}
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginTop: "8px",
-                }}
-              >
-                <span
+                <div
                   style={{
-                    fontSize: "10px",
-                    color: "var(--rose-muted)",
-                    fontFamily: "var(--font-mono)",
+                    fontSize: "13px",
+                    color: "var(--rose-text)",
+                    fontWeight: 500,
+                    lineHeight: 1.4,
                   }}
                 >
-                  📄 {task.sourceFile}
-                </span>
-                <span
+                  {task.title}
+                </div>
+                <div
                   style={{
-                    fontSize: "10px",
-                    fontWeight: 600,
-                    padding: "2px 6px",
-                    borderRadius: "4px",
-                    backgroundColor: badge.bg,
-                    color: badge.color,
-                    border: `1px solid ${badge.border}`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginTop: "8px",
                   }}
                 >
-                  {badge.label}
-                </span>
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      color: "var(--rose-muted)",
+                      fontFamily: "var(--font-mono)",
+                    }}
+                  >
+                    📄 {task.sourceFile}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 600,
+                      padding: "2px 6px",
+                      borderRadius: "4px",
+                      backgroundColor: badge.bg,
+                      color: badge.color,
+                      border: `1px solid ${badge.border}`,
+                    }}
+                  >
+                    {badge.label}
+                  </span>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </aside>
   );
