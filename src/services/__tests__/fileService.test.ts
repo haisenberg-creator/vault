@@ -2,15 +2,30 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   readMarkdownFile,
   writeMarkdownFile,
+  readWorkspaceFiles,
+  readWorkspaceTree,
+  createFolder,
+  createFile,
+  deletePath,
+  renamePath,
+  movePath,
   setMockFileContent,
   getMockFileContent,
   clearMockStorage,
+  normalizePath,
 } from "../fileService";
 
 describe("fileService", () => {
   beforeEach(() => {
     clearMockStorage();
     vi.restoreAllMocks();
+  });
+
+  it("normalizes paths consistently", () => {
+    expect(normalizePath("Projects\\Client-A\\note.md")).toBe(
+      "Projects/Client-A/note.md"
+    );
+    expect(normalizePath("./Projects/Client-A/")).toBe("Projects/Client-A");
   });
 
   it("reads mock content when in browser mode", async () => {
@@ -44,5 +59,106 @@ describe("fileService", () => {
 
     const updated = await readMarkdownFile(filePath);
     expect(updated).toBe("New Content Updated");
+  });
+
+  it("constructs a nested workspace tree identifying folders, notes, and dashboards", async () => {
+    setMockFileContent("root-note.md", "# Root Note");
+    setMockFileContent("Projects/Client-A/spec.md", "# Client A Spec");
+    setMockFileContent(
+      "Projects/Client-A/overview.dashboard.md",
+      "---\ntype: dashboard\n---"
+    );
+    await createFolder("Archive/2026");
+
+    const tree = await readWorkspaceTree();
+
+    expect(tree).toHaveLength(3);
+
+    // Root elements sorted: Archive (folder), Projects (folder), root-note.md (file)
+    expect(tree[0].name).toBe("Archive");
+    expect(tree[0].kind).toBe("folder");
+    expect(tree[0].children).toHaveLength(1);
+    expect(tree[0].children![0].name).toBe("2026");
+
+    expect(tree[1].name).toBe("Projects");
+    expect(tree[1].kind).toBe("folder");
+    expect(tree[1].children).toHaveLength(1);
+
+    const clientA = tree[1].children![0];
+    expect(clientA.name).toBe("Client-A");
+    expect(clientA.kind).toBe("folder");
+    expect(clientA.children).toHaveLength(2);
+
+    expect(clientA.children![0].name).toBe("overview.dashboard.md");
+    expect(clientA.children![0].kind).toBe("dashboard");
+    expect(clientA.children![0].isDashboard).toBe(true);
+
+    expect(clientA.children![1].name).toBe("spec.md");
+    expect(clientA.children![1].kind).toBe("file");
+
+    expect(tree[2].name).toBe("root-note.md");
+    expect(tree[2].kind).toBe("file");
+  });
+
+  it("creates new folders and files inside nested paths", async () => {
+    await createFolder("Work/Sprint1");
+    await createFile("Work/Sprint1/tasks.md", "# Sprint 1 Tasks");
+
+    const tree = await readWorkspaceTree();
+    expect(tree).toHaveLength(1);
+    expect(tree[0].name).toBe("Work");
+    expect(tree[0].children![0].name).toBe("Sprint1");
+    expect(tree[0].children![0].children![0].name).toBe("tasks.md");
+
+    const content = await readMarkdownFile("Work/Sprint1/tasks.md");
+    expect(content).toBe("# Sprint 1 Tasks");
+  });
+
+  it("renames single files and entire folder hierarchies", async () => {
+    setMockFileContent("OldFolder/sub/note1.md", "# Note 1");
+    setMockFileContent("OldFolder/sub/note2.md", "# Note 2");
+
+    await renamePath("OldFolder", "NewFolder");
+
+    expect(getMockFileContent("OldFolder/sub/note1.md")).toBeUndefined();
+    expect(getMockFileContent("NewFolder/sub/note1.md")).toBe("# Note 1");
+    expect(getMockFileContent("NewFolder/sub/note2.md")).toBe("# Note 2");
+
+    const tree = await readWorkspaceTree();
+    expect(tree[0].name).toBe("NewFolder");
+  });
+
+  it("deletes single files and entire folder hierarchies", async () => {
+    setMockFileContent("DeleteMe/note.md", "# Note");
+    setMockFileContent("KeepMe/note.md", "# Keep");
+
+    await deletePath("DeleteMe");
+
+    expect(getMockFileContent("DeleteMe/note.md")).toBeUndefined();
+    expect(getMockFileContent("KeepMe/note.md")).toBe("# Keep");
+
+    const tree = await readWorkspaceTree();
+    expect(tree).toHaveLength(1);
+    expect(tree[0].name).toBe("KeepMe");
+  });
+
+  it("moves files and folders into destination target directories", async () => {
+    setMockFileContent("Drafts/spec.md", "# Draft Spec");
+    await createFolder("Projects/Client");
+
+    await movePath("Drafts/spec.md", "Projects/Client");
+
+    expect(getMockFileContent("Drafts/spec.md")).toBeUndefined();
+    expect(getMockFileContent("Projects/Client/spec.md")).toBe("# Draft Spec");
+  });
+
+  it("reads workspace files recursively across all nested folders", async () => {
+    setMockFileContent("note1.md", "# Note 1");
+    setMockFileContent("Sub/note2.md", "# Note 2");
+
+    const files = await readWorkspaceFiles();
+    expect(files).toHaveLength(2);
+    expect(files.map((f) => f.path)).toContain("note1.md");
+    expect(files.map((f) => f.path)).toContain("Sub/note2.md");
   });
 });
