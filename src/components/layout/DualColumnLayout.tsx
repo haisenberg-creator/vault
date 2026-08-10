@@ -23,9 +23,10 @@ export interface DualColumnLayoutProps {
 }
 
 export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
-  filename = "workspace-note.md",
+  filename: initialFilename = "workspace-note.md",
   workspaceDir = "workspace",
 }) => {
+  const [activeFilename, setActiveFilename] = useState<string>(initialFilename);
   const [activeEditorTasks, setActiveEditorTasks] = useState<TaskItem[]>([]);
   const [workspaceFiles, setWorkspaceFiles] = useState<WorkspaceFile[]>([]);
   const [activeFilter, setActiveFilter] = useState<TaskState | "all">("all");
@@ -62,7 +63,7 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
 
   // Add tasks from non-active workspace files
   workspaceFiles.forEach((file) => {
-    if (file.name !== filename && file.path !== filename) {
+    if (file.name !== activeFilename && file.path !== activeFilename) {
       const fileTasks = parseTasksFromMarkdown(file.content, file.name);
       aggregatedTasks.push(...fileTasks);
     }
@@ -74,7 +75,7 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
   } else {
     // Fallback parsing from workspace files if active editor hasn't loaded nodes yet
     const activeFile = workspaceFiles.find(
-      (f) => f.name === filename || f.path === filename
+      (f) => f.name === activeFilename || f.path === activeFilename
     );
     if (activeFile) {
       aggregatedTasks.push(
@@ -93,9 +94,9 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
         return;
       }
 
-      const activeBaseName = filename.split(/[/\\]/).pop();
+      const activeBaseName = activeFilename.split(/[/\\]/).pop();
       const isActiveFile =
-        targetTask.sourceFile === filename ||
+        targetTask.sourceFile === activeFilename ||
         targetTask.sourceFile === activeBaseName;
 
       if (isActiveFile) {
@@ -125,7 +126,7 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
         await writeMarkdownFile(targetTask.sourceFile, updatedContent);
       }
     },
-    [activeEditorTasks, aggregatedTasks, filename, workspaceFiles]
+    [activeEditorTasks, aggregatedTasks, activeFilename, workspaceFiles]
   );
 
   return (
@@ -143,9 +144,13 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
         activeFilter={activeFilter}
         onFilterChange={setActiveFilter}
         onToggleTask={handleToggleTask}
+        activeFilePath={activeFilename}
+        onSelectFile={(path) => setActiveFilename(path)}
+        workspaceDir={workspaceDir}
       />
       <EditorPane
-        filename={filename}
+        key={activeFilename}
+        filename={activeFilename}
         onTasksChange={setActiveEditorTasks}
         onRegisterToggleTask={handleRegisterToggleTask}
       />
