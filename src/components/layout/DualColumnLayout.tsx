@@ -5,11 +5,13 @@ import {
   TaskState,
 } from "../sidebar/TaskDashboardSidebar";
 import { EditorPane } from "../editor/EditorPane";
+import { DashboardView } from "../dashboard/DashboardView";
 import {
   readWorkspaceFiles,
   subscribeToWorkspaceChanges,
   writeMarkdownFile,
   readMarkdownFile,
+  normalizePath,
   WorkspaceFile,
 } from "../../services/fileService";
 import {
@@ -58,28 +60,44 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
     []
   );
 
-  // Aggregate tasks from all workspace files
+  // Determine if active file is a Dashboard
+  const normActivePath = normalizePath(activeFilename);
+  const activeFileObj = workspaceFiles.find(
+    (f) => normalizePath(f.path) === normActivePath || f.name === activeFilename
+  );
+  const isDashboardFile =
+    normActivePath.endsWith(".dashboard.md") ||
+    (activeFileObj &&
+      Boolean(
+        activeFileObj.content
+          .match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1]
+          .includes("type: dashboard")
+      ));
+
+  // Aggregate tasks from all non-dashboard workspace files
   const aggregatedTasks: TaskItem[] = [];
 
-  // Add tasks from non-active workspace files
   workspaceFiles.forEach((file) => {
-    if (file.name !== activeFilename && file.path !== activeFilename) {
+    const normP = normalizePath(file.path);
+    if (
+      normP !== normActivePath &&
+      !normP.endsWith(".dashboard.md") &&
+      !file.content
+        .match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1]
+        .includes("type: dashboard")
+    ) {
       const fileTasks = parseTasksFromMarkdown(file.content, file.name);
       aggregatedTasks.push(...fileTasks);
     }
   });
 
-  // Add tasks from active document
-  if (activeEditorTasks.length > 0) {
-    aggregatedTasks.push(...activeEditorTasks);
-  } else {
-    // Fallback parsing from workspace files if active editor hasn't loaded nodes yet
-    const activeFile = workspaceFiles.find(
-      (f) => f.name === activeFilename || f.path === activeFilename
-    );
-    if (activeFile) {
+  // Add tasks from active document if it's not a dashboard
+  if (!isDashboardFile) {
+    if (activeEditorTasks.length > 0) {
+      aggregatedTasks.push(...activeEditorTasks);
+    } else if (activeFileObj) {
       aggregatedTasks.push(
-        ...parseTasksFromMarkdown(activeFile.content, activeFile.name)
+        ...parseTasksFromMarkdown(activeFileObj.content, activeFileObj.name)
       );
     }
   }
@@ -99,8 +117,7 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
         targetTask.sourceFile === activeFilename ||
         targetTask.sourceFile === activeBaseName;
 
-      if (isActiveFile) {
-        // Find current matching task in activeEditorTasks by title
+      if (isActiveFile && !isDashboardFile) {
         const activeTask = activeEditorTasks.find(
           (t) => t.title === targetTask.title
         );
@@ -124,9 +141,17 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
         );
 
         await writeMarkdownFile(targetTask.sourceFile, updatedContent);
+        loadWorkspaceFiles();
       }
     },
-    [activeEditorTasks, aggregatedTasks, activeFilename, workspaceFiles]
+    [
+      activeEditorTasks,
+      aggregatedTasks,
+      activeFilename,
+      isDashboardFile,
+      workspaceFiles,
+      loadWorkspaceFiles,
+    ]
   );
 
   return (
@@ -148,12 +173,24 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
         onSelectFile={(path) => setActiveFilename(path)}
         workspaceDir={workspaceDir}
       />
-      <EditorPane
-        key={activeFilename}
-        filename={activeFilename}
-        onTasksChange={setActiveEditorTasks}
-        onRegisterToggleTask={handleRegisterToggleTask}
-      />
+      {isDashboardFile ? (
+        <DashboardView
+          key={activeFilename}
+          filePath={activeFilename}
+          workspaceFiles={workspaceFiles}
+          onSelectFile={(path) => setActiveFilename(path)}
+          onRefreshWorkspace={loadWorkspaceFiles}
+          onTasksChange={setActiveEditorTasks}
+          onRegisterToggleTask={handleRegisterToggleTask}
+        />
+      ) : (
+        <EditorPane
+          key={activeFilename}
+          filename={activeFilename}
+          onTasksChange={setActiveEditorTasks}
+          onRegisterToggleTask={handleRegisterToggleTask}
+        />
+      )}
     </div>
   );
 };
