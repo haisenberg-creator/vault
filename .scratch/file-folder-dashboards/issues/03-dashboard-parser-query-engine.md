@@ -4,10 +4,10 @@
 
 **Blocked by:** 01 — Folder Hierarchy & File System Storage Operations
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `dashboardService` parses YAML frontmatter schema from `.dashboard.md` files into structured section query configurations.
-- [ ] Task query engine aggregates tasks matching specified state filters, tag filters, and folder path scopes.
-- [ ] Folder filter recursively includes tasks inside sub-directories by default.
-- [ ] Support task grouping (by Folder, Note, Tag, State) and sorting options.
-- [ ] Service unit tests verifying YAML parsing and multi-criteria task query execution across mock vault data.
+- [x] `dashboardService` parses YAML frontmatter schema from `.dashboard.md` files into structured section query configurations.
+- [x] Task query engine aggregates tasks matching specified state filters, tag filters, and folder path scopes.
+- [x] Folder filter recursively includes tasks inside sub-directories by default.
+- [x] Support task grouping (by Folder, Note, Tag, State) and sorting options.
+- [x] Service unit tests verifying YAML parsing and multi-criteria task query execution across mock vault data.
