@@ -16,7 +16,7 @@ const mockStorage: Map<string, string> = new Map([
     "workspace-note.md",
     `# Workspace Project Roadmap
 
-Welcome to the Rosé Pine Moon Soho Checklist app. Tasks within plain Markdown files are automatically aggregated into the Task Dashboard on the left sidebar.
+Welcome to the Rosé Pine Moon Soho Vault app. Tasks within plain Markdown files are automatically aggregated into the Task Dashboard on the left sidebar.
 
 ## Immediate Milestones
 

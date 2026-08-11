@@ -4,10 +4,10 @@
 
 **Blocked by:** 02 — Unified Sidebar Tree & File Management UI, 03 — Dashboard Schema Parsing & Task Query Engine
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Render responsive multi-section widget grids based on parsed Dashboard section definitions.
-- [ ] Interactive task checkboxes update the task state in the underlying Markdown note file on disk immediately.
-- [ ] Clicking a task title or note link navigates to and loads that Note in the Lexical editor.
-- [ ] Header toggle switches between Interactive Dashboard View and Raw Source Mode.
-- [ ] UI component integration tests verifying section grid rendering, checkbox state updates, and mode toggling.
+- [x] Render responsive multi-section widget grids based on parsed Dashboard section definitions.
+- [x] Interactive task checkboxes update the task state in the underlying Markdown note file on disk immediately.
+- [x] Clicking a task title or note link navigates to and loads that Note in the Lexical editor.
+- [x] Header toggle switches between Interactive Dashboard View and Raw Source Mode.
+- [x] UI component integration tests verifying section grid rendering, checkbox state updates, and mode toggling.

@@ -1,6 +1,6 @@
-# Checklist App
+# Vault
 
-A desktop checklist application that manages data using a local file system of plain-text Markdown files, heavily inspired by Obsidian.
+A desktop application (Vault) that manages data using a local file system of plain-text Markdown files (V-Folder), heavily inspired by Obsidian.
 
 ## Language
 
