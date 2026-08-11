@@ -180,4 +180,50 @@ describe("SidebarTree Component", () => {
     fireEvent.drop(folderNode, { dataTransfer });
     expect(handleMove).toHaveBeenCalledWith("root-note.md", "Projects");
   });
+
+  it("handles dragging task payload and dropping onto markdown file node in tree", () => {
+    const handleMoveTaskToNote = vi.fn();
+    render(
+      <SidebarTree
+        nodes={sampleNodes}
+        onSelectFile={vi.fn()}
+        onCreateNote={vi.fn()}
+        onCreateFolder={vi.fn()}
+        onCreateDashboard={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onMovePath={vi.fn()}
+        onMoveTaskToNote={handleMoveTaskToNote}
+      />
+    );
+
+    // Expand folder to see client-a.md
+    fireEvent.click(screen.getByText("Projects"));
+
+    const noteTarget = screen.getByTestId("tree-node-Projects/client-a.md");
+    const taskPayload = JSON.stringify({
+      taskTitle: "Set up Dual Column layout shell with Rosé Pine tokens",
+      sourceFile: "root-note.md",
+    });
+
+    const dataTransfer = {
+      setData: vi.fn(),
+      getData: vi.fn((format: string) => {
+        if (format === "application/json") return taskPayload;
+        return "";
+      }),
+      types: ["application/json"],
+      dropEffect: "",
+      effectAllowed: "",
+    };
+
+    fireEvent.dragOver(noteTarget, { dataTransfer });
+    fireEvent.drop(noteTarget, { dataTransfer });
+
+    expect(handleMoveTaskToNote).toHaveBeenCalledWith(
+      "Set up Dual Column layout shell with Rosé Pine tokens",
+      "root-note.md",
+      "Projects/client-a.md"
+    );
+  });
 });

@@ -6,6 +6,7 @@ import {
 } from "../sidebar/TaskDashboardSidebar";
 import { EditorPane } from "../editor/EditorPane";
 import { DashboardView } from "../dashboard/DashboardView";
+import { TitleBar } from "./TitleBar";
 import {
   readWorkspaceFiles,
   subscribeToWorkspaceChanges,
@@ -35,6 +36,7 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
   const [workspaceFiles, setWorkspaceFiles] = useState<WorkspaceFile[]>([]);
   const [activeFilter, setActiveFilter] = useState<TaskState | "all">("all");
   const toggleTaskFnRef = useRef<((nodeKey: string) => void) | null>(null);
+  const removeTaskFnRef = useRef<((taskTitle: string) => boolean) | null>(null);
 
   const loadWorkspaceFiles = useCallback(async () => {
     try {
@@ -58,6 +60,13 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
   const handleRegisterToggleTask = useCallback(
     (toggleFn: (nodeKey: string) => void) => {
       toggleTaskFnRef.current = toggleFn;
+    },
+    []
+  );
+
+  const handleRegisterRemoveTask = useCallback(
+    (removeFn: (taskTitle: string) => boolean) => {
+      removeTaskFnRef.current = removeFn;
     },
     []
   );
@@ -159,65 +168,138 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
   const handleMoveTaskToNote = useCallback(
     async (taskTitle: string, sourceFile: string, targetNotePath: string) => {
       try {
-        const sourceContent = await readMarkdownFile(sourceFile);
-        const { updatedContent: newSourceContent, removedTaskLine } =
-          removeTaskFromMarkdown(sourceContent, taskTitle);
+        const rawSource = sourceFile || activeFilename;
+        const normSource = normalizePath(rawSource);
+        const normTarget = normalizePath(targetNotePath);
 
-        await writeMarkdownFile(sourceFile, newSourceContent);
+        const sourceFileObj = workspaceFiles.find(
+          (f) =>
+            normalizePath(f.path) === normSource ||
+            f.name === rawSource ||
+            normalizePath(f.path).endsWith("/" + normSource)
+        );
+        const targetFileObj = workspaceFiles.find(
+          (f) =>
+            normalizePath(f.path) === normTarget ||
+            f.name === targetNotePath ||
+            normalizePath(f.path).endsWith("/" + normTarget)
+        );
 
-        const targetContent = await readMarkdownFile(targetNotePath);
+        const resolvedSourcePath = sourceFileObj
+          ? sourceFileObj.path
+          : rawSource;
+        const resolvedTargetPath = targetFileObj
+          ? targetFileObj.path
+          : targetNotePath;
+
+        const normActive = normalizePath(activeFilename);
+        const normResolvedSource = normalizePath(resolvedSourcePath);
+        const isActiveSource =
+          normResolvedSource === normActive ||
+          resolvedSourcePath === activeFilename ||
+          sourceFileObj?.name === activeFilename;
+
+        let removedTaskLine: string | null = null;
+
+        if (isActiveSource && !isDashboardFile && removeTaskFnRef.current) {
+          const removed = removeTaskFnRef.current(taskTitle);
+          if (removed) {
+            const activeContent = sourceFileObj ? sourceFileObj.content : "";
+            const match = activeContent.split(/\r?\n/).find((line) => {
+              const m = line.match(/^(\s*[-*+]\s+)?\[([ x\->X])\]\s*(.*)$/);
+              return (
+                m &&
+                (m[3].trim() === taskTitle || taskTitle.includes(m[3].trim()))
+              );
+            });
+            removedTaskLine = match || `- [ ] ${taskTitle}`;
+          }
+        }
+
+        if (!removedTaskLine) {
+          const sourceContent = sourceFileObj
+            ? sourceFileObj.content
+            : await readMarkdownFile(resolvedSourcePath);
+
+          const {
+            updatedContent: newSourceContent,
+            removedTaskLine: taskLine,
+          } = removeTaskFromMarkdown(sourceContent, taskTitle);
+
+          await writeMarkdownFile(resolvedSourcePath, newSourceContent);
+          removedTaskLine = taskLine;
+        }
+
+        const targetContent = targetFileObj
+          ? targetFileObj.content
+          : await readMarkdownFile(resolvedTargetPath);
+
         const newTargetContent = appendTaskToMarkdown(
           targetContent,
           removedTaskLine || `- [ ] ${taskTitle}`
         );
-        await writeMarkdownFile(targetNotePath, newTargetContent);
 
-        loadWorkspaceFiles();
+        await writeMarkdownFile(resolvedTargetPath, newTargetContent);
+
+        await loadWorkspaceFiles();
       } catch (err) {
         console.error("Failed to move task to note:", err);
       }
     },
-    [loadWorkspaceFiles]
+    [activeFilename, workspaceFiles, isDashboardFile, loadWorkspaceFiles]
   );
 
   return (
     <div
       style={{
         display: "flex",
+        flexDirection: "column",
         width: "100vw",
         height: "100vh",
         overflow: "hidden",
         backgroundColor: "var(--rose-bg-base)",
       }}
     >
-      <TaskDashboardSidebar
-        tasks={aggregatedTasks}
-        activeFilter={activeFilter}
-        onFilterChange={setActiveFilter}
-        onToggleTask={handleToggleTask}
-        activeFilePath={activeFilename}
-        onSelectFile={(path) => setActiveFilename(path)}
-        workspaceDir={workspaceDir}
-        onMoveTaskToNote={handleMoveTaskToNote}
-      />
-      {isDashboardFile ? (
-        <DashboardView
-          key={activeFilename}
-          filePath={activeFilename}
-          workspaceFiles={workspaceFiles}
+      <TitleBar activeFilename={activeFilename} />
+      <div
+        style={{
+          display: "flex",
+          flex: 1,
+          width: "100%",
+          height: "calc(100vh - 36px)",
+          overflow: "hidden",
+        }}
+      >
+        <TaskDashboardSidebar
+          tasks={aggregatedTasks}
+          activeFilter={activeFilter}
+          onFilterChange={setActiveFilter}
+          onToggleTask={handleToggleTask}
+          activeFilePath={activeFilename}
           onSelectFile={(path) => setActiveFilename(path)}
-          onRefreshWorkspace={loadWorkspaceFiles}
-          onTasksChange={setActiveEditorTasks}
-          onRegisterToggleTask={handleRegisterToggleTask}
+          workspaceDir={workspaceDir}
+          onMoveTaskToNote={handleMoveTaskToNote}
         />
-      ) : (
-        <EditorPane
-          key={activeFilename}
-          filename={activeFilename}
-          onTasksChange={setActiveEditorTasks}
-          onRegisterToggleTask={handleRegisterToggleTask}
-        />
-      )}
+        {isDashboardFile ? (
+          <DashboardView
+            key={activeFilename}
+            filePath={activeFilename}
+            workspaceFiles={workspaceFiles}
+            onSelectFile={(path) => setActiveFilename(path)}
+            onRefreshWorkspace={loadWorkspaceFiles}
+            onTasksChange={setActiveEditorTasks}
+            onRegisterToggleTask={handleRegisterToggleTask}
+          />
+        ) : (
+          <EditorPane
+            key={activeFilename}
+            filename={activeFilename}
+            onTasksChange={setActiveEditorTasks}
+            onRegisterToggleTask={handleRegisterToggleTask}
+            onRegisterRemoveTask={handleRegisterRemoveTask}
+          />
+        )}
+      </div>
     </div>
   );
 };

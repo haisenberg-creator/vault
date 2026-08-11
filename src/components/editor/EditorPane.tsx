@@ -32,6 +32,7 @@ import {
   $isChecklistNode,
   getNextTaskState,
   formatTaskState,
+  ActiveFileContext,
 } from "./ChecklistNode";
 import { ALL_TRANSFORMERS } from "./checklistTransformer";
 import { TaskItem, TaskState } from "../sidebar/TaskDashboardSidebar";
@@ -41,6 +42,7 @@ export interface EditorPaneProps {
   filename?: string;
   onTasksChange?: (tasks: TaskItem[]) => void;
   onRegisterToggleTask?: (toggleFn: (nodeKey: string) => void) => void;
+  onRegisterRemoveTask?: (removeFn: (taskTitle: string) => boolean) => void;
 }
 
 const EDITOR_NODES = [
@@ -125,6 +127,45 @@ function TaskToggleHandlerPlugin({
   return null;
 }
 
+// Plugin to expose node removal action to parent components
+function TaskRemoveHandlerPlugin({
+  onRegisterRemoveTask,
+}: {
+  onRegisterRemoveTask?: (removeFn: (taskTitle: string) => boolean) => void;
+}) {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    if (!onRegisterRemoveTask) return;
+
+    onRegisterRemoveTask((taskTitle: string) => {
+      let removed = false;
+      editor.update(() => {
+        const checklistNodes = $nodesOfType(ChecklistNode);
+        for (const node of checklistNodes) {
+          const parent = node.getParent();
+          if (parent) {
+            const fullText = parent.getTextContent();
+            const title = fullText.replace(/\[([ x\->])\]/gi, "").trim();
+            if (
+              title === taskTitle ||
+              taskTitle.includes(title) ||
+              title.includes(taskTitle)
+            ) {
+              parent.remove();
+              removed = true;
+              break;
+            }
+          }
+        }
+      });
+      return removed;
+    });
+  }, [editor, onRegisterRemoveTask]);
+
+  return null;
+}
+
 // Helper plugin to import markdown when external file content changes
 function MarkdownSyncPlugin({
   initialContent,
@@ -191,6 +232,7 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
   filename = "workspace-note.md",
   onTasksChange,
   onRegisterToggleTask,
+  onRegisterRemoveTask,
 }) => {
   const [markdownContent, setMarkdownContent] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -477,43 +519,50 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
             Loading document...
           </div>
         ) : (
-          <LexicalComposer initialConfig={initialConfig}>
-            <div
-              style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                overflow: "hidden",
-                position: "relative",
-              }}
-            >
-              <div style={{ flex: 1, position: "relative", overflowY: "auto" }}>
-                <RichTextPlugin
-                  contentEditable={
-                    <ContentEditable
-                      data-testid="editor-contenteditable"
-                      aria-label={`Editor for ${filename}`}
-                      className="lexical-editor-root"
-                    />
-                  }
-                  ErrorBoundary={LexicalErrorBoundary}
+          <ActiveFileContext.Provider value={filename}>
+            <LexicalComposer initialConfig={initialConfig}>
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  overflow: "hidden",
+                  position: "relative",
+                }}
+              >
+                <div
+                  style={{ flex: 1, position: "relative", overflowY: "auto" }}
+                >
+                  <RichTextPlugin
+                    contentEditable={
+                      <ContentEditable
+                        data-testid="editor-contenteditable"
+                        aria-label={`Editor for ${filename}`}
+                        className="lexical-editor-root"
+                      />
+                    }
+                    ErrorBoundary={LexicalErrorBoundary}
+                  />
+                </div>
+                <HistoryPlugin />
+                <TaskExtractorPlugin
+                  filename={filename}
+                  onTasksChange={onTasksChange}
                 />
+                <TaskToggleHandlerPlugin
+                  onRegisterToggleTask={onRegisterToggleTask}
+                />
+                <TaskRemoveHandlerPlugin
+                  onRegisterRemoveTask={onRegisterRemoveTask}
+                />
+                <MarkdownSyncPlugin
+                  initialContent={markdownContent}
+                  onMarkdownChange={handleMarkdownChange}
+                />
+                <KeyboardSavePlugin onSave={handleManualSave} />
               </div>
-              <HistoryPlugin />
-              <TaskExtractorPlugin
-                filename={filename}
-                onTasksChange={onTasksChange}
-              />
-              <TaskToggleHandlerPlugin
-                onRegisterToggleTask={onRegisterToggleTask}
-              />
-              <MarkdownSyncPlugin
-                initialContent={markdownContent}
-                onMarkdownChange={handleMarkdownChange}
-              />
-              <KeyboardSavePlugin onSave={handleManualSave} />
-            </div>
-          </LexicalComposer>
+            </LexicalComposer>
+          </ActiveFileContext.Provider>
         )}
       </div>
     </main>

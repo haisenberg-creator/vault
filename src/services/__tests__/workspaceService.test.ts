@@ -98,4 +98,24 @@ describe("workspaceService", () => {
       "# Target Note\n- [x] Existing task\n- [ ] Dragged task"
     );
   });
+
+  it("preserves completed task state ([x]) when moving task between markdown notes", () => {
+    const sourceMarkdown = `# Note 1\n- [x] Set up Dual Column layout shell with Rosé Pine tokens\n- [ ] Remaining task`;
+    const targetMarkdown = `# test-dragging.md\n- [ ] Initial task`;
+
+    const { updatedContent, removedTaskLine } = removeTaskFromMarkdown(
+      sourceMarkdown,
+      "Set up Dual Column layout shell with Rosé Pine tokens"
+    );
+
+    expect(updatedContent).toBe("# Note 1\n- [ ] Remaining task");
+    expect(removedTaskLine).toBe(
+      "- [x] Set up Dual Column layout shell with Rosé Pine tokens"
+    );
+
+    const newTarget = appendTaskToMarkdown(targetMarkdown, removedTaskLine!);
+    expect(newTarget).toBe(
+      "# test-dragging.md\n- [ ] Initial task\n- [x] Set up Dual Column layout shell with Rosé Pine tokens"
+    );
+  });
 });

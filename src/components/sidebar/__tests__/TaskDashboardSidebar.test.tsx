@@ -179,4 +179,24 @@ describe("TaskDashboardSidebar Component", () => {
     expect(openTask).toHaveClass("task-title-text");
     expect(completedTask).toHaveClass("task-completed-text");
   });
+
+  it("opens move task modal when move button is clicked", async () => {
+    const handleMove = vi.fn();
+    await act(async () => {
+      render(
+        <TaskDashboardSidebar
+          tasks={sampleTasks}
+          initialTab="tasks"
+          onMoveTaskToNote={handleMove}
+        />
+      );
+    });
+
+    const moveBtn = screen.getByTestId("move-task-btn-node-1");
+    await act(async () => {
+      fireEvent.click(moveBtn);
+    });
+
+    expect(screen.getByTestId("move-task-modal")).toBeInTheDocument();
+  });
 });

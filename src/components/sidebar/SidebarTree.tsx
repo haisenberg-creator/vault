@@ -57,7 +57,16 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
   const handleDragOver = (e: React.DragEvent, targetNode: FileTreeNode) => {
     e.preventDefault();
     e.stopPropagation();
-    if (targetNode.kind === "folder" || targetNode.kind === "file") {
+    const types = e.dataTransfer?.types;
+    const isTaskDrag = types
+      ? Array.from(types).includes("application/json")
+      : false;
+    if (isTaskDrag) {
+      if (targetNode.kind === "file" && targetNode.path.endsWith(".md")) {
+        e.dataTransfer.dropEffect = "move";
+        setDragOverPath(targetNode.path);
+      }
+    } else if (targetNode.kind === "folder" || targetNode.kind === "file") {
       e.dataTransfer.dropEffect = "move";
       setDragOverPath(targetNode.path);
     }
@@ -77,15 +86,21 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
     setDragOverPath(null);
 
     const taskDataStr = e.dataTransfer.getData("application/json");
-    if (taskDataStr && targetNode.kind === "file") {
-      try {
-        const { taskTitle, sourceFile } = JSON.parse(taskDataStr);
-        if (taskTitle && sourceFile && sourceFile !== targetNode.path) {
-          onMoveTaskToNote?.(taskTitle, sourceFile, targetNode.path);
-          return;
+    if (taskDataStr && taskDataStr.trim().startsWith("{")) {
+      if (targetNode.kind === "file" && targetNode.path.endsWith(".md")) {
+        try {
+          const payload = JSON.parse(taskDataStr);
+          if (payload && payload.taskTitle) {
+            onMoveTaskToNote?.(
+              payload.taskTitle,
+              payload.sourceFile || "",
+              targetNode.path
+            );
+            return;
+          }
+        } catch (err) {
+          console.warn("Failed to parse task payload:", err);
         }
-      } catch (err) {
-        console.warn("Failed to parse task payload:", err);
       }
     }
 

@@ -7,11 +7,7 @@ export interface NoteActionBarProps {
   onApplyPrefix?: (prefix: string) => void;
 }
 
-export const MARKER_STYLES = [
-  { label: "[ ] Open Task", prefix: "- [ ] " },
-  { label: "[-] In Progress", prefix: "- [-] " },
-  { label: "[>] Blocked Task", prefix: "- [>] " },
-  { label: "[x] Completed Task", prefix: "- [x] " },
+const MARKER_STYLES = [
   { label: "- Dash Bullet", prefix: "- " },
   { label: "+ Plus Bullet", prefix: "+ " },
   { label: "* Star Bullet", prefix: "* " },

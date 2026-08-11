@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
+import bookIcon from "../../assets/book.png";
+import enchantedBookIcon from "../../assets/enchanted-book.png";
 import { FileTreeNode } from "../../types/workspaceTree";
 import { PinnedDashboards } from "./PinnedDashboards";
 import { SidebarTree } from "./SidebarTree";
@@ -83,6 +85,36 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
     useState<FileTreeNode | null>(null);
 
   const activeFilter = propsFilter ?? internalFilter;
+
+  // Move Task Modal State
+  const [movingTask, setMovingTask] = useState<TaskItem | null>(null);
+  const [selectedTargetNote, setSelectedTargetNote] = useState<string>("");
+
+  const collectNotes = useCallback((nodes: FileTreeNode[]): FileTreeNode[] => {
+    const result: FileTreeNode[] = [];
+    nodes.forEach((n) => {
+      if (n.kind === "file" && n.path.endsWith(".md")) {
+        result.push(n);
+      }
+      if (n.children) {
+        result.push(...collectNotes(n.children));
+      }
+    });
+    return result;
+  }, []);
+
+  const availableNotes = collectNotes(treeNodes).filter(
+    (n) =>
+      movingTask &&
+      n.path !== movingTask.sourceFile &&
+      n.name !== movingTask.sourceFile
+  );
+
+  useEffect(() => {
+    if (movingTask && availableNotes.length > 0) {
+      setSelectedTargetNote(availableNotes[0].path);
+    }
+  }, [movingTask, availableNotes]);
 
   // Load directory tree
   const loadTree = useCallback(async () => {
@@ -306,27 +338,12 @@ sections:
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ color: "var(--rose-pink)" }}
-            >
-              <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-              <path d="M12 11h4" />
-              <path d="M12 16h4" />
-              <path d="M8 11h.01" />
-              <path d="M8 16h.01" />
-            </svg>
             <h2
               style={{
-                fontFamily: "var(--font-pixel)",
+                fontFamily:
+                  themeMode === "arcade"
+                    ? "var(--font-pixel)"
+                    : "var(--font-ui)",
                 fontSize: "15px",
                 letterSpacing: "0.5px",
                 color: "var(--rose-pink)",
@@ -371,33 +388,34 @@ sections:
           >
             {themeMode === "arcade" ? (
               <>
-                <span
+                <img
+                  src={enchantedBookIcon}
+                  alt="Arcade Mode Icon"
                   style={{
-                    fontSize: "12px",
+                    width: "14px",
+                    height: "14px",
+                    objectFit: "contain",
                     filter: "drop-shadow(0 0 4px var(--rose-pink))",
                   }}
-                >
-                  📖✨
-                </span>
+                />
                 <span>ARCADE</span>
               </>
             ) : (
               <>
-                <span style={{ fontSize: "12px" }}>📖</span>
+                <img
+                  src={bookIcon}
+                  alt="Working Mode Icon"
+                  style={{
+                    width: "14px",
+                    height: "14px",
+                    objectFit: "contain",
+                  }}
+                />
                 <span>WORKING</span>
               </>
             )}
           </button>
         </div>
-        <p
-          style={{
-            fontSize: "11px",
-            color: "var(--rose-subtle)",
-            marginTop: "4px",
-          }}
-        >
-          Aggregated workspace checklists
-        </p>
       </div>
 
       {/* Pinned Dashboards Bar */}
@@ -756,19 +774,48 @@ sections:
                         </svg>
                         {task.sourceFile}
                       </span>
-                      <span
+                      <div
                         style={{
-                          fontSize: "10px",
-                          fontWeight: 600,
-                          padding: "2px 6px",
-                          borderRadius: "4px",
-                          backgroundColor: badge.bg,
-                          color: badge.color,
-                          border: `1px solid ${badge.border}`,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
                         }}
                       >
-                        {badge.label}
-                      </span>
+                        <button
+                          data-testid={`move-task-btn-${task.id}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMovingTask(task);
+                          }}
+                          className="tactile-btn"
+                          style={{
+                            fontSize: "10px",
+                            fontWeight: 600,
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            backgroundColor: "rgba(38, 35, 58, 0.6)",
+                            color: "var(--rose-subtle)",
+                            border: "1px solid rgba(110, 106, 134, 0.25)",
+                            cursor: "pointer",
+                          }}
+                          title="Move task to another note"
+                        >
+                          ↪ Move
+                        </button>
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            fontWeight: 600,
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            backgroundColor: badge.bg,
+                            color: badge.color,
+                            border: `1px solid ${badge.border}`,
+                          }}
+                        >
+                          {badge.label}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 );
@@ -787,6 +834,142 @@ sections:
         onSubmit={handleModalSubmit}
         onClose={() => setModalOpen(false)}
       />
+
+      {/* Move Task Modal */}
+      {movingTask && (
+        <div
+          data-testid="move-task-modal"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2000,
+          }}
+          onClick={() => setMovingTask(null)}
+        >
+          <div
+            style={{
+              backgroundColor: "var(--rose-bg-surface)",
+              border: "1px solid var(--rose-border-color)",
+              borderRadius: "var(--radius-md)",
+              padding: "16px",
+              width: "320px",
+              boxShadow: "var(--rose-shadow)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3
+              style={{
+                margin: "0 0 8px 0",
+                fontSize: "14px",
+                color: "var(--rose-pink)",
+              }}
+            >
+              Move Task to Note
+            </h3>
+            <p
+              style={{
+                margin: "0 0 12px 0",
+                fontSize: "12px",
+                color: "var(--rose-subtle)",
+              }}
+            >
+              Select target note for &quot;{movingTask.title}&quot;:
+            </p>
+            {availableNotes.length === 0 ? (
+              <p
+                style={{
+                  fontSize: "12px",
+                  color: "var(--rose-muted)",
+                  margin: "0 0 16px 0",
+                }}
+              >
+                No other notes found in workspace.
+              </p>
+            ) : (
+              <select
+                data-testid="move-task-target-select"
+                value={selectedTargetNote}
+                onChange={(e) => setSelectedTargetNote(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "6px 8px",
+                  marginBottom: "16px",
+                  borderRadius: "4px",
+                  backgroundColor: "var(--rose-bg-overlay)",
+                  color: "var(--rose-text)",
+                  border: "1px solid rgba(110, 106, 134, 0.3)",
+                  fontSize: "12px",
+                }}
+              >
+                {availableNotes.map((note) => (
+                  <option key={note.path} value={note.path}>
+                    {note.name || note.path}
+                  </option>
+                ))}
+              </select>
+            )}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "8px",
+              }}
+            >
+              <button
+                onClick={() => setMovingTask(null)}
+                className="tactile-btn"
+                style={{
+                  padding: "4px 12px",
+                  borderRadius: "4px",
+                  border: "1px solid rgba(110, 106, 134, 0.3)",
+                  backgroundColor: "transparent",
+                  color: "var(--rose-subtle)",
+                  fontSize: "12px",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                data-testid="move-task-confirm-btn"
+                disabled={availableNotes.length === 0}
+                onClick={() => {
+                  if (selectedTargetNote && onMoveTaskToNote) {
+                    onMoveTaskToNote(
+                      movingTask.title,
+                      movingTask.sourceFile,
+                      selectedTargetNote
+                    );
+                  }
+                  setMovingTask(null);
+                }}
+                className="tactile-btn"
+                style={{
+                  padding: "4px 12px",
+                  borderRadius: "4px",
+                  border: "none",
+                  backgroundColor: "var(--rose-pink)",
+                  color: "#191724",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  cursor:
+                    availableNotes.length === 0 ? "not-allowed" : "pointer",
+                  opacity: availableNotes.length === 0 ? 0.5 : 1,
+                }}
+              >
+                Move
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 };

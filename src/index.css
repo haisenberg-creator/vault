@@ -226,6 +226,12 @@ body,
   margin-bottom: 0.3em;
 }
 
+.lexical-list-ul li:has([data-task-state]),
+.lexical-listitem:has([data-task-state]) {
+  list-style-type: none;
+  margin-left: -12px;
+}
+
 .lexical-text-bold {
   font-weight: bold;
 }

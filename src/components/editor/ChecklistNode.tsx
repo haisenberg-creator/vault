@@ -62,6 +62,8 @@ export function getNextTaskState(current: TaskState): TaskState {
   }
 }
 
+export const ActiveFileContext = React.createContext<string>("");
+
 interface ChecklistComponentProps {
   nodeKey: NodeKey;
   state: TaskState;
@@ -72,6 +74,7 @@ export const ChecklistComponent: React.FC<ChecklistComponentProps> = ({
   state,
 }) => {
   const [editor] = useLexicalComposerContext();
+  const activeFile = React.useContext(ActiveFileContext);
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -183,14 +186,39 @@ export const ChecklistComponent: React.FC<ChecklistComponentProps> = ({
 
   const info = getStyleAndIcon();
 
+  const handleDragStart = (e: React.DragEvent) => {
+    let taskTitle = "";
+    editor.getEditorState().read(() => {
+      const node = $getNodeByKey(nodeKey);
+      if (node) {
+        const parent = node.getParent();
+        const fullText = parent ? parent.getTextContent() : "";
+        taskTitle = fullText.replace(/\[([ x\->])\]/gi, "").trim();
+      }
+    });
+
+    if (taskTitle) {
+      e.dataTransfer.setData(
+        "application/json",
+        JSON.stringify({
+          taskTitle,
+          sourceFile: activeFile || "",
+        })
+      );
+      e.dataTransfer.effectAllowed = "move";
+    }
+  };
+
   return (
     <span
       data-testid={`checklist-node-${state}`}
       data-task-state={state}
       onClick={handleClick}
+      draggable
+      onDragStart={handleDragStart}
       role="button"
       tabIndex={0}
-      title={`Click to change state from ${state}`}
+      title={`Click to change state from ${state}, or drag to move task to another note`}
       className="tactile-btn"
       style={{
         display: "inline-flex",
@@ -203,7 +231,7 @@ export const ChecklistComponent: React.FC<ChecklistComponentProps> = ({
         color: info.color,
         border: info.border,
         boxShadow: info.shadow,
-        cursor: "pointer",
+        cursor: "grab",
         userSelect: "none",
         fontSize: "12px",
         fontFamily: "var(--font-mono, monospace)",
