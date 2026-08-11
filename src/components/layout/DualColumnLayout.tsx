@@ -17,6 +17,8 @@ import {
 import {
   parseTasksFromMarkdown,
   toggleTaskInMarkdown,
+  removeTaskFromMarkdown,
+  appendTaskToMarkdown,
 } from "../../services/workspaceService";
 
 export interface DualColumnLayoutProps {
@@ -154,6 +156,30 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
     ]
   );
 
+  const handleMoveTaskToNote = useCallback(
+    async (taskTitle: string, sourceFile: string, targetNotePath: string) => {
+      try {
+        const sourceContent = await readMarkdownFile(sourceFile);
+        const { updatedContent: newSourceContent, removedTaskLine } =
+          removeTaskFromMarkdown(sourceContent, taskTitle);
+
+        await writeMarkdownFile(sourceFile, newSourceContent);
+
+        const targetContent = await readMarkdownFile(targetNotePath);
+        const newTargetContent = appendTaskToMarkdown(
+          targetContent,
+          removedTaskLine || `- [ ] ${taskTitle}`
+        );
+        await writeMarkdownFile(targetNotePath, newTargetContent);
+
+        loadWorkspaceFiles();
+      } catch (err) {
+        console.error("Failed to move task to note:", err);
+      }
+    },
+    [loadWorkspaceFiles]
+  );
+
   return (
     <div
       style={{
@@ -172,6 +198,7 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
         activeFilePath={activeFilename}
         onSelectFile={(path) => setActiveFilename(path)}
         workspaceDir={workspaceDir}
+        onMoveTaskToNote={handleMoveTaskToNote}
       />
       {isDashboardFile ? (
         <DashboardView

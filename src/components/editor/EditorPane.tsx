@@ -31,9 +31,11 @@ import {
   ChecklistNode,
   $isChecklistNode,
   getNextTaskState,
+  formatTaskState,
 } from "./ChecklistNode";
 import { ALL_TRANSFORMERS } from "./checklistTransformer";
-import { TaskItem } from "../sidebar/TaskDashboardSidebar";
+import { TaskItem, TaskState } from "../sidebar/TaskDashboardSidebar";
+import { NoteActionBar } from "./NoteActionBar";
 
 export interface EditorPaneProps {
   filename?: string;
@@ -303,6 +305,40 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
     },
   };
 
+  const handleActionBarAddTask = useCallback(() => {
+    const newTaskLine =
+      currentContentRef.current.endsWith("\n") || !currentContentRef.current
+        ? "- [ ] New task"
+        : "\n- [ ] New task";
+    const updated = currentContentRef.current + newTaskLine;
+    handleMarkdownChange(updated);
+  }, [handleMarkdownChange]);
+
+  const handleActionBarChangeStatus = useCallback(
+    (status: TaskState) => {
+      const syntax = formatTaskState(status);
+      const lineToAdd =
+        currentContentRef.current.endsWith("\n") || !currentContentRef.current
+          ? `- ${syntax} Task item`
+          : `\n- ${syntax} Task item`;
+      const updated = currentContentRef.current + lineToAdd;
+      handleMarkdownChange(updated);
+    },
+    [handleMarkdownChange]
+  );
+
+  const handleActionBarApplyPrefix = useCallback(
+    (prefix: string) => {
+      const lineToAdd =
+        currentContentRef.current.endsWith("\n") || !currentContentRef.current
+          ? `${prefix}New list item`
+          : `\n${prefix}New list item`;
+      const updated = currentContentRef.current + lineToAdd;
+      handleMarkdownChange(updated);
+    },
+    [handleMarkdownChange]
+  );
+
   return (
     <main
       style={{
@@ -396,6 +432,13 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
           </span>
         </div>
       </div>
+
+      {/* Note Action Toolbar */}
+      <NoteActionBar
+        onAddTask={handleActionBarAddTask}
+        onChangeTaskStatus={handleActionBarChangeStatus}
+        onApplyPrefix={handleActionBarApplyPrefix}
+      />
 
       {/* Editor Content Area */}
       <div

@@ -264,3 +264,35 @@ body,
   color: var(--rose-foam);
   text-decoration: underline;
 }
+
+/* ARCADE MODE THEME OVERRIDES */
+.theme-arcade {
+  --font-ui: "Pixelify Sans", cursive, sans-serif;
+  --font-mono: "Pixelify Sans", cursive, sans-serif;
+}
+
+.theme-arcade body,
+.theme-arcade button,
+.theme-arcade input,
+.theme-arcade select,
+.theme-arcade textarea,
+.theme-arcade .lexical-editor-root {
+  font-family: var(--font-pixel) !important;
+  letter-spacing: 0.5px;
+}
+
+.theme-arcade .tactile-card {
+  border-image: linear-gradient(
+      to bottom right,
+      var(--rose-pink),
+      var(--rose-gold)
+    )
+    1;
+  box-shadow: 0 0 10px rgba(235, 111, 146, 0.25);
+}
+
+.theme-arcade .tactile-btn {
+  text-transform: uppercase;
+  font-weight: 700;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+}

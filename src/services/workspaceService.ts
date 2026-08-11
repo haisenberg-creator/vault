@@ -95,3 +95,45 @@ export function toggleTaskInMarkdown(
 
   return updatedLines.join("\n");
 }
+
+/**
+ * Removes a task line matching taskTitle from raw markdown content.
+ */
+export function removeTaskFromMarkdown(
+  content: string,
+  taskTitle: string
+): { updatedContent: string; removedTaskLine: string | null } {
+  const lines = content.split(/\r?\n/);
+  let removedTaskLine: string | null = null;
+
+  const updatedLines = lines.filter((line) => {
+    if (!removedTaskLine) {
+      const match = line.match(/^(\s*[-*+]\s+)?\[([ x\->X])\]\s*(.*)$/);
+      if (match) {
+        const title = match[3].trim();
+        if (title === taskTitle || taskTitle.includes(title)) {
+          removedTaskLine = line;
+          return false;
+        }
+      }
+    }
+    return true;
+  });
+
+  return {
+    updatedContent: updatedLines.join("\n"),
+    removedTaskLine: removedTaskLine || `- [ ] ${taskTitle}`,
+  };
+}
+
+/**
+ * Appends a task line to target markdown content.
+ */
+export function appendTaskToMarkdown(
+  targetContent: string,
+  taskLine: string
+): string {
+  const trimmed = targetContent.trimEnd();
+  if (!trimmed) return taskLine;
+  return `${trimmed}\n${taskLine}`;
+}

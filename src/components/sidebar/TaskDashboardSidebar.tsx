@@ -12,6 +12,12 @@ import {
   movePath,
   subscribeToWorkspaceChanges,
 } from "../../services/fileService";
+import {
+  getThemeMode,
+  toggleThemeMode,
+  applyThemeMode,
+  ThemeMode,
+} from "../../services/themeService";
 
 export type TaskState = "open" | "in_progress" | "blocked" | "completed";
 
@@ -32,6 +38,11 @@ export interface TaskDashboardSidebarProps {
   onSelectFile?: (filePath: string) => void;
   workspaceDir?: string;
   initialTab?: "files" | "tasks";
+  onMoveTaskToNote?: (
+    taskTitle: string,
+    sourceFile: string,
+    targetNotePath: string
+  ) => void;
 }
 
 export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
@@ -43,12 +54,25 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
   onSelectFile,
   workspaceDir = "workspace",
   initialTab = "tasks",
+  onMoveTaskToNote,
 }) => {
   const [activeTab, setActiveTab] = useState<"files" | "tasks">(initialTab);
   const [treeNodes, setTreeNodes] = useState<FileTreeNode[]>([]);
   const [internalFilter, setInternalFilter] = useState<TaskState | "all">(
     "all"
   );
+  const [themeMode, setThemeModeState] = useState<ThemeMode>(() =>
+    getThemeMode()
+  );
+
+  useEffect(() => {
+    applyThemeMode(themeMode);
+  }, [themeMode]);
+
+  const handleToggleThemeMode = () => {
+    const next = toggleThemeMode();
+    setThemeModeState(next);
+  };
 
   // Modal State for file operations
   const [modalOpen, setModalOpen] = useState(false);
@@ -274,36 +298,96 @@ sections:
           backgroundColor: "var(--rose-bg-overlay)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            style={{ color: "var(--rose-pink)" }}
-          >
-            <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-            <path d="M12 11h4" />
-            <path d="M12 16h4" />
-            <path d="M8 11h.01" />
-            <path d="M8 16h.01" />
-          </svg>
-          <h2
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ color: "var(--rose-pink)" }}
+            >
+              <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+              <path d="M12 11h4" />
+              <path d="M12 16h4" />
+              <path d="M8 11h.01" />
+              <path d="M8 16h.01" />
+            </svg>
+            <h2
+              style={{
+                fontFamily: "var(--font-pixel)",
+                fontSize: "15px",
+                letterSpacing: "0.5px",
+                color: "var(--rose-pink)",
+                margin: 0,
+              }}
+            >
+              TASK DASHBOARD
+            </h2>
+          </div>
+
+          <button
+            data-testid="theme-mode-toggle-btn"
+            onClick={handleToggleThemeMode}
+            className="tactile-btn"
             style={{
-              fontFamily: "var(--font-pixel)",
-              fontSize: "15px",
-              letterSpacing: "0.5px",
-              color: "var(--rose-pink)",
-              margin: 0,
+              padding: "4px 8px",
+              borderRadius: "var(--radius-sm)",
+              border:
+                themeMode === "arcade"
+                  ? "1px solid var(--rose-pink)"
+                  : "1px solid rgba(110, 106, 134, 0.3)",
+              backgroundColor:
+                themeMode === "arcade"
+                  ? "rgba(235, 111, 146, 0.2)"
+                  : "rgba(38, 35, 58, 0.6)",
+              color:
+                themeMode === "arcade"
+                  ? "var(--rose-pink)"
+                  : "var(--rose-text)",
+              fontSize: "10px",
+              fontWeight: 700,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
             }}
+            title={
+              themeMode === "arcade"
+                ? "Switch to Working Mode"
+                : "Switch to Arcade Mode"
+            }
           >
-            TASK DASHBOARD
-          </h2>
+            {themeMode === "arcade" ? (
+              <>
+                <span
+                  style={{
+                    fontSize: "12px",
+                    filter: "drop-shadow(0 0 4px var(--rose-pink))",
+                  }}
+                >
+                  📖✨
+                </span>
+                <span>ARCADE</span>
+              </>
+            ) : (
+              <>
+                <span style={{ fontSize: "12px" }}>📖</span>
+                <span>WORKING</span>
+              </>
+            )}
+          </button>
         </div>
         <p
           style={{
@@ -468,6 +552,7 @@ sections:
             onRename={handleOpenRenameModal}
             onDelete={handleDeleteItem}
             onMovePath={handleMoveItem}
+            onMoveTaskToNote={onMoveTaskToNote}
           />
         </div>
       )}
@@ -601,6 +686,17 @@ sections:
                     key={task.id}
                     data-testid={`sidebar-task-item-${task.id}`}
                     data-task-state={task.state}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData(
+                        "application/json",
+                        JSON.stringify({
+                          taskTitle: task.title,
+                          sourceFile: task.sourceFile,
+                        })
+                      );
+                      e.dataTransfer.effectAllowed = "move";
+                    }}
                     onClick={() => onToggleTask?.(task.id)}
                     role="button"
                     tabIndex={0}

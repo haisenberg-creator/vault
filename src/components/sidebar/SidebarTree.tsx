@@ -11,6 +11,11 @@ export interface SidebarTreeProps {
   onRename: (node: FileTreeNode) => void;
   onDelete: (node: FileTreeNode) => void;
   onMovePath: (sourcePath: string, targetFolderPath: string) => void;
+  onMoveTaskToNote?: (
+    taskTitle: string,
+    sourceFile: string,
+    targetNotePath: string
+  ) => void;
 }
 
 export const SidebarTree: React.FC<SidebarTreeProps> = ({
@@ -23,6 +28,7 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
   onRename,
   onDelete,
   onMovePath,
+  onMoveTaskToNote,
 }) => {
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(
     new Set([""])
@@ -51,7 +57,7 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
   const handleDragOver = (e: React.DragEvent, targetNode: FileTreeNode) => {
     e.preventDefault();
     e.stopPropagation();
-    if (targetNode.kind === "folder") {
+    if (targetNode.kind === "folder" || targetNode.kind === "file") {
       e.dataTransfer.dropEffect = "move";
       setDragOverPath(targetNode.path);
     }
@@ -69,6 +75,20 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
     e.preventDefault();
     e.stopPropagation();
     setDragOverPath(null);
+
+    const taskDataStr = e.dataTransfer.getData("application/json");
+    if (taskDataStr && targetNode.kind === "file") {
+      try {
+        const { taskTitle, sourceFile } = JSON.parse(taskDataStr);
+        if (taskTitle && sourceFile && sourceFile !== targetNode.path) {
+          onMoveTaskToNote?.(taskTitle, sourceFile, targetNode.path);
+          return;
+        }
+      } catch (err) {
+        console.warn("Failed to parse task payload:", err);
+      }
+    }
+
     const sourcePath = e.dataTransfer.getData("text/plain");
     if (!sourcePath) return;
 

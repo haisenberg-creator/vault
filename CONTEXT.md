@@ -5,7 +5,10 @@ A desktop checklist application that manages data using a local file system of p
 ## Language
 
 **Vault**:
-A local folder on the user's computer containing all their Markdown files and assets.
+The desktop application itself.
+
+**V-Folder**:
+The root directory on the user's computer containing all their Markdown files and assets opened in Vault.
 _Avoid_: Workspace, database, project folder
 
 **Note**:
@@ -35,3 +38,9 @@ _Avoid_: Internal link, page link, bracket link
 **Tag**:
 A hashtag (e.g. `#urgent`) used to categorize Notes or Tasks, placed directly in the text.
 _Avoid_: Label, category
+
+**Arcade Mode**:
+A visual theme mode featuring pixel/arcade typography (`Pixelify Sans`), retro styling, and Minecraft-inspired icon accents (Enchanted Book).
+
+**Working Mode**:
+The default visual theme mode featuring clean modern typography (`Plus Jakarta Sans` and `JetBrains Mono`) and standard interface icons (Normal Book).

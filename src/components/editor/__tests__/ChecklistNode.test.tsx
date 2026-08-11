@@ -111,7 +111,7 @@ describe("EditorPane with Custom Checklist Nodes", () => {
       expect(screen.queryByText("Loading document...")).not.toBeInTheDocument();
     });
 
-    const openBadge = screen.getByTestId("checklist-node-open");
+    const openBadge = await screen.findByTestId("checklist-node-open");
     expect(openBadge).toBeInTheDocument();
 
     fireEvent.click(openBadge);

@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   parseTasksFromMarkdown,
   toggleTaskInMarkdown,
+  removeTaskFromMarkdown,
+  appendTaskToMarkdown,
 } from "../workspaceService";
 
 describe("workspaceService", () => {
@@ -77,5 +79,23 @@ describe("workspaceService", () => {
       "completed"
     );
     expect(result).toBe("- [x] Implement feature");
+  });
+
+  it("removes a task line from markdown content and appends it to target content", () => {
+    const sourceMarkdown = `# Source Note\n- [ ] Dragged task\n- [-] Keep task`;
+    const targetMarkdown = `# Target Note\n- [x] Existing task`;
+
+    const { updatedContent, removedTaskLine } = removeTaskFromMarkdown(
+      sourceMarkdown,
+      "Dragged task"
+    );
+
+    expect(updatedContent).toBe("# Source Note\n- [-] Keep task");
+    expect(removedTaskLine).toBe("- [ ] Dragged task");
+
+    const newTarget = appendTaskToMarkdown(targetMarkdown, removedTaskLine!);
+    expect(newTarget).toBe(
+      "# Target Note\n- [x] Existing task\n- [ ] Dragged task"
+    );
   });
 });
