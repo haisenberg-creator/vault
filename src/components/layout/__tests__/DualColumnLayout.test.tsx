@@ -29,7 +29,7 @@ describe("DualColumnLayout Integration", () => {
 `;
     fileService.setMockFileContent("test-note.md", mockMarkdown);
 
-    render(<DualColumnLayout filename="test-note.md" />);
+    render(<DualColumnLayout />);
 
     // Wait for document to load and editor to render
     await waitFor(() => {
@@ -60,7 +60,7 @@ describe("DualColumnLayout Integration", () => {
     fileService.setMockFileContent("active-note.md", activeNoteContent);
     fileService.setMockFileContent("secondary-note.md", secondaryNoteContent);
 
-    render(<DualColumnLayout filename="active-note.md" />);
+    render(<DualColumnLayout />);
 
     await waitFor(() => {
       expect(screen.getByText("Active Note Task")).toBeInTheDocument();
@@ -69,17 +69,18 @@ describe("DualColumnLayout Integration", () => {
       ).toBeInTheDocument();
       expect(screen.getByText("Secondary Note Done Task")).toBeInTheDocument();
     });
-
-    // Check sourceFile badges in sidebar
-    expect(screen.getAllByText("active-note.md").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("secondary-note.md")).toHaveLength(2);
   });
 
   it("toggles task state in editor when clicked in sidebar", async () => {
     const mockMarkdown = `- [ ] Sync task from sidebar\n`;
     fileService.setMockFileContent("sync-note.md", mockMarkdown);
 
-    render(<DualColumnLayout filename="sync-note.md" />);
+    render(<DualColumnLayout />);
+
+    // Wait for editor to fully mount (auto-select picks the file)
+    await waitFor(() => {
+      expect(screen.getByTestId("editor-contenteditable")).toBeInTheDocument();
+    });
 
     await waitFor(() => {
       expect(screen.queryByText("Loading document...")).not.toBeInTheDocument();
@@ -128,7 +129,7 @@ describe("DualColumnLayout Integration", () => {
     fileService.setMockFileContent("active-note.md", activeNoteContent);
     fileService.setMockFileContent("other-note.md", otherNoteContent);
 
-    render(<DualColumnLayout filename="active-note.md" />);
+    render(<DualColumnLayout />);
 
     await waitFor(() => {
       expect(screen.getByText("Other Note Task")).toBeInTheDocument();

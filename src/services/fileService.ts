@@ -31,6 +31,48 @@ Welcome to the Rosé Pine Moon Soho Vault app. Tasks within plain Markdown files
 // In-memory mock set for explicit folder paths (e.g. empty directories)
 const mockStorageFolders: Set<string> = new Set();
 
+const STORAGE_FILES_KEY = "vault_mock_storage_files_v1";
+const STORAGE_FOLDERS_KEY = "vault_mock_storage_folders_v1";
+
+function loadMockStorageFromLocalStorage(): void {
+  try {
+    if (typeof window === "undefined" || isTauriEnvironment()) return;
+    const ls = window.localStorage;
+    if (!ls) return;
+    const filesJson = ls.getItem(STORAGE_FILES_KEY);
+    if (filesJson) {
+      const parsedFiles: [string, string][] = JSON.parse(filesJson);
+      mockStorage.clear();
+      parsedFiles.forEach(([key, val]) => mockStorage.set(key, val));
+    }
+    const foldersJson = ls.getItem(STORAGE_FOLDERS_KEY);
+    if (foldersJson) {
+      const parsedFolders: string[] = JSON.parse(foldersJson);
+      mockStorageFolders.clear();
+      parsedFolders.forEach((f) => mockStorageFolders.add(f));
+    }
+  } catch (err) {
+    console.warn("Failed to load mock storage from localStorage:", err);
+  }
+}
+
+function saveMockStorageToLocalStorage(): void {
+  try {
+    if (typeof window === "undefined" || isTauriEnvironment()) return;
+    const ls = window.localStorage;
+    if (!ls) return;
+    const filesArray = Array.from(mockStorage.entries());
+    ls.setItem(STORAGE_FILES_KEY, JSON.stringify(filesArray));
+    const foldersArray = Array.from(mockStorageFolders.values());
+    ls.setItem(STORAGE_FOLDERS_KEY, JSON.stringify(foldersArray));
+  } catch (err) {
+    console.warn("Failed to save mock storage to localStorage:", err);
+  }
+}
+
+// Load persisted mock state if running in browser
+loadMockStorageFromLocalStorage();
+
 /**
  * Normalizes file paths to use forward slashes consistently
  */
@@ -43,6 +85,22 @@ export function normalizePath(path: string): string {
  */
 export function isTauriEnvironment(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
+
+/**
+ * Resolves the absolute workspace directory path.
+ * In Tauri, this returns %APPDATA%/com.user.vault-app/workspace/.
+ * In browser/test environments, falls back to "workspace".
+ */
+export async function getWorkspaceDir(): Promise<string> {
+  if (isTauriEnvironment()) {
+    try {
+      return await invoke<string>("get_workspace_dir");
+    } catch (error) {
+      console.warn("Failed to get workspace dir from Tauri:", error);
+    }
+  }
+  return "workspace";
 }
 
 /**
@@ -428,6 +486,7 @@ export function subscribeToWorkspaceChanges(
 }
 
 function notifyWorkspaceChange() {
+  saveMockStorageToLocalStorage();
   workspaceListeners.forEach((listener) => listener());
 }
 
@@ -454,5 +513,13 @@ export function getMockFileContent(path: string): string | undefined {
 export function clearMockStorage(): void {
   mockStorage.clear();
   mockStorageFolders.clear();
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      window.localStorage.removeItem(STORAGE_FILES_KEY);
+      window.localStorage.removeItem(STORAGE_FOLDERS_KEY);
+    } catch {
+      // ignore
+    }
+  }
   notifyWorkspaceChange();
 }

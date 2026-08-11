@@ -59,7 +59,7 @@ fn collect_workspace_files(dir_path: &Path, results: &mut Vec<WorkspaceFileInfo>
             if let Some(ext) = path.extension() {
                 if ext == "md" {
                     if let Ok(content) = fs::read_to_string(&path) {
-                        let path_str = path.to_str().unwrap_or("").to_string();
+                        let path_str = path.to_str().unwrap_or("").replace('\\', "/");
                         results.push(WorkspaceFileInfo {
                             path: path_str,
                             name: name.to_string(),
@@ -78,8 +78,8 @@ fn read_workspace_files(dir_path: String) -> Result<Vec<WorkspaceFileInfo>, Stri
     let mut results = Vec::new();
     let dir_path_buf = Path::new(&dir_path);
 
-    if !dir_path_buf.exists() || !dir_path_buf.is_dir() {
-        return Err(format!("Directory '{}' does not exist or is not a directory", dir_path));
+    if !dir_path_buf.exists() {
+        let _ = fs::create_dir_all(dir_path_buf);
     }
 
     collect_workspace_files(dir_path_buf, &mut results)
@@ -109,7 +109,7 @@ fn scan_directory_tree(dir_path: &Path) -> std::io::Result<Vec<WorkspaceTreeNode
             continue;
         }
 
-        let path_str = path.to_str().unwrap_or("").to_string();
+        let path_str = path.to_str().unwrap_or("").replace('\\', "/");
 
         if path.is_dir() {
             let children = scan_directory_tree(&path)?;
@@ -148,12 +148,40 @@ fn scan_directory_tree(dir_path: &Path) -> std::io::Result<Vec<WorkspaceTreeNode
 #[tauri::command]
 fn read_workspace_tree(dir_path: String) -> Result<Vec<WorkspaceTreeNode>, String> {
     let dir_path_buf = Path::new(&dir_path);
-    if !dir_path_buf.exists() || !dir_path_buf.is_dir() {
-        return Err(format!("Directory '{}' does not exist or is not a directory", dir_path));
+    if !dir_path_buf.exists() {
+        let _ = fs::create_dir_all(dir_path_buf);
     }
 
     scan_directory_tree(dir_path_buf)
         .map_err(|e| format!("Failed to read workspace tree for '{}': {}", dir_path, e))
+}
+
+#[tauri::command]
+fn get_workspace_dir(app_handle: tauri::AppHandle) -> Result<String, String> {
+    use tauri::Manager;
+    let app_data_dir = app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to get app data dir: {}", e))?;
+    let workspace_dir = app_data_dir.join("workspace");
+    if !workspace_dir.exists() {
+        fs::create_dir_all(&workspace_dir)
+            .map_err(|e| format!("Failed to create workspace dir: {}", e))?;
+    }
+    // Seed a default note if the workspace is completely empty
+    let is_empty = fs::read_dir(&workspace_dir)
+        .map(|mut entries| entries.next().is_none())
+        .unwrap_or(true);
+    if is_empty {
+        let default_note = workspace_dir.join("workspace-note.md");
+        let initial_content = "# Workspace Project Roadmap\n\nWelcome to the Rosé Pine Moon Soho Vault app. Tasks within plain Markdown files are automatically aggregated into the Task Dashboard on the left sidebar.\n\n## Immediate Milestones\n\n- [x] Set up Dual Column layout shell with Rosé Pine tokens\n- [-] Integrate Tauri file system commands for reading/writing markdown\n- [ ] Lexical editor Markdown transformer & DecoratorNode integration\n- [>] Custom interactive checklist portal node renderer\n";
+        let _ = fs::write(&default_note, initial_content);
+    }
+    let path_str = workspace_dir
+        .to_str()
+        .ok_or_else(|| "Invalid workspace path".to_string())?
+        .replace('\\', "/");
+    Ok(path_str)
 }
 
 #[tauri::command]
@@ -198,7 +226,8 @@ pub fn run() {
             read_workspace_tree,
             create_folder,
             delete_path,
-            rename_path
+            rename_path,
+            get_workspace_dir
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

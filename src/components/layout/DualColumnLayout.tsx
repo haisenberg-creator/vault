@@ -23,15 +23,13 @@ import {
 } from "../../services/workspaceService";
 
 export interface DualColumnLayoutProps {
-  filename?: string;
   workspaceDir?: string;
 }
 
 export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
-  filename: initialFilename = "workspace-note.md",
   workspaceDir = "workspace",
 }) => {
-  const [activeFilename, setActiveFilename] = useState<string>(initialFilename);
+  const [activeFilename, setActiveFilename] = useState<string>("");
   const [activeEditorTasks, setActiveEditorTasks] = useState<TaskItem[]>([]);
   const [workspaceFiles, setWorkspaceFiles] = useState<WorkspaceFile[]>([]);
   const [activeFilter, setActiveFilter] = useState<TaskState | "all">("all");
@@ -56,6 +54,20 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
       unsubscribe();
     };
   }, [loadWorkspaceFiles]);
+
+  // Auto-select: pick first file when active file is missing (initial load or after deletion)
+  useEffect(() => {
+    if (workspaceFiles.length === 0) return;
+    setActiveFilename((prev) => {
+      if (!prev) return workspaceFiles[0].path;
+      const normPrev = normalizePath(prev);
+      const exists = workspaceFiles.some(
+        (f) => normalizePath(f.path) === normPrev || f.name === prev
+      );
+      if (!exists) return workspaceFiles[0].path;
+      return prev;
+    });
+  }, [workspaceFiles]);
 
   const handleRegisterToggleTask = useCallback(
     (toggleFn: (nodeKey: string) => void) => {
@@ -280,24 +292,40 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
           workspaceDir={workspaceDir}
           onMoveTaskToNote={handleMoveTaskToNote}
         />
-        {isDashboardFile ? (
-          <DashboardView
-            key={activeFilename}
-            filePath={activeFilename}
-            workspaceFiles={workspaceFiles}
-            onSelectFile={(path) => setActiveFilename(path)}
-            onRefreshWorkspace={loadWorkspaceFiles}
-            onTasksChange={setActiveEditorTasks}
-            onRegisterToggleTask={handleRegisterToggleTask}
-          />
+        {activeFilename ? (
+          isDashboardFile ? (
+            <DashboardView
+              key={activeFilename}
+              filePath={activeFilename}
+              workspaceFiles={workspaceFiles}
+              onSelectFile={(path) => setActiveFilename(path)}
+              onRefreshWorkspace={loadWorkspaceFiles}
+              onTasksChange={setActiveEditorTasks}
+              onRegisterToggleTask={handleRegisterToggleTask}
+            />
+          ) : (
+            <EditorPane
+              key={activeFilename}
+              filename={activeFilename}
+              onTasksChange={setActiveEditorTasks}
+              onRegisterToggleTask={handleRegisterToggleTask}
+              onRegisterRemoveTask={handleRegisterRemoveTask}
+            />
+          )
         ) : (
-          <EditorPane
-            key={activeFilename}
-            filename={activeFilename}
-            onTasksChange={setActiveEditorTasks}
-            onRegisterToggleTask={handleRegisterToggleTask}
-            onRegisterRemoveTask={handleRegisterRemoveTask}
-          />
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "var(--rose-subtle)",
+              fontFamily: "var(--font-mono)",
+              fontSize: "13px",
+            }}
+          >
+            No file selected
+          </div>
         )}
       </div>
     </div>
