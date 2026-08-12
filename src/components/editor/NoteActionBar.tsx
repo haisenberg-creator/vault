@@ -6,6 +6,7 @@ export interface NoteActionBarProps {
   onChangeTaskStatus?: (status: TaskState) => void;
   onApplyPrefix?: (prefix: string) => void;
   onInsertPriorityTemplate?: () => void;
+  onInsertPriorityHeader?: (priority: "Urgent" | "High" | "Low") => void;
 }
 
 const MARKER_STYLES = [
@@ -25,6 +26,7 @@ export const NoteActionBar: React.FC<NoteActionBarProps> = ({
   onChangeTaskStatus,
   onApplyPrefix,
   onInsertPriorityTemplate,
+  onInsertPriorityHeader,
 }) => {
   const [showMarkerDropdown, setShowMarkerDropdown] = useState(false);
 
@@ -87,6 +89,61 @@ export const NoteActionBar: React.FC<NoteActionBarProps> = ({
         <span>⚡</span>
         <span>Priority Template</span>
       </button>
+
+      {/* Priority Header Buttons */}
+      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+        <button
+          data-testid="note-action-priority-urgent"
+          onClick={() => onInsertPriorityHeader?.("Urgent")}
+          className="tactile-btn"
+          style={{
+            padding: "3px 7px",
+            borderRadius: "var(--radius-sm)",
+            border: "1px solid var(--rose-pink)",
+            backgroundColor: "rgba(235, 111, 146, 0.15)",
+            color: "var(--rose-love)",
+            fontSize: "10px",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          Urgent
+        </button>
+        <button
+          data-testid="note-action-priority-high"
+          onClick={() => onInsertPriorityHeader?.("High")}
+          className="tactile-btn"
+          style={{
+            padding: "3px 7px",
+            borderRadius: "var(--radius-sm)",
+            border: "1px solid var(--rose-gold)",
+            backgroundColor: "rgba(246, 193, 119, 0.15)",
+            color: "var(--rose-gold)",
+            fontSize: "10px",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          High
+        </button>
+        <button
+          data-testid="note-action-priority-low"
+          onClick={() => onInsertPriorityHeader?.("Low")}
+          className="tactile-btn"
+          style={{
+            padding: "3px 7px",
+            borderRadius: "var(--radius-sm)",
+            border: "1px solid var(--rose-foam)",
+            backgroundColor: "rgba(156, 207, 216, 0.15)",
+            color: "var(--rose-foam)",
+            fontSize: "10px",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          Low
+        </button>
+      </div>
 
       <div
         style={{

@@ -329,7 +329,7 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
         backgroundColor: "var(--rose-bg-base)",
       }}
     >
-      <TitleBar activeFilename={activeFilename} />
+      <TitleBar activeFilename={activeFilename} workspaceDir={workspaceDir} />
       <div
         style={{
           display: "flex",

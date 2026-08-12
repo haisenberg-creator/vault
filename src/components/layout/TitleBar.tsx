@@ -1,14 +1,20 @@
 import React from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { isTauriEnvironment } from "../../services/fileService";
+import {
+  isTauriEnvironment,
+  stripWorkspacePrefix,
+} from "../../services/fileService";
 
 export interface TitleBarProps {
   activeFilename?: string;
+  workspaceDir?: string;
 }
 
 export const TitleBar: React.FC<TitleBarProps> = ({
   activeFilename = "workspace-note.md",
+  workspaceDir,
 }) => {
+  const displayFilename = stripWorkspacePrefix(activeFilename, workspaceDir);
   const handleMinimize = async () => {
     if (!isTauriEnvironment()) {
       console.info("[TitleBar] Minimize clicked in browser dev mode.");
@@ -122,7 +128,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
             border: "1px solid rgba(110, 106, 134, 0.2)",
           }}
         >
-          {activeFilename}
+          {displayFilename}
         </span>
       </div>
 

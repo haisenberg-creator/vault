@@ -41,4 +41,12 @@ describe("TitleBar Component", () => {
     fireEvent.click(maximizeBtn);
     fireEvent.click(closeBtn);
   });
+
+  it("displays clean relative path when activeFilename is an absolute system path", () => {
+    render(
+      <TitleBar activeFilename="C:/Users/ANH-NTP/AppData/Local/com.user.vault-app/workspace/Projects/Eucerin.md" />
+    );
+
+    expect(screen.getByText("Projects/Eucerin.md")).toBeInTheDocument();
+  });
 });
