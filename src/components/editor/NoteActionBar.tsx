@@ -133,12 +133,12 @@ export const NoteActionBar: React.FC<NoteActionBarProps> = ({
               }}
             >
               {st === "open"
-                ? "[ ] Open"
+                ? "Open"
                 : st === "in_progress"
-                  ? "[-] In Progress"
+                  ? "In Progress"
                   : st === "blocked"
-                    ? "[>] Blocked"
-                    : "[x] Done"}
+                    ? "Blocked"
+                    : "Done"}
             </button>
           )
         )}

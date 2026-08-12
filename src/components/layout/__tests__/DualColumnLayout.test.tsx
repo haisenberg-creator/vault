@@ -31,6 +31,9 @@ describe("DualColumnLayout Integration", () => {
 
     render(<DualColumnLayout />);
 
+    // Switch to Tasks tab to test task dashboard functionality
+    fireEvent.click(screen.getByTestId("tab-tasks"));
+
     // Wait for document to load and editor to render
     await waitFor(() => {
       expect(screen.getByText("TASK DASHBOARD")).toBeInTheDocument();
@@ -53,6 +56,16 @@ describe("DualColumnLayout Integration", () => {
     );
   });
 
+  it("defaults sidebar tab to Files & Folders tab on startup", async () => {
+    render(<DualColumnLayout />);
+
+    await waitFor(() => {
+      const filesTab = screen.getByTestId("tab-files");
+      expect(filesTab).toBeInTheDocument();
+      expect(filesTab.style.borderBottom).toContain("solid");
+    });
+  });
+
   it("aggregates tasks across multiple distinct workspace notes", async () => {
     const activeNoteContent = `- [ ] Active Note Task`;
     const secondaryNoteContent = `- [>] Secondary Note Blocked Task\n- [x] Secondary Note Done Task`;
@@ -61,6 +74,7 @@ describe("DualColumnLayout Integration", () => {
     fileService.setMockFileContent("secondary-note.md", secondaryNoteContent);
 
     render(<DualColumnLayout />);
+    fireEvent.click(screen.getByTestId("tab-tasks"));
 
     await waitFor(() => {
       expect(screen.getByText("Active Note Task")).toBeInTheDocument();
@@ -76,6 +90,7 @@ describe("DualColumnLayout Integration", () => {
     fileService.setMockFileContent("sync-note.md", mockMarkdown);
 
     render(<DualColumnLayout />);
+    fireEvent.click(screen.getByTestId("tab-tasks"));
 
     // Wait for editor to fully mount (auto-select picks the file)
     await waitFor(() => {
@@ -130,6 +145,7 @@ describe("DualColumnLayout Integration", () => {
     fileService.setMockFileContent("other-note.md", otherNoteContent);
 
     render(<DualColumnLayout />);
+    fireEvent.click(screen.getByTestId("tab-tasks"));
 
     await waitFor(() => {
       expect(screen.getByText("Other Note Task")).toBeInTheDocument();

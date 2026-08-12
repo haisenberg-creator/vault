@@ -59,7 +59,7 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
   activeFilePath,
   onSelectFile,
   workspaceDir = "workspace",
-  initialTab = "tasks",
+  initialTab = "files",
   onMoveTaskToNote,
   onDeleteTask,
 }) => {

@@ -14,6 +14,21 @@ describe("NoteActionBar", () => {
     expect(handleAddTask).toHaveBeenCalledTimes(1);
   });
 
+  it("renders status buttons cleanly without markdown brackets", () => {
+    render(<NoteActionBar />);
+
+    expect(screen.getByTestId("note-status-open")).toHaveTextContent("Open");
+    expect(screen.getByTestId("note-status-in_progress")).toHaveTextContent(
+      "In Progress"
+    );
+    expect(screen.getByTestId("note-status-blocked")).toHaveTextContent(
+      "Blocked"
+    );
+    expect(screen.getByTestId("note-status-completed")).toHaveTextContent(
+      "Done"
+    );
+  });
+
   it("triggers onChangeTaskStatus when a status button is clicked", () => {
     const handleChangeStatus = vi.fn();
     render(<NoteActionBar onChangeTaskStatus={handleChangeStatus} />);
