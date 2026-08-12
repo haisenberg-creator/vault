@@ -203,8 +203,11 @@ export const ChecklistComponent: React.FC<ChecklistComponentProps> = ({
         JSON.stringify({
           taskTitle,
           sourceFile: activeFile || "",
+          nodeKey,
+          state,
         })
       );
+      e.dataTransfer.setData("application/x-lexical-task-key", nodeKey);
       e.dataTransfer.setData("text/plain", `task-drag:${taskTitle}`);
       e.dataTransfer.effectAllowed = "move";
     }

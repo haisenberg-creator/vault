@@ -172,10 +172,16 @@ body,
   line-height: 1.7;
   caret-color: var(--rose-rose);
   overflow-y: auto;
+  padding: 4px 8px;
 }
 
 .lexical-paragraph {
   margin-bottom: 0.8em;
+}
+
+.lexical-paragraph:has([data-task-state]) {
+  margin-left: 8px;
+  margin-bottom: 0.3em;
 }
 
 .lexical-h1 {
@@ -192,6 +198,32 @@ body,
   color: var(--rose-gold);
   margin-top: 0.9em;
   margin-bottom: 0.4em;
+}
+
+.lexical-h2[data-priority="urgent"] {
+  color: var(--rose-love) !important;
+  border-bottom: 1px solid rgba(235, 111, 146, 0.3);
+  padding-bottom: 2px;
+}
+
+.lexical-h2[data-priority="high"] {
+  color: var(--rose-gold) !important;
+  border-bottom: 1px solid rgba(246, 193, 119, 0.3);
+  padding-bottom: 2px;
+}
+
+.lexical-h2[data-priority="low"] {
+  color: var(--rose-foam) !important;
+  border-bottom: 1px solid rgba(156, 207, 216, 0.3);
+  padding-bottom: 2px;
+}
+
+.lexical-h2[data-priority].drag-over {
+  outline: 2px dashed var(--rose-rose);
+  outline-offset: 4px;
+  background-color: rgba(235, 111, 146, 0.1);
+  border-radius: 4px;
+  transition: all 150ms ease;
 }
 
 .lexical-h3 {
@@ -211,13 +243,45 @@ body,
 }
 
 .lexical-list-ul {
-  padding-left: 20px;
+  padding-left: 24px;
   list-style-type: disc;
   margin-bottom: 0.8em;
 }
 
+.lexical-list-ul[data-list-marker="-"] {
+  list-style-type: "- ";
+}
+
+.lexical-list-ul[data-list-marker="+"] {
+  list-style-type: "+ ";
+}
+
+.lexical-list-ul[data-list-marker="*"] {
+  list-style-type: "* ";
+}
+
+.lexical-list-ul[data-list-marker="•"] {
+  list-style-type: disc;
+}
+
+.lexical-list-ul[data-list-marker="◦"] {
+  list-style-type: circle;
+}
+
+.lexical-list-ul[data-list-marker="▪"] {
+  list-style-type: square;
+}
+
+.lexical-list-ul[data-list-marker="→"] {
+  list-style-type: "→ ";
+}
+
+.lexical-list-ul[data-list-marker="★"] {
+  list-style-type: "★ ";
+}
+
 .lexical-list-ol {
-  padding-left: 20px;
+  padding-left: 28px;
   list-style-type: decimal;
   margin-bottom: 0.8em;
 }

@@ -4,6 +4,7 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
+import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPlugin";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
@@ -17,10 +18,13 @@ import {
 import {
   KEY_DOWN_COMMAND,
   KEY_ENTER_COMMAND,
+  DRAGOVER_COMMAND,
+  DROP_COMMAND,
   COMMAND_PRIORITY_HIGH,
   EditorState,
   $nodesOfType,
   $getNodeByKey,
+  $getNearestNodeFromDOMNode,
   $getSelection,
   $isRangeSelection,
   $getRoot,
@@ -28,6 +32,7 @@ import {
   $createTextNode,
   $isElementNode,
   TextNode,
+  LexicalNode,
 } from "lexical";
 
 import {
@@ -284,6 +289,185 @@ function TaskKeyboardPlugin() {
   return null;
 }
 
+// Plugin to decorate H2 priority headers with data-priority attributes
+function PriorityHeaderPlugin() {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    const updateHeaderAttributes = () => {
+      editor.getEditorState().read(() => {
+        const headingNodes = $nodesOfType(HeadingNode);
+        for (const node of headingNodes) {
+          if (node.getTag() === "h2") {
+            const dom = editor.getElementByKey(node.getKey());
+            if (dom) {
+              const text = node.getTextContent().trim().toLowerCase();
+              if (text.includes("urgent")) {
+                dom.setAttribute("data-priority", "urgent");
+              } else if (text.includes("high")) {
+                dom.setAttribute("data-priority", "high");
+              } else if (text.includes("low")) {
+                dom.setAttribute("data-priority", "low");
+              } else {
+                dom.removeAttribute("data-priority");
+              }
+            }
+          }
+        }
+      });
+    };
+
+    updateHeaderAttributes();
+    return editor.registerUpdateListener(() => {
+      updateHeaderAttributes();
+    });
+  }, [editor]);
+
+  return null;
+}
+
+// Plugin to handle dragging and dropping tasks onto priority headers or document locations
+function TaskDragDropPlugin() {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    const unregisterDragOver = editor.registerCommand(
+      DRAGOVER_COMMAND,
+      (event: DragEvent) => {
+        event.preventDefault();
+        if (event.dataTransfer) {
+          event.dataTransfer.dropEffect = "move";
+        }
+
+        if (event.target && "closest" in (event.target as object)) {
+          const priorityHeader = (event.target as HTMLElement).closest(
+            "[data-priority]"
+          );
+          const existingDragOver = document.querySelector(".drag-over");
+          if (existingDragOver && existingDragOver !== priorityHeader) {
+            existingDragOver.classList.remove("drag-over");
+          }
+          if (priorityHeader) {
+            priorityHeader.classList.add("drag-over");
+          }
+        }
+        return true;
+      },
+      COMMAND_PRIORITY_HIGH
+    );
+
+    const removeDragOverStyles = () => {
+      const existingDragOver = document.querySelectorAll(".drag-over");
+      existingDragOver.forEach((el) => el.classList.remove("drag-over"));
+    };
+
+    const unregisterDrop = editor.registerCommand(
+      DROP_COMMAND,
+      (event: DragEvent) => {
+        event.preventDefault();
+        removeDragOverStyles();
+
+        const dataTransfer = event.dataTransfer;
+        if (!dataTransfer) return false;
+
+        const taskKey = dataTransfer.getData("application/x-lexical-task-key");
+        const jsonRaw = dataTransfer.getData("application/json");
+        const textRaw = dataTransfer.getData("text/plain");
+
+        let parsedKey = taskKey;
+        let taskTitle = "";
+        let taskState: TaskState = "open";
+
+        if (jsonRaw) {
+          try {
+            const parsed = JSON.parse(jsonRaw);
+            if (parsed.nodeKey && !parsedKey) {
+              parsedKey = parsed.nodeKey;
+            }
+            if (parsed.taskTitle) {
+              taskTitle = parsed.taskTitle;
+            }
+            if (parsed.state) {
+              taskState = parsed.state;
+            }
+          } catch {
+            // Ignore JSON parse errors
+          }
+        }
+
+        if (!taskTitle && textRaw && textRaw.startsWith("task-drag:")) {
+          taskTitle = textRaw.replace(/^task-drag:/, "").trim();
+        }
+
+        if (!parsedKey && !taskTitle) {
+          return false;
+        }
+
+        editor.update(() => {
+          let targetNode: LexicalNode | null = null;
+
+          if (
+            event.target &&
+            ("nodeType" in (event.target as object) ||
+              event.target instanceof Node)
+          ) {
+            const nearestNode = $getNearestNodeFromDOMNode(
+              event.target as Node
+            );
+            if (nearestNode) {
+              targetNode = $isElementNode(nearestNode)
+                ? nearestNode
+                : nearestNode.getParent();
+            }
+          }
+
+          if (!targetNode) {
+            targetNode = $getRoot().getLastChild();
+          }
+
+          if (!targetNode) return;
+
+          if (parsedKey) {
+            const checklistNode = $getNodeByKey(parsedKey);
+            if (checklistNode) {
+              const draggedBlock = checklistNode.getParent();
+              if (
+                draggedBlock &&
+                draggedBlock.getKey() !== targetNode.getKey()
+              ) {
+                targetNode.insertAfter(draggedBlock);
+                return;
+              }
+            }
+          }
+
+          if (taskTitle) {
+            const paragraph = $createParagraphNode();
+            const checklistNode = $createChecklistNode(taskState);
+            const textNode = $createTextNode(" " + taskTitle);
+            paragraph.append(checklistNode, textNode);
+            targetNode.insertAfter(paragraph);
+          }
+        });
+
+        return true;
+      },
+      COMMAND_PRIORITY_HIGH
+    );
+
+    window.addEventListener("dragend", removeDragOverStyles);
+
+    return () => {
+      unregisterDragOver();
+      unregisterDrop();
+      window.removeEventListener("dragend", removeDragOverStyles);
+      removeDragOverStyles();
+    };
+  }, [editor]);
+
+  return null;
+}
+
 // Helper plugin to import markdown when external file content changes
 function MarkdownSyncPlugin({
   initialContent,
@@ -524,6 +708,25 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
     handleMarkdownChange(updated);
   }, [handleMarkdownChange]);
 
+  const handleActionBarInsertPriorityHeader = useCallback(
+    (priority: "Urgent" | "High" | "Low") => {
+      const headerText = `## ${priority}\n- [ ] `;
+      let lineToAdd = headerText;
+      if (currentContentRef.current) {
+        if (currentContentRef.current.endsWith("\n\n")) {
+          lineToAdd = headerText;
+        } else if (currentContentRef.current.endsWith("\n")) {
+          lineToAdd = "\n" + headerText;
+        } else {
+          lineToAdd = "\n\n" + headerText;
+        }
+      }
+      const updated = currentContentRef.current + lineToAdd;
+      handleMarkdownChange(updated);
+    },
+    [handleMarkdownChange]
+  );
+
   return (
     <main
       style={{
@@ -624,6 +827,7 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
         onChangeTaskStatus={handleActionBarChangeStatus}
         onApplyPrefix={handleActionBarApplyPrefix}
         onInsertPriorityTemplate={handleActionBarInsertPriorityTemplate}
+        onInsertPriorityHeader={handleActionBarInsertPriorityHeader}
       />
 
       {/* Editor Content Area */}
@@ -683,6 +887,7 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
                         data-testid="editor-contenteditable"
                         aria-label={`Editor for ${filename}`}
                         className="lexical-editor-root"
+                        spellCheck={false}
                       />
                     }
                     ErrorBoundary={LexicalErrorBoundary}
@@ -707,6 +912,9 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
                   initialContent={markdownContent}
                   onMarkdownChange={handleMarkdownChange}
                 />
+                <MarkdownShortcutPlugin transformers={ALL_TRANSFORMERS} />
+                <PriorityHeaderPlugin />
+                <TaskDragDropPlugin />
                 <KeyboardSavePlugin onSave={handleManualSave} />
               </div>
             </LexicalComposer>
