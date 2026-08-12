@@ -4,8 +4,8 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] The default tab on application startup is "Files & Folders".
-- [ ] The "Open", "In Progress", "Blocked", and "Done" buttons in the editor's NoteActionBar render without markdown brackets (e.g., `[ ]`).
-- [ ] Clicking the cleaned-up status buttons still accurately applies the correct state to the task.
+- [x] The default tab on application startup is "Files & Folders".
+- [x] The "Open", "In Progress", "Blocked", and "Done" buttons in the editor's NoteActionBar render without markdown brackets (e.g., `[ ]`).
+- [x] Clicking the cleaned-up status buttons still accurately applies the correct state to the task.
