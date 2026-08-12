@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Scratch temporary helper scripts
+.scratch/*.ps1
+
