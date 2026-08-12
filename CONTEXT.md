@@ -43,6 +43,10 @@ _Avoid_: Workspace progress
 A hashtag (e.g. `#urgent`) used to categorize Notes or Tasks, placed directly in the text.
 _Avoid_: Label, category
 
+**Priority Header**:
+A specific Markdown heading (e.g. `## Urgent`, `## High`, `## Low`) that implicitly assigns a priority level to all Tasks physically located beneath it, until the next heading.
+_Avoid_: Priority tag, priority block
+
 **Arcade Mode**:
 A visual theme mode featuring pixel/arcade typography (`Pixelify Sans`), retro styling, and Minecraft-inspired icon accents (Enchanted Book).
 
