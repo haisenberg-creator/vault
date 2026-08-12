@@ -9,10 +9,12 @@ import {
   deletePath,
   renamePath,
   movePath,
+  importFolder,
   setMockFileContent,
   getMockFileContent,
   clearMockStorage,
   normalizePath,
+  stripWorkspacePrefix,
 } from "../fileService";
 
 describe("fileService", () => {
@@ -26,6 +28,26 @@ describe("fileService", () => {
       "Projects/Client-A/note.md"
     );
     expect(normalizePath("./Projects/Client-A/")).toBe("Projects/Client-A");
+  });
+
+  it("strips workspace prefix from absolute and relative paths", () => {
+    expect(
+      stripWorkspacePrefix(
+        "C:/Users/ANH-NTP/AppData/Local/com.user.vault-app/workspace/Projects/Eucerin.md",
+        "C:/Users/ANH-NTP/AppData/Local/com.user.vault-app/workspace"
+      )
+    ).toBe("Projects/Eucerin.md");
+    expect(
+      stripWorkspacePrefix(
+        "C:/Users/ANH-NTP/AppData/Local/com.user.vault-app/workspace/Projects/Eucerin.md"
+      )
+    ).toBe("Projects/Eucerin.md");
+    expect(stripWorkspacePrefix("workspace/Projects/Eucerin.md")).toBe(
+      "Projects/Eucerin.md"
+    );
+    expect(stripWorkspacePrefix("Projects/Eucerin.md")).toBe(
+      "Projects/Eucerin.md"
+    );
   });
 
   it("reads mock content when in browser mode", async () => {
@@ -160,5 +182,26 @@ describe("fileService", () => {
     expect(files).toHaveLength(2);
     expect(files.map((f) => f.path)).toContain("note1.md");
     expect(files.map((f) => f.path)).toContain("Sub/note2.md");
+  });
+
+  it("imports folders and automatically converts .txt files to .md format", async () => {
+    const res = await importFolder({
+      mockFiles: [
+        { path: "Imported/notes.txt", content: "# Text note" },
+        { path: "Imported/readme.md", content: "# Markdown readme" },
+        { path: "Imported/sub/details.TXT", content: "Sub details" },
+      ],
+    });
+
+    expect(res.success).toBe(true);
+    expect(res.count).toBe(3);
+
+    expect(getMockFileContent("Imported/notes.md")).toBe("# Text note");
+    expect(getMockFileContent("Imported/notes.txt")).toBeUndefined();
+
+    expect(getMockFileContent("Imported/readme.md")).toBe("# Markdown readme");
+
+    expect(getMockFileContent("Imported/sub/details.md")).toBe("Sub details");
+    expect(getMockFileContent("Imported/sub/details.TXT")).toBeUndefined();
   });
 });

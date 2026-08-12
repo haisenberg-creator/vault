@@ -12,9 +12,11 @@ import {
   renamePath,
   deletePath,
   movePath,
+  importFolder,
   subscribeToWorkspaceChanges,
   normalizePath,
   isSameFilePath,
+  stripWorkspacePrefix,
 } from "../../services/fileService";
 import {
   getThemeMode,
@@ -179,6 +181,17 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
     setModalOpen(true);
   };
 
+  const handleImportFolder = async () => {
+    try {
+      const result = await importFolder();
+      if (result.success) {
+        await loadTree();
+      }
+    } catch (err) {
+      console.error("Failed to import folder:", err);
+    }
+  };
+
   const handleOpenRenameModal = (node: FileTreeNode) => {
     setTargetNodeToRename(node);
     setModalMode("rename");
@@ -319,6 +332,7 @@ sections:
   interface TaskTreeNode {
     name: string;
     path: string;
+    fullPath?: string;
     kind: "folder" | "note";
     children: TaskTreeNode[];
     tasks: TaskItem[];
@@ -329,13 +343,7 @@ sections:
     const nodeMap = new Map<string, TaskTreeNode>();
 
     for (const task of filteredTaskList) {
-      let normFile = normalizePath(task.sourceFile);
-      const rootPrefix = normalizePath(workspaceDir) + "/";
-      if (normFile.startsWith(rootPrefix)) {
-        normFile = normFile.substring(rootPrefix.length);
-      } else if (normFile === normalizePath(workspaceDir)) {
-        normFile = "";
-      }
+      const normFile = stripWorkspacePrefix(task.sourceFile, workspaceDir);
       const parts = normFile.split("/").filter(Boolean);
       let currentPath = "";
 
@@ -367,6 +375,7 @@ sections:
         }
 
         if (isFile) {
+          node.fullPath = task.sourceFile;
           node.tasks.push(task);
         }
       }
@@ -456,7 +465,7 @@ sections:
             cursor: "pointer",
             marginBottom: "4px",
           }}
-          onClick={() => onSelectFile?.(node.path)}
+          onClick={() => onSelectFile?.(node.fullPath || node.path)}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             <span
@@ -906,6 +915,25 @@ sections:
               }}
             >
               + Dashboard
+            </button>
+            <button
+              data-testid="sidebar-action-import-folder"
+              onClick={handleImportFolder}
+              className="tactile-btn"
+              style={{
+                flex: 1,
+                fontSize: "11px",
+                fontWeight: 600,
+                padding: "4px 6px",
+                borderRadius: "var(--radius-sm)",
+                border: "1px solid rgba(56, 189, 248, 0.3)",
+                backgroundColor: "rgba(56, 189, 248, 0.15)",
+                color: "var(--rose-foam, #9ccfd8)",
+                cursor: "pointer",
+              }}
+              title="Import folder into workspace"
+            >
+              Import Folder
             </button>
           </div>
 

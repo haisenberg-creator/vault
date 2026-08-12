@@ -1,58 +1,68 @@
+Status: ready-for-agent
+
 ## Problem Statement
 
-The user is experiencing several usability bugs and missing convenience features related to task management, drag-and-drop interactions, and initial state within the Vault application. Specifically:
+The Vault desktop application currently suffers from several UI, UX, and functional inconsistencies related to task ergonomics, Markdown processing, and sidebar behaviors:
 
-1. Creating a new task from the toolbar doesn't focus the editor on the new task line.
-2. Hitting `Enter` on a task line creates a standard bullet point instead of continuing the task list, forcing manual interaction.
-3. When a note is placed inside a subfolder, the Task Dashboard fails to open the note correctly, treating it as a new empty file and failing to track its task progress.
-4. The task status toolbar buttons are cluttered with raw markdown syntax brackets (e.g. `[ ] Open`).
-5. Dragging a note in the sidebar over folder boundaries causes a rapid, infinite visual flickering loop.
-6. Dragging a task from the active note into another note occasionally duplicates the task because the removal from the active note fails to synchronize with the editor's internal state.
-7. The application defaults to opening the "Tasks" tab on startup, but the user prefers it to open the "Files & Folders" tab.
+1. Newly created tasks in the Lexical editor have a misaligned left margin compared to parsed tasks.
+2. The Tasks Dashboard tab opens notes using a relative path instead of an absolute path, causing the editor to load an empty/new state rather than the actual note.
+3. Markdown list bullet markers (`*`, `+`, `-`) selected via the dropdown render as generic dots instead of their specified characters.
+4. Users cannot import external folders or bulk-convert text files into the Vault.
+5. Priority headings (`## Urgent`, etc.) lack visual distinction.
+6. Users cannot drag and drop tasks under specific Priority headings within the editor to change their priority.
+7. Creating Priority headings currently requires manual typing; there are no quick-access toolbar buttons.
+8. In "Working Mode", ordered list numbers (`1.`, `2.`) are pushed too far to the left, causing them to be partially cut off.
+9. Vietnamese text is aggressively flagged with red squiggles by the browser's native spell checker inside the editor.
+10. The Lexical auto-transformer for `=>` is buggy; typing additional characters after the arrow eventually causes the `=` to disappear, leaving a broken `>`.
 
 ## Solution
 
-We will implement a suite of targeted fixes across the UI components and state logic to create a seamless user experience:
+We will resolve these issues through a comprehensive update targeting the Lexical configuration, the Sidebar layout, native Tauri dialog integrations, and Markdown transformers:
 
-1. Intercept Lexical editor commands to automatically focus the newly inserted task when created via the toolbar, and to continue the task list automatically when `Enter` is pressed.
-2. Update the path normalization and matching logic in the layout component so it correctly resolves and loads existing files inside subfolders, restoring their task tracking capabilities.
-3. Refine the toolbar UI to remove markdown brackets from the button labels.
-4. Fix the drag-and-drop indicator styles in the sidebar to prevent layout shifting and hover flickering.
-5. Ensure the task removal logic properly triggers a state update in the active editor so that moved tasks are reliably deleted from the source document.
-6. Change the default startup tab state to "files".
+- **Editor Ergonomics:** Fix CSS alignment for tasks and ordered lists, apply explicit list-style rendering for bullet markers, and disable native spellchecking.
+- **Priority System:** Color-code Priority Headers, add 3 quick-insert toolbar buttons (Urgent, High, Low), and enable drag-and-drop of tasks under these headers.
+- **Path Resolution:** Update the Tasks Dashboard to resolve and open notes using absolute paths.
+- **Import Functionality:** Add an "Import Folder" feature via a native file picker that copies folders into the Vault and auto-converts `.txt` files to `.md`.
+- **Markdown Transformers:** Implement a custom `TextMatchTransformer` for `=>` that cleanly converts it to `⇒` without eating adjacent characters during subsequent typing.
 
 ## User Stories
 
-1. As a user, I want the editor to automatically focus on the new task I just created from the toolbar, so that I can immediately start typing without clicking again.
-2. As a user, I want pressing `Enter` on a task to automatically create a new task on the next line, so that I can rapidly type out a checklist.
-3. As a user, I want pressing `Enter` on an empty task to exit the task list, so that I don't have to manually delete the empty checkbox when I'm done.
-4. As a user, I want the Task Dashboard to correctly open notes that are located inside folders, so that I can manage tasks across my entire workspace hierarchy.
-5. As a user, I want the progress of tasks inside subfolders to be calculated correctly, so I can trust the dashboard statistics.
-6. As a user, I want the task status buttons in the toolbar to have clean labels without markdown brackets, so that the UI looks polished and readable.
-7. As a user, I want to drag notes over folders without the UI flickering wildly, so that organizing my workspace feels stable and predictable.
-8. As a user, I want tasks that I drag to another note to be reliably removed from the original note, so that I don't end up with duplicate tasks.
-9. As a user, I want the application to start on the "Files & Folders" tab, so that I can immediately see my workspace structure instead of my tasks.
+1. As a user, I want newly created tasks to align perfectly with existing tasks, so that my notes look visually consistent.
+2. As a user, I want clicking a note in the Tasks tab to open the actual note, so that I don't accidentally create a duplicate empty note.
+3. As a user, I want list bullet markers (*, +, -) to render as their specific characters, so that I can visually distinguish list types.
+4. As a user, I want to import a folder from my computer into the Vault, so that I can easily migrate external data.
+5. As a user, I want imported `.txt` files to automatically convert to `.md`, so that they are instantly compatible with the Vault editor.
+6. As a user, I want Priority Headers (Urgent, High, Low) to have distinct colors, so that I can quickly visually scan for important sections.
+7. As a user, I want 3 Priority buttons in the toolbar, so that I can insert priority headers with a single click instead of typing Markdown.
+8. As a user, I want to drag and drop a task under a Priority Header, so that I can quickly change its priority level without copy-pasting.
+9. As a user, I want ordered list numbers in Working Mode to be fully visible, so that I can read the sequence clearly.
+10. As a user, I want to type Vietnamese text without red squiggles, so that the editor doesn't feel cluttered with false spelling errors.
+11. As a user, I want to type `=>` and have it securely convert to an arrow (`⇒`), so that typing numbers or text immediately afterward doesn't break the symbol and delete the `=`.
 
 ## Implementation Decisions
 
-- **Editor Commands**: We will utilize Lexical's internal state updates (`editor.update()`) and node selection APIs to manage focus and intercept the `Enter` key behavior for task nodes, ensuring the markdown source-of-truth remains in sync.
-- **Path Resolution**: We will harden the `activeFileObj` matching logic in the Dual Column Layout to correctly compare relative paths containing slashes (e.g., `Projects/Note.md`), ensuring the editor component receives the existing file content instead of a blank template.
-- **Task Deletion Sync**: We will modify the `removeTaskFnRef` implementation provided by the editor to ensure it physically deletes the task node from the Lexical AST, preventing the editor from re-saving stale content over the file system updates.
-- **Visual Drag Indicators**: We will adjust the sidebar tree's CSS to use `box-sizing: border-box` with inset borders or absolute-positioned overlays for the `isOver` drag state, guaranteeing the element's physical height remains constant and eliminating the hover oscillation bug.
-- **Tab State**: We will modify the `initialTab` default prop of the sidebar component.
+- **Lexical Editor Configuration:** We will set `spellCheck={false}` on the Lexical `ContentEditable` component.
+- **Priority System:** We will add 3 toolbar buttons that dispatch commands to inject `HeadingNode`s with specific priority text. We will use CSS (either targeting specific heading nodes or using generic text-matching CSS if supported, or extending `HeadingNode` themes) to color the headers. Drag-and-drop node reordering will be enabled for tasks to move them between header sections.
+- **Arrow Transformation:** We will remove the default `=>` TextMatchTransformer from Lexical's `TRANSFORMERS` array and replace it with a custom transformer that explicitly preserves surrounding text nodes.
+- **Sidebar Pathing:** The `openNote` function handler in `TaskDashboardSidebar` will be updated to pass the absolute file path, mirroring the behavior of the Files & Folders tab, while the UI will continue to display the clean relative path.
+- **Folder Import:** We will use `@tauri-apps/api/dialog` to trigger a native folder picker, followed by a recursive file copy operation that intercepts `.txt` extensions and writes them as `.md`.
+- **CSS Adjustments:** We will update `index.css` to fix the `TaskNode` padding, `ol` margins in Working Mode, and `ul` list-style-types for custom markers.
 
 ## Testing Decisions
 
-- **React Component Seams**: We will test the task insertion and `Enter` key behaviors by mocking the Lexical editor context within the `EditorPane` component tests.
-- We will test the path resolution and task duplication fixes by mounting `DualColumnLayout` with a mocked file system (via `mockStorage`), simulating drag-and-drop events and asserting the correct `readMarkdownFile` and `writeMarkdownFile` operations.
-- The button label changes will be verified with a simple React Testing Library render test on `NoteActionBar`.
-- **Manual Verification**: Due to the historical brittleness of testing drag-and-drop hover CSS layout quirks in JSDOM, the sidebar flickering bug will be verified manually.
+- **What makes a good test:** Tests should verify the external behavior (e.g., text conversion output, file path resolution) without tightly coupling to the Lexical DOM structure where possible.
+- **Modules to be tested:**
+  - `workspaceService.ts`: Test the `importFolder` logic (mocking the FS) to ensure `.txt` files are renamed to `.md` during the copy.
+  - `checklistTransformer.ts`: Unit test the custom `=>` transformer to ensure that appending characters (like `7` then `8`) doesn't cause the preceding text node to drop characters.
+  - `TaskDashboardSidebar` / `EditorPane`: Component-level tests to verify that the absolute path is correctly passed to the editor when a note is clicked in the Tasks tab, and that Priority buttons dispatch the correct Lexical events.
+- **Prior art:** We will follow the existing pattern in `workspaceService.test.ts` for file operations and `@testing-library/react` patterns in `TaskDashboardSidebar.test.tsx`.
 
 ## Out of Scope
 
-- Refactoring the entire Lexical markdown parser.
-- Implementing drag-and-drop for tasks inside the editor itself (only sidebar-to-note and note-to-sidebar drag-and-drop are in scope).
+- Synchronizing imported folders with their original source (this is a one-time import copy).
+- Advanced spellchecking dictionaries (we are simply disabling the native one).
+- Complex drag-and-drop between completely different notes (drag-and-drop priority is constrained to within the single active editor).
 
 ## Further Notes
 
-Status: ready-for-agent
+- The fix for the `=>` transformer is specifically addressing a bug where typing a sequence of characters quickly after the transformation causes a DOM reconciliation issue that drops the `=` character from the previous text node.

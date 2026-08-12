@@ -1,6 +1,6 @@
 use serde::Serialize;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Serialize, Debug, PartialEq)]
 pub struct WorkspaceFileInfo {
@@ -214,6 +214,64 @@ fn rename_path(old_path: String, new_path: String) -> Result<(), String> {
         .map_err(|e| format!("Failed to rename path '{}' to '{}': {}", old_path, new_path, e))
 }
 
+fn copy_folder_recursive(src: &Path, dst: &Path) -> Result<u32, String> {
+    if !src.exists() || !src.is_dir() {
+        return Err(format!("Source path '{}' is not a valid directory", src.display()));
+    }
+    fs::create_dir_all(dst).map_err(|e| format!("Failed to create directory '{}': {}", dst.display(), e))?;
+
+    let mut count = 0;
+    let entries = fs::read_dir(src).map_err(|e| format!("Failed to read dir '{}': {}", src.display(), e))?;
+
+    for entry in entries.flatten() {
+        let entry_path = entry.path();
+        let file_name = entry_path.file_name().unwrap_or_default();
+        if file_name.to_str().map_or(false, |s| s.starts_with('.')) {
+            continue;
+        }
+
+        if entry_path.is_dir() {
+            let target_sub_dir = dst.join(file_name);
+            count += copy_folder_recursive(&entry_path, &target_sub_dir)?;
+        } else if entry_path.is_file() {
+            let target_file_name = if let Some(ext) = entry_path.extension() {
+                if ext.to_string_lossy().eq_ignore_ascii_case("txt") {
+                    let stem = entry_path.file_stem().unwrap_or_default().to_string_lossy();
+                    format!("{}.md", stem)
+                } else {
+                    file_name.to_string_lossy().to_string()
+                }
+            } else {
+                file_name.to_string_lossy().to_string()
+            };
+
+            let target_file_path = dst.join(target_file_name);
+            fs::copy(&entry_path, &target_file_path)
+                .map_err(|e| format!("Failed to copy file from '{}' to '{}': {}", entry_path.display(), target_file_path.display(), e))?;
+            count += 1;
+        }
+    }
+    Ok(count)
+}
+
+#[tauri::command]
+fn import_folder(source_path: Option<String>, target_workspace_dir: String) -> Result<u32, String> {
+    let src_buf = match source_path {
+        Some(ref path) if !path.trim().is_empty() => PathBuf::from(path),
+        _ => match rfd::FileDialog::new().pick_folder() {
+            Some(path) => path,
+            None => return Ok(0), // User canceled selection
+        },
+    };
+
+    let folder_name = src_buf
+        .file_name()
+        .ok_or_else(|| "Invalid source folder name".to_string())?;
+
+    let destination = Path::new(&target_workspace_dir).join(folder_name);
+    copy_folder_recursive(&src_buf, &destination)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -227,7 +285,8 @@ pub fn run() {
             create_folder,
             delete_path,
             rename_path,
-            get_workspace_dir
+            get_workspace_dir,
+            import_folder
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -318,6 +377,37 @@ mod tests {
         // 5. Delete path
         assert!(delete_path(folder_str.clone()).is_ok());
         assert!(!folder_path.exists());
+    }
+
+    #[test]
+    fn test_copy_folder_recursive_with_txt_conversion() {
+        let temp_src = tempfile::tempdir().unwrap();
+        let temp_dst = tempfile::tempdir().unwrap();
+
+        let sub_dir = temp_src.path().join("Notes");
+        fs::create_dir_all(&sub_dir).unwrap();
+
+        let txt_file = temp_src.path().join("todo.txt");
+        let md_file = temp_src.path().join("readme.md");
+        let sub_txt = sub_dir.join("journal.TXT");
+
+        fs::write(&txt_file, "text file content").unwrap();
+        fs::write(&md_file, "markdown file content").unwrap();
+        fs::write(&sub_txt, "sub text content").unwrap();
+
+        let target_dir = temp_dst.path().join("ImportedFolder");
+        let count = copy_folder_recursive(temp_src.path(), &target_dir).unwrap();
+        assert_eq!(count, 3);
+
+        assert!(target_dir.join("todo.md").exists());
+        assert!(!target_dir.join("todo.txt").exists());
+        assert_eq!(fs::read_to_string(target_dir.join("todo.md")).unwrap(), "text file content");
+
+        assert!(target_dir.join("readme.md").exists());
+        assert_eq!(fs::read_to_string(target_dir.join("readme.md")).unwrap(), "markdown file content");
+
+        assert!(target_dir.join("Notes").join("journal.md").exists());
+        assert_eq!(fs::read_to_string(target_dir.join("Notes").join("journal.md")).unwrap(), "sub text content");
     }
 }
 

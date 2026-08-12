@@ -58,6 +58,9 @@ describe("TaskDashboardSidebar Component", () => {
     expect(
       screen.getByTestId("sidebar-action-new-dashboard")
     ).toBeInTheDocument();
+    expect(
+      screen.getByTestId("sidebar-action-import-folder")
+    ).toBeInTheDocument();
   });
 
   it("renders all task items when Tasks tab is selected", async () => {
@@ -199,6 +202,37 @@ describe("TaskDashboardSidebar Component", () => {
 
     expect(openTask).toHaveClass("task-title-text");
     expect(completedTask).toHaveClass("task-completed-text");
+  });
+
+  it("calls onSelectFile with full task sourceFile when clicking a note header in Tasks tab", async () => {
+    const handleSelectFile = vi.fn();
+    const customTasks: TaskItem[] = [
+      {
+        id: "t1",
+        title: "Test task",
+        sourceFile: "C:/appdata/workspace/Projects/Eucerin.md",
+        state: "open",
+      },
+    ];
+
+    await act(async () => {
+      render(
+        <TaskDashboardSidebar
+          tasks={customTasks}
+          initialTab="tasks"
+          onSelectFile={handleSelectFile}
+        />
+      );
+    });
+
+    const noteHeader = screen.getByTestId("task-tree-note-Projects/Eucerin.md");
+    await act(async () => {
+      fireEvent.click(noteHeader);
+    });
+
+    expect(handleSelectFile).toHaveBeenCalledWith(
+      "C:/appdata/workspace/Projects/Eucerin.md"
+    );
   });
 
   it("opens move task modal when move button is clicked", async () => {

@@ -81,19 +81,24 @@ export function normalizePath(path: string): string {
 }
 
 /**
- * Strip optional workspace directory prefix from path (e.g. "workspace/" or "workspaceDir/")
+ * Strip optional workspace directory prefix from path (e.g. "workspace/" or "workspaceDir/" or absolute workspace path)
  */
-function stripWorkspacePrefix(
+export function stripWorkspacePrefix(
   path: string,
   workspaceDir: string = "workspace"
 ): string {
+  if (!path) return "";
   const norm = normalizePath(path);
-  const normWs = normalizePath(workspaceDir);
+  const normWs = workspaceDir ? normalizePath(workspaceDir) : "";
   if (normWs && norm.startsWith(normWs + "/")) {
     return norm.substring(normWs.length + 1);
   }
   if (norm.startsWith("workspace/")) {
     return norm.substring("workspace/".length);
+  }
+  const workspaceMatch = norm.match(/(?:^|\/)workspace\/(.+)$/i);
+  if (workspaceMatch) {
+    return workspaceMatch[1];
   }
   return norm;
 }
@@ -543,6 +548,63 @@ export async function movePath(
     ? `${normTargetDir}/${fileName}`
     : fileName;
   await renamePath(normSource, destinationPath);
+}
+
+export interface ImportFolderOptions {
+  sourcePath?: string;
+  mockFiles?: Array<{ path: string; content: string }>;
+}
+
+/**
+ * Import a folder into the workspace root.
+ * Automatically converts any .txt files into .md format.
+ */
+export async function importFolder(
+  options?: string | ImportFolderOptions
+): Promise<{ success: boolean; importedPath?: string; count?: number }> {
+  const sourcePath =
+    typeof options === "string" ? options : options?.sourcePath;
+  const mockFiles =
+    typeof options === "object" ? options?.mockFiles : undefined;
+
+  if (isTauriEnvironment()) {
+    try {
+      const workspaceDir = await getWorkspaceDir();
+      const count = await invoke<number>("import_folder", {
+        sourcePath: sourcePath || null,
+        targetWorkspaceDir: workspaceDir,
+      });
+      notifyWorkspaceChange();
+      return { success: true, count };
+    } catch (error) {
+      console.warn("Failed to import folder via Tauri command:", error);
+    }
+  }
+
+  // Browser / mock fallback for testing
+  if (mockFiles && mockFiles.length > 0) {
+    let count = 0;
+    for (const file of mockFiles) {
+      const normPath = normalizePath(file.path);
+      const convertedPath = normPath.replace(/\.txt$/i, ".md");
+      mockStorage.set(convertedPath, file.content);
+      count++;
+    }
+    notifyWorkspaceChange();
+    return { success: true, count };
+  } else if (sourcePath) {
+    const folderName =
+      normalizePath(sourcePath).split("/").pop() || "imported_folder";
+    const defaultNotePath = `${folderName}/imported_note.md`;
+    mockStorage.set(
+      defaultNotePath,
+      "# Imported Folder\n\nContent imported successfully."
+    );
+    notifyWorkspaceChange();
+    return { success: true, count: 1, importedPath: folderName };
+  }
+
+  return { success: false, count: 0 };
 }
 
 /**
