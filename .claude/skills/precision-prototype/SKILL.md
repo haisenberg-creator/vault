@@ -14,6 +14,7 @@ Before writing any code, walk through an intense, one-by-one grilling session us
 For each question, provide your recommended answer.
 
 Walk down the decision tree resolving dependencies one-by-one:
+
 1. **Purpose:** What exact question or hypothesis is this prototype testing?
 2. **Target UI Scope:** Which specific page, section, component, or part of the page are we creating a prototype for?
 3. **Target Elements:** Which specific elements need the ability to adjust scale, position, alignment, or layout dynamically?

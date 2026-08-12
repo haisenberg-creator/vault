@@ -102,14 +102,16 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
 
   workspaceFiles.forEach((file) => {
     const normP = normalizePath(file.path);
+    const isThisActiveFile =
+      normP === normActivePath || file.name === activeFilename;
     if (
-      normP !== normActivePath &&
+      !isThisActiveFile &&
       !normP.endsWith(".dashboard.md") &&
       !file.content
         .match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1]
         .includes("type: dashboard")
     ) {
-      const fileTasks = parseTasksFromMarkdown(file.content, file.name);
+      const fileTasks = parseTasksFromMarkdown(file.content, file.path);
       aggregatedTasks.push(...fileTasks);
     }
   });
@@ -120,10 +122,53 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
       aggregatedTasks.push(...activeEditorTasks);
     } else if (activeFileObj) {
       aggregatedTasks.push(
-        ...parseTasksFromMarkdown(activeFileObj.content, activeFileObj.name)
+        ...parseTasksFromMarkdown(activeFileObj.content, activeFileObj.path)
       );
     }
   }
+
+  const handleDeleteTask = useCallback(
+    async (taskId: string) => {
+      const targetTask = aggregatedTasks.find((t) => t.id === taskId);
+      if (!targetTask) return;
+
+      const activeBaseName = activeFilename.split(/[/\\]/).pop();
+      const isActiveFile =
+        targetTask.sourceFile === activeFilename ||
+        targetTask.sourceFile === activeBaseName ||
+        normalizePath(targetTask.sourceFile) === normActivePath;
+
+      if (isActiveFile && !isDashboardFile && removeTaskFnRef.current) {
+        removeTaskFnRef.current(targetTask.title);
+      } else {
+        const fileToUpdate = workspaceFiles.find(
+          (f) =>
+            f.name === targetTask.sourceFile ||
+            f.path === targetTask.sourceFile ||
+            normalizePath(f.path) === normalizePath(targetTask.sourceFile)
+        );
+        const currentContent = fileToUpdate
+          ? fileToUpdate.content
+          : await readMarkdownFile(targetTask.sourceFile);
+
+        const { updatedContent } = removeTaskFromMarkdown(
+          currentContent,
+          targetTask.title
+        );
+
+        await writeMarkdownFile(targetTask.sourceFile, updatedContent);
+        await loadWorkspaceFiles();
+      }
+    },
+    [
+      aggregatedTasks,
+      activeFilename,
+      normActivePath,
+      isDashboardFile,
+      workspaceFiles,
+      loadWorkspaceFiles,
+    ]
+  );
 
   const handleToggleTask = useCallback(
     async (taskId: string) => {
@@ -291,6 +336,7 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
           onSelectFile={(path) => setActiveFilename(path)}
           workspaceDir={workspaceDir}
           onMoveTaskToNote={handleMoveTaskToNote}
+          onDeleteTask={handleDeleteTask}
         />
         {activeFilename ? (
           isDashboardFile ? (

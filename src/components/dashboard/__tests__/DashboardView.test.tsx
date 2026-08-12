@@ -64,10 +64,10 @@ sections:
     vi.clearAllMocks();
   });
 
-  it("renders header with dashboard title, section count, and total tasks", () => {
+  it("renders header with dashboard title, section count, and total tasks for root dashboard", () => {
     render(
       <DashboardView
-        filePath="Projects/overview.dashboard.md"
+        filePath="overview.dashboard.md"
         workspaceFiles={mockWorkspaceFiles}
       />
     );
@@ -77,6 +77,17 @@ sections:
     );
     expect(screen.getByText("2 Sections")).toBeInTheDocument();
     expect(screen.getByText("4 Total Tasks")).toBeInTheDocument();
+  });
+
+  it("scopes dashboard aggregation to containing folder when in a subfolder", () => {
+    render(
+      <DashboardView
+        filePath="Projects/overview.dashboard.md"
+        workspaceFiles={mockWorkspaceFiles}
+      />
+    );
+
+    expect(screen.getByText("3 Total Tasks")).toBeInTheDocument();
   });
 
   it("renders multi-section widget grid in interactive view mode", () => {

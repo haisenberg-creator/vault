@@ -1,5 +1,6 @@
 import React from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { isTauriEnvironment } from "../../services/fileService";
 
 export interface TitleBarProps {
   activeFilename?: string;
@@ -9,35 +10,46 @@ export const TitleBar: React.FC<TitleBarProps> = ({
   activeFilename = "workspace-note.md",
 }) => {
   const handleMinimize = async () => {
+    if (!isTauriEnvironment()) {
+      console.info("[TitleBar] Minimize clicked in browser dev mode.");
+      return;
+    }
     try {
       const appWindow = getCurrentWindow();
       await appWindow.minimize();
-    } catch {
-      // Graceful fallback for non-Tauri browser preview environments
+    } catch (err) {
+      console.warn("Minimize window call failed:", err);
     }
   };
 
   const handleMaximize = async () => {
+    if (!isTauriEnvironment()) {
+      console.info("[TitleBar] Maximize clicked in browser dev mode.");
+      return;
+    }
     try {
       const appWindow = getCurrentWindow();
       await appWindow.toggleMaximize();
-    } catch {
-      // Graceful fallback for non-Tauri browser preview environments
+    } catch (err) {
+      console.warn("Maximize window call failed:", err);
     }
   };
 
   const handleClose = async () => {
+    if (!isTauriEnvironment()) {
+      console.info("[TitleBar] Close clicked in browser dev mode.");
+      return;
+    }
     try {
       const appWindow = getCurrentWindow();
       await appWindow.close();
-    } catch {
-      // Graceful fallback for non-Tauri browser preview environments
+    } catch (err) {
+      console.warn("Close window call failed:", err);
     }
   };
 
   return (
     <div
-      data-tauri-drag-region
       style={{
         height: "36px",
         backgroundColor: "rgba(25, 23, 36, 0.95)",
@@ -125,7 +137,6 @@ export const TitleBar: React.FC<TitleBarProps> = ({
 
       {/* Right: Window Controls */}
       <div
-        data-tauri-drag-region={false}
         style={
           {
             display: "flex",
@@ -136,66 +147,78 @@ export const TitleBar: React.FC<TitleBarProps> = ({
         }
       >
         <button
+          data-testid="window-minimize"
           onClick={handleMinimize}
           className="tactile-btn"
-          style={{
-            width: "28px",
-            height: "24px",
-            borderRadius: "4px",
-            border: "none",
-            backgroundColor: "transparent",
-            color: "var(--rose-subtle)",
-            fontSize: "12px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            transition: "all 0.15s ease",
-          }}
+          style={
+            {
+              width: "28px",
+              height: "24px",
+              borderRadius: "4px",
+              border: "none",
+              backgroundColor: "transparent",
+              color: "var(--rose-subtle)",
+              fontSize: "12px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.15s ease",
+              WebkitAppRegion: "no-drag",
+            } as React.CSSProperties
+          }
           title="Minimize Window"
         >
           &#8212;
         </button>
 
         <button
+          data-testid="window-maximize"
           onClick={handleMaximize}
           className="tactile-btn"
-          style={{
-            width: "28px",
-            height: "24px",
-            borderRadius: "4px",
-            border: "none",
-            backgroundColor: "transparent",
-            color: "var(--rose-subtle)",
-            fontSize: "12px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            transition: "all 0.15s ease",
-          }}
+          style={
+            {
+              width: "28px",
+              height: "24px",
+              borderRadius: "4px",
+              border: "none",
+              backgroundColor: "transparent",
+              color: "var(--rose-subtle)",
+              fontSize: "12px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.15s ease",
+              WebkitAppRegion: "no-drag",
+            } as React.CSSProperties
+          }
           title="Maximize Window"
         >
           &#9633;
         </button>
 
         <button
+          data-testid="window-close"
           onClick={handleClose}
           className="tactile-btn"
-          style={{
-            width: "28px",
-            height: "24px",
-            borderRadius: "4px",
-            border: "none",
-            backgroundColor: "transparent",
-            color: "var(--rose-subtle)",
-            fontSize: "14px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            transition: "all 0.15s ease",
-          }}
+          style={
+            {
+              width: "28px",
+              height: "24px",
+              borderRadius: "4px",
+              border: "none",
+              backgroundColor: "transparent",
+              color: "var(--rose-subtle)",
+              fontSize: "14px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.15s ease",
+              WebkitAppRegion: "no-drag",
+            } as React.CSSProperties
+          }
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor = "rgba(235, 111, 146, 0.25)";
             e.currentTarget.style.color = "var(--rose-pink)";

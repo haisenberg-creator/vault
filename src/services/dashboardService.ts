@@ -160,6 +160,7 @@ export function parseDashboardSchema(
     type: "dashboard",
     title,
     sections,
+    dashboardFilePath: filePath ? normalizePath(filePath) : undefined,
   };
 }
 
@@ -397,7 +398,22 @@ export function executeDashboardQuery(
   files: WorkspaceFile[],
   schema: DashboardSchema
 ): DashboardQueryResult {
-  const allVaultTasks = parseTasksFromVaultFiles(files);
+  let allVaultTasks = parseTasksFromVaultFiles(files);
+
+  if (schema.dashboardFilePath) {
+    const normDashPath = normalizePath(schema.dashboardFilePath);
+    const dashParts = normDashPath.split("/");
+    dashParts.pop(); // remove file name
+    const dashFolder = dashParts.join("/");
+
+    if (dashFolder !== "") {
+      allVaultTasks = allVaultTasks.filter(
+        (task) =>
+          task.folderPath === dashFolder ||
+          task.folderPath.startsWith(`${dashFolder}/`)
+      );
+    }
+  }
 
   const sectionResults: DashboardSectionResult[] = schema.sections.map(
     (section) => {

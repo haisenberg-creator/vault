@@ -13,6 +13,7 @@ import {
   deletePath,
   movePath,
   subscribeToWorkspaceChanges,
+  normalizePath,
 } from "../../services/fileService";
 import {
   getThemeMode,
@@ -45,6 +46,7 @@ export interface TaskDashboardSidebarProps {
     sourceFile: string,
     targetNotePath: string
   ) => void;
+  onDeleteTask?: (taskId: string) => void;
 }
 
 export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
@@ -57,6 +59,7 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
   workspaceDir = "workspace",
   initialTab = "tasks",
   onMoveTaskToNote,
+  onDeleteTask,
 }) => {
   const [activeTab, setActiveTab] = useState<"files" | "tasks">(initialTab);
   const [treeNodes, setTreeNodes] = useState<FileTreeNode[]>([]);
@@ -65,6 +68,9 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
   );
   const [themeMode, setThemeModeState] = useState<ThemeMode>(() =>
     getThemeMode()
+  );
+  const [collapsedTaskNodes, setCollapsedTaskNodes] = useState<Set<string>>(
+    new Set()
   );
 
   useEffect(() => {
@@ -206,13 +212,17 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
     mode: OperationMode,
     targetPath?: string
   ) => {
+    const defaultDir = workspaceDir || "workspace";
+    const effectiveDir =
+      targetPath && targetPath.trim() ? targetPath : defaultDir;
+
     try {
       if (mode === "create-note") {
         const fileName = name.endsWith(".md") ? name : `${name}.md`;
-        const fullPath = targetPath ? `${targetPath}/${fileName}` : fileName;
+        const fullPath = `${effectiveDir}/${fileName}`;
         await createFile(fullPath, `# ${name.replace(/\.md$/, "")}\n\n`);
       } else if (mode === "create-folder") {
-        const fullPath = targetPath ? `${targetPath}/${name}` : name;
+        const fullPath = `${effectiveDir}/${name}`;
         await createFolder(fullPath);
       } else if (mode === "create-dashboard") {
         const fileName = name.endsWith(".dashboard.md")
@@ -220,7 +230,7 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
           : name.endsWith(".md")
             ? name.replace(/\.md$/, ".dashboard.md")
             : `${name}.dashboard.md`;
-        const fullPath = targetPath ? `${targetPath}/${fileName}` : fileName;
+        const fullPath = `${effectiveDir}/${fileName}`;
         const initialContent = `---
 type: dashboard
 title: ${name.replace(/\.(dashboard\.md|md)$/i, "")}
@@ -233,11 +243,13 @@ sections:
 `;
         await createFile(fullPath, initialContent);
       } else if (mode === "rename" && targetNodeToRename) {
-        const oldPath = targetNodeToRename.path;
-        const pathParts = oldPath.split("/");
-        pathParts.pop();
-        const parentPath = pathParts.join("/");
-        const newPath = parentPath ? `${parentPath}/${name}` : name;
+        const oldPath = normalizePath(targetNodeToRename.path);
+        const lastSlashIndex = oldPath.lastIndexOf("/");
+        const parentPath =
+          lastSlashIndex !== -1
+            ? oldPath.substring(0, lastSlashIndex)
+            : defaultDir;
+        const newPath = `${parentPath}/${name}`;
         await renamePath(oldPath, newPath);
       }
       loadTree();
@@ -301,10 +313,337 @@ sections:
     completed: tasks.filter((t) => t.state === "completed").length,
   };
 
-  const totalCount = tasks.length;
-  const completedCount = counts.completed;
-  const completionPercentage =
-    totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  interface TaskTreeNode {
+    name: string;
+    path: string;
+    kind: "folder" | "note";
+    children: TaskTreeNode[];
+    tasks: TaskItem[];
+  }
+
+  const buildTaskTree = (filteredTaskList: TaskItem[]): TaskTreeNode[] => {
+    const rootNodes: TaskTreeNode[] = [];
+    const nodeMap = new Map<string, TaskTreeNode>();
+
+    for (const task of filteredTaskList) {
+      let normFile = normalizePath(task.sourceFile);
+      const rootPrefix = normalizePath(workspaceDir) + "/";
+      if (normFile.startsWith(rootPrefix)) {
+        normFile = normFile.substring(rootPrefix.length);
+      } else if (normFile === normalizePath(workspaceDir)) {
+        normFile = "";
+      }
+      const parts = normFile.split("/").filter(Boolean);
+      let currentPath = "";
+
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        const isFile = i === parts.length - 1;
+        const prevPath = currentPath;
+        currentPath = currentPath ? `${currentPath}/${part}` : part;
+
+        let node = nodeMap.get(currentPath);
+        if (!node) {
+          node = {
+            name: part,
+            path: currentPath,
+            kind: isFile ? "note" : "folder",
+            children: [],
+            tasks: [],
+          };
+          nodeMap.set(currentPath, node);
+
+          if (prevPath) {
+            const parentNode = nodeMap.get(prevPath);
+            if (parentNode) {
+              parentNode.children.push(node);
+            }
+          } else {
+            rootNodes.push(node);
+          }
+        }
+
+        if (isFile) {
+          node.tasks.push(task);
+        }
+      }
+    }
+
+    return rootNodes;
+  };
+
+  const toggleTaskNodeExpand = (nodePath: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCollapsedTaskNodes((prev) => {
+      const next = new Set(prev);
+      if (next.has(nodePath)) {
+        next.delete(nodePath);
+      } else {
+        next.add(nodePath);
+      }
+      return next;
+    });
+  };
+
+  const renderTaskTreeNode = (node: TaskTreeNode, depth: number = 0) => {
+    const isExpanded = !collapsedTaskNodes.has(node.path);
+
+    if (node.kind === "folder") {
+      return (
+        <div
+          key={node.path}
+          style={{ marginLeft: `${depth * 12}px`, marginBottom: "4px" }}
+        >
+          <div
+            onClick={(e) => toggleTaskNodeExpand(node.path, e)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "4px 8px",
+              cursor: "pointer",
+              fontSize: "12px",
+              fontWeight: 600,
+              color: "var(--rose-text)",
+              borderRadius: "var(--radius-sm)",
+            }}
+          >
+            <span style={{ fontSize: "10px", width: "12px" }}>
+              {isExpanded ? "▼" : "▶"}
+            </span>
+            <span>📁 {node.name}</span>
+          </div>
+          {isExpanded && (
+            <div>
+              {node.children.map((child) =>
+                renderTaskTreeNode(child, depth + 1)
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Note Node
+    const allNoteTasks = tasks.filter(
+      (t) => normalizePath(t.sourceFile) === node.path
+    );
+    const noteCompletedCount = allNoteTasks.filter(
+      (t) => t.state === "completed"
+    ).length;
+    const noteProgress =
+      allNoteTasks.length > 0
+        ? Math.round((noteCompletedCount / allNoteTasks.length) * 100)
+        : 0;
+
+    return (
+      <div
+        key={node.path}
+        style={{ marginLeft: `${depth * 12}px`, marginBottom: "8px" }}
+      >
+        <div
+          data-testid={`task-tree-note-${node.path}`}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "6px 8px",
+            backgroundColor: "rgba(38, 35, 58, 0.4)",
+            borderRadius: "var(--radius-sm)",
+            cursor: "pointer",
+            marginBottom: "4px",
+          }}
+          onClick={() => onSelectFile?.(node.path)}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span
+              onClick={(e) => toggleTaskNodeExpand(node.path, e)}
+              style={{ fontSize: "10px", width: "12px", cursor: "pointer" }}
+            >
+              {isExpanded ? "▼" : "▶"}
+            </span>
+            <span
+              style={{
+                fontSize: "12px",
+                fontWeight: 600,
+                color: "var(--rose-text)",
+              }}
+            >
+              📄 {node.name}
+            </span>
+          </div>
+          <span
+            data-testid={`note-progress-${node.path}`}
+            style={{
+              fontSize: "11px",
+              fontFamily: "var(--font-mono)",
+              fontWeight: 600,
+              color: "var(--rose-foam)",
+              backgroundColor: "rgba(156, 207, 216, 0.15)",
+              padding: "2px 6px",
+              borderRadius: "10px",
+            }}
+          >
+            {noteProgress}%
+          </span>
+        </div>
+
+        {isExpanded && (
+          <div
+            style={{
+              paddingLeft: "16px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "4px",
+            }}
+          >
+            {node.tasks.map((task) => {
+              const badge = getBadgeStyle(task.state);
+              const isCompleted = task.state === "completed";
+              return (
+                <div
+                  key={task.id}
+                  data-testid={`sidebar-task-item-${task.id}`}
+                  data-task-state={task.state}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData(
+                      "application/json",
+                      JSON.stringify({
+                        taskTitle: task.title,
+                        sourceFile: task.sourceFile,
+                      })
+                    );
+                    e.dataTransfer.effectAllowed = "move";
+                  }}
+                  onClick={() => onToggleTask?.(task.id)}
+                  role="button"
+                  tabIndex={0}
+                  className="tactile-card"
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: "var(--radius-sm)",
+                    backgroundColor: "var(--rose-bg-overlay)",
+                    border: "1px solid rgba(110, 106, 134, 0.15)",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    transition: "all 150ms ease",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      flex: 1,
+                      minWidth: 0,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isCompleted}
+                      onChange={() => {}}
+                      style={{ cursor: "pointer" }}
+                    />
+                    <span
+                      className={
+                        isCompleted ? "task-completed-text" : "task-title-text"
+                      }
+                      style={{
+                        fontSize: "12px",
+                        color: isCompleted
+                          ? "var(--rose-subtle)"
+                          : "var(--rose-text)",
+                        textDecoration: isCompleted ? "line-through" : "none",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {task.title}
+                    </span>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    <button
+                      data-testid={`move-task-btn-${task.id}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMovingTask(task);
+                      }}
+                      className="tactile-btn"
+                      style={{
+                        fontSize: "10px",
+                        fontWeight: 600,
+                        padding: "2px 6px",
+                        borderRadius: "4px",
+                        backgroundColor: "rgba(38, 35, 58, 0.6)",
+                        color: "var(--rose-subtle)",
+                        border: "1px solid rgba(110, 106, 134, 0.25)",
+                        cursor: "pointer",
+                      }}
+                      title="Move task to another note"
+                    >
+                      ↪ Move
+                    </button>
+                    <button
+                      data-testid={`delete-task-btn-${task.id}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (
+                          window.confirm(
+                            `Are you sure you want to delete "${task.title}"?`
+                          )
+                        ) {
+                          onDeleteTask?.(task.id);
+                        }
+                      }}
+                      className="tactile-btn"
+                      style={{
+                        fontSize: "10px",
+                        fontWeight: 600,
+                        padding: "2px 6px",
+                        borderRadius: "4px",
+                        backgroundColor: "rgba(38, 35, 58, 0.6)",
+                        color: "var(--rose-love, #eb6f92)",
+                        border: "1px solid rgba(235, 111, 146, 0.25)",
+                        cursor: "pointer",
+                      }}
+                      title="Delete task"
+                    >
+                      🗑️
+                    </button>
+                    <span
+                      style={{
+                        fontSize: "10px",
+                        fontWeight: 600,
+                        padding: "2px 6px",
+                        borderRadius: "4px",
+                        backgroundColor: badge.bg,
+                        color: badge.color,
+                        border: `1px solid ${badge.border}`,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {badge.label}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <aside
@@ -436,6 +775,15 @@ sections:
         <button
           data-testid="tab-files"
           onClick={() => setActiveTab("files")}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            setActiveTab("files");
+          }}
+          onDragEnter={(e) => {
+            e.preventDefault();
+            setActiveTab("files");
+          }}
           className="tactile-btn"
           style={{
             flex: 1,
@@ -571,6 +919,7 @@ sections:
             onDelete={handleDeleteItem}
             onMovePath={handleMoveItem}
             onMoveTaskToNote={onMoveTaskToNote}
+            workspaceDir={workspaceDir}
           />
         </div>
       )}
@@ -585,61 +934,6 @@ sections:
             overflow: "hidden",
           }}
         >
-          {/* Live Workspace Progress Meter */}
-          <div
-            data-testid="workspace-progress-meter"
-            style={{
-              padding: "10px 16px",
-              borderBottom: "1px solid rgba(110, 106, 134, 0.15)",
-              backgroundColor: "rgba(25, 23, 36, 0.4)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                fontSize: "11px",
-                marginBottom: "6px",
-              }}
-            >
-              <span style={{ color: "var(--rose-subtle)", fontWeight: 500 }}>
-                Workspace Progress
-              </span>
-              <span
-                style={{
-                  color: "var(--rose-foam)",
-                  fontFamily: "var(--font-mono)",
-                  fontWeight: 600,
-                }}
-              >
-                {completionPercentage}%
-              </span>
-            </div>
-            <div
-              style={{
-                height: "6px",
-                width: "100%",
-                backgroundColor: "rgba(38, 35, 58, 0.8)",
-                borderRadius: "3px",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                data-testid="progress-bar-fill"
-                style={{
-                  height: "100%",
-                  width: `${completionPercentage}%`,
-                  background:
-                    "linear-gradient(90deg, var(--rose-pine), var(--rose-foam))",
-                  borderRadius: "3px",
-                  transition: "width 350ms cubic-bezier(0.4, 0, 0.2, 1)",
-                  boxShadow: "0 0 8px rgba(156, 207, 216, 0.4)",
-                }}
-              />
-            </div>
-          </div>
-
           {/* Filter Tabs */}
           <div
             style={{
@@ -680,7 +974,7 @@ sections:
             })}
           </div>
 
-          {/* Task List */}
+          {/* Task Tree */}
           <div style={{ flex: 1, overflowY: "auto", padding: "12px" }}>
             {filteredTasks.length === 0 ? (
               <div
@@ -696,130 +990,9 @@ sections:
                 No tasks found
               </div>
             ) : (
-              filteredTasks.map((task) => {
-                const badge = getBadgeStyle(task.state);
-                const isCompleted = task.state === "completed";
-                return (
-                  <div
-                    key={task.id}
-                    data-testid={`sidebar-task-item-${task.id}`}
-                    data-task-state={task.state}
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData(
-                        "application/json",
-                        JSON.stringify({
-                          taskTitle: task.title,
-                          sourceFile: task.sourceFile,
-                        })
-                      );
-                      e.dataTransfer.effectAllowed = "move";
-                    }}
-                    onClick={() => onToggleTask?.(task.id)}
-                    role="button"
-                    tabIndex={0}
-                    className="tactile-card"
-                    style={{
-                      padding: "10px 12px",
-                      borderRadius: "var(--radius-sm)",
-                      backgroundColor: "var(--rose-bg-overlay)",
-                      border: "1px solid rgba(110, 106, 134, 0.15)",
-                      marginBottom: "8px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <div
-                      className={
-                        isCompleted ? "task-completed-text" : "task-title-text"
-                      }
-                      style={{
-                        fontSize: "13px",
-                        color: "var(--rose-text)",
-                        fontWeight: 500,
-                        lineHeight: 1.4,
-                      }}
-                    >
-                      {task.title}
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        marginTop: "8px",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "10px",
-                          color: "var(--rose-muted)",
-                          fontFamily: "var(--font-mono)",
-                          display: "inline-flex",
-                          alignItems: "center",
-                        }}
-                      >
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          style={{ marginRight: "4px" }}
-                        >
-                          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                          <polyline points="14 2 14 8 20 8" />
-                        </svg>
-                        {task.sourceFile}
-                      </span>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        <button
-                          data-testid={`move-task-btn-${task.id}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setMovingTask(task);
-                          }}
-                          className="tactile-btn"
-                          style={{
-                            fontSize: "10px",
-                            fontWeight: 600,
-                            padding: "2px 6px",
-                            borderRadius: "4px",
-                            backgroundColor: "rgba(38, 35, 58, 0.6)",
-                            color: "var(--rose-subtle)",
-                            border: "1px solid rgba(110, 106, 134, 0.25)",
-                            cursor: "pointer",
-                          }}
-                          title="Move task to another note"
-                        >
-                          ↪ Move
-                        </button>
-                        <span
-                          style={{
-                            fontSize: "10px",
-                            fontWeight: 600,
-                            padding: "2px 6px",
-                            borderRadius: "4px",
-                            backgroundColor: badge.bg,
-                            color: badge.color,
-                            border: `1px solid ${badge.border}`,
-                          }}
-                        >
-                          {badge.label}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
+              buildTaskTree(filteredTasks).map((node) =>
+                renderTaskTreeNode(node, 0)
+              )
             )}
           </div>
         </div>

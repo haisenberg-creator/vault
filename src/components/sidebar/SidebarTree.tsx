@@ -16,6 +16,7 @@ export interface SidebarTreeProps {
     sourceFile: string,
     targetNotePath: string
   ) => void;
+  workspaceDir?: string;
 }
 
 export const SidebarTree: React.FC<SidebarTreeProps> = ({
@@ -29,6 +30,7 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
   onDelete,
   onMovePath,
   onMoveTaskToNote,
+  workspaceDir,
 }) => {
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(
     new Set([""])
@@ -54,6 +56,27 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
     e.dataTransfer.effectAllowed = "move";
   };
 
+  const handleDragEnter = (e: React.DragEvent, targetNode: FileTreeNode) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const types = e.dataTransfer?.types;
+    const isTaskDrag = types
+      ? Array.from(types).includes("application/json")
+      : false;
+
+    if (isTaskDrag) {
+      if (targetNode.kind === "file" && targetNode.path.endsWith(".md")) {
+        e.dataTransfer.dropEffect = "move";
+        setDragOverPath(targetNode.path);
+      } else {
+        e.dataTransfer.dropEffect = "none";
+      }
+    } else {
+      e.dataTransfer.dropEffect = "move";
+      setDragOverPath(targetNode.path);
+    }
+  };
+
   const handleDragOver = (e: React.DragEvent, targetNode: FileTreeNode) => {
     e.preventDefault();
     e.stopPropagation();
@@ -65,8 +88,10 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
       if (targetNode.kind === "file" && targetNode.path.endsWith(".md")) {
         e.dataTransfer.dropEffect = "move";
         setDragOverPath(targetNode.path);
+      } else {
+        e.dataTransfer.dropEffect = "none";
       }
-    } else if (targetNode.kind === "folder" || targetNode.kind === "file") {
+    } else {
       e.dataTransfer.dropEffect = "move";
       setDragOverPath(targetNode.path);
     }
@@ -75,41 +100,98 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
   const handleDragLeave = (e: React.DragEvent, targetNode: FileTreeNode) => {
     e.preventDefault();
     e.stopPropagation();
-    if (dragOverPath === targetNode.path) {
+    // Only clear drag over if leaving to an external element outside this target
+    if (
+      dragOverPath === targetNode.path &&
+      !e.currentTarget.contains(e.relatedTarget as Node)
+    ) {
       setDragOverPath(null);
     }
   };
 
-  const handleDrop = (e: React.DragEvent, targetNode: FileTreeNode) => {
+  const handleRootDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverPath("__root__");
+  };
+
+  const handleRootDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (dragOverPath === "__root__") {
+      setDragOverPath(null);
+    }
+  };
+
+  const handleDropOnNode = (e: React.DragEvent, targetNode: FileTreeNode) => {
     e.preventDefault();
     e.stopPropagation();
     setDragOverPath(null);
 
+    const plainTextData = e.dataTransfer.getData("text/plain");
+    let taskTitleFromFallback = "";
+    if (plainTextData && plainTextData.startsWith("task-drag:")) {
+      taskTitleFromFallback = plainTextData.substring("task-drag:".length);
+    }
+
     const taskDataStr = e.dataTransfer.getData("application/json");
+    let payloadTitle = "";
+    let payloadSource = "";
     if (taskDataStr && taskDataStr.trim().startsWith("{")) {
-      if (targetNode.kind === "file" && targetNode.path.endsWith(".md")) {
-        try {
-          const payload = JSON.parse(taskDataStr);
-          if (payload && payload.taskTitle) {
-            onMoveTaskToNote?.(
-              payload.taskTitle,
-              payload.sourceFile || "",
-              targetNode.path
-            );
-            return;
-          }
-        } catch (err) {
-          console.warn("Failed to parse task payload:", err);
+      try {
+        const payload = JSON.parse(taskDataStr);
+        if (payload && payload.taskTitle) {
+          payloadTitle = payload.taskTitle;
+          payloadSource = payload.sourceFile || "";
         }
+      } catch (err) {
+        console.warn("Failed to parse task payload:", err);
       }
     }
 
-    const sourcePath = e.dataTransfer.getData("text/plain");
-    if (!sourcePath) return;
+    const finalTaskTitle = payloadTitle || taskTitleFromFallback;
+    if (finalTaskTitle) {
+      if (targetNode.kind === "file" && targetNode.path.endsWith(".md")) {
+        onMoveTaskToNote?.(finalTaskTitle, payloadSource, targetNode.path);
+      }
+      return;
+    }
 
-    const targetDir = targetNode.kind === "folder" ? targetNode.path : "";
+    const sourcePath = plainTextData;
+    if (!sourcePath || sourcePath.startsWith("task-drag:")) return;
+
+    let targetDir = "";
+    if (targetNode.kind === "folder") {
+      targetDir = targetNode.path;
+    } else {
+      const lastSlashIndex = targetNode.path.lastIndexOf("/");
+      targetDir =
+        lastSlashIndex !== -1
+          ? targetNode.path.substring(0, lastSlashIndex)
+          : "";
+    }
+
     if (sourcePath !== targetDir && !targetDir.startsWith(sourcePath + "/")) {
       onMovePath(sourcePath, targetDir);
+    }
+  };
+
+  const handleDropOnRoot = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverPath(null);
+
+    const sourcePath = e.dataTransfer.getData("text/plain");
+    if (!sourcePath || sourcePath.startsWith("task-drag:")) return;
+
+    const effectiveWorkspace = workspaceDir || "";
+    const lastSlashIndex = sourcePath.lastIndexOf("/");
+    const currentParentDir =
+      lastSlashIndex !== -1 ? sourcePath.substring(0, lastSlashIndex) : "";
+
+    if (currentParentDir !== effectiveWorkspace && currentParentDir !== "") {
+      onMovePath(sourcePath, effectiveWorkspace);
     }
   };
 
@@ -127,9 +209,10 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
           data-kind={node.kind}
           draggable
           onDragStart={(e) => handleDragStart(e, node)}
+          onDragEnter={(e) => handleDragEnter(e, node)}
           onDragOver={(e) => handleDragOver(e, node)}
           onDragLeave={(e) => handleDragLeave(e, node)}
-          onDrop={(e) => handleDrop(e, node)}
+          onDrop={(e) => handleDropOnNode(e, node)}
           onClick={() => {
             if (isFolder) {
               setExpandedPaths((prev) => {
@@ -311,6 +394,34 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
                 </button>
               </>
             )}
+            {(() => {
+              const effectiveWorkspace = workspaceDir || "";
+              const lastSlash = node.path.lastIndexOf("/");
+              const parentDir =
+                lastSlash !== -1 ? node.path.substring(0, lastSlash) : "";
+
+              if (parentDir && parentDir !== effectiveWorkspace) {
+                return (
+                  <button
+                    data-testid={`node-move-root-${node.path}`}
+                    title="Move out of folder"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const grandParentSlash = parentDir.lastIndexOf("/");
+                      const targetDir =
+                        grandParentSlash !== -1
+                          ? parentDir.substring(0, grandParentSlash)
+                          : effectiveWorkspace;
+                      onMovePath(node.path, targetDir);
+                    }}
+                    style={actionBtnStyle}
+                  >
+                    ↖
+                  </button>
+                );
+              }
+              return null;
+            })()}
             <button
               data-testid={`node-rename-${node.path}`}
               title="Rename"
@@ -343,15 +454,49 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
     );
   };
 
+  const isRootDragTarget = dragOverPath === "__root__";
+
   return (
     <div
       data-testid="sidebar-tree-container"
+      onDragOver={handleRootDragOver}
+      onDragLeave={handleRootDragLeave}
+      onDrop={handleDropOnRoot}
       style={{
         flex: 1,
         overflowY: "auto",
         padding: "8px 6px",
+        display: "flex",
+        flexDirection: "column",
+        backgroundColor: isRootDragTarget
+          ? "rgba(156, 207, 216, 0.08)"
+          : "transparent",
+        border: isRootDragTarget
+          ? "1px dashed var(--rose-foam)"
+          : "1px solid transparent",
+        borderRadius: "var(--radius-sm)",
+        transition: "all 150ms ease",
       }}
     >
+      {isRootDragTarget && (
+        <div
+          data-testid="root-drop-zone"
+          style={{
+            padding: "6px 12px",
+            marginBottom: "8px",
+            borderRadius: "var(--radius-sm)",
+            backgroundColor: "rgba(156, 207, 216, 0.2)",
+            border: "1px dashed var(--rose-foam)",
+            color: "var(--rose-foam)",
+            fontSize: "11px",
+            fontWeight: 600,
+            textAlign: "center",
+            fontFamily: "var(--font-mono)",
+          }}
+        >
+          Drop here to move to V-Folder Root
+        </div>
+      )}
       {nodes.length === 0 ? (
         <div
           data-testid="empty-tree-message"

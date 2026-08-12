@@ -127,7 +127,7 @@ describe("TaskDashboardSidebar Component", () => {
     );
   });
 
-  it("calculates workspace progress meter percentage correctly in Tasks tab", async () => {
+  it("calculates note progress percentage correctly in Tasks tab", async () => {
     let rerenderFn: any;
     await act(async () => {
       const { rerender } = render(
@@ -136,14 +136,11 @@ describe("TaskDashboardSidebar Component", () => {
       rerenderFn = rerender;
     });
 
-    expect(screen.getByTestId("workspace-progress-meter")).toHaveTextContent(
+    expect(screen.getByTestId("note-progress-note.md")).toHaveTextContent(
       "25%"
     );
-    expect(screen.getByTestId("progress-bar-fill")).toHaveStyle({
-      width: "25%",
-    });
 
-    // 2 completed out of 4 tasks = 50%
+    // 2 completed out of 5 tasks in note.md = 40%
     const updatedTasks: TaskItem[] = [
       ...sampleTasks.slice(0, 3),
       { ...sampleTasks[3] },
@@ -160,12 +157,9 @@ describe("TaskDashboardSidebar Component", () => {
       );
     });
 
-    expect(screen.getByTestId("workspace-progress-meter")).toHaveTextContent(
+    expect(screen.getByTestId("note-progress-note.md")).toHaveTextContent(
       "40%"
     );
-    expect(screen.getByTestId("progress-bar-fill")).toHaveStyle({
-      width: "40%",
-    });
   });
 
   it("applies task-completed-text class to completed tasks in Tasks tab", async () => {
@@ -198,5 +192,52 @@ describe("TaskDashboardSidebar Component", () => {
     });
 
     expect(screen.getByTestId("move-task-modal")).toBeInTheDocument();
+  });
+
+  it("switches to Files & Folders tab when dragging over tab-files header", async () => {
+    await act(async () => {
+      render(<TaskDashboardSidebar tasks={sampleTasks} initialTab="tasks" />);
+    });
+
+    const tabFilesBtn = screen.getByTestId("tab-files");
+    const dataTransfer = {
+      setData: vi.fn(),
+      getData: vi.fn(),
+      dropEffect: "",
+    };
+
+    await act(async () => {
+      fireEvent.dragOver(tabFilesBtn, { dataTransfer });
+    });
+
+    expect(screen.getByTestId("sidebar-tree-container")).toBeInTheDocument();
+  });
+
+  it("calls onDeleteTask callback when delete button is clicked and confirmed", async () => {
+    const handleDelete = vi.fn();
+    const windowConfirmSpy = vi
+      .spyOn(window, "confirm")
+      .mockImplementation(() => true);
+
+    await act(async () => {
+      render(
+        <TaskDashboardSidebar
+          tasks={sampleTasks}
+          initialTab="tasks"
+          onDeleteTask={handleDelete}
+        />
+      );
+    });
+
+    const deleteBtn = screen.getByTestId("delete-task-btn-node-1");
+    await act(async () => {
+      fireEvent.click(deleteBtn);
+    });
+
+    expect(windowConfirmSpy).toHaveBeenCalledTimes(1);
+    expect(handleDelete).toHaveBeenCalledTimes(1);
+    expect(handleDelete).toHaveBeenCalledWith("node-1");
+
+    windowConfirmSpy.mockRestore();
   });
 });

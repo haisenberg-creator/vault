@@ -328,5 +328,41 @@ sections:
       expect(result.sections[0].sectionTitle).toBe("Urgent Priority");
       expect(result.sections[0].groups).toHaveLength(2);
     });
+
+    it("scopes dashboard task query to its containing folder if not in root", () => {
+      const files: WorkspaceFile[] = [
+        {
+          path: "Projects/Alpha/tasks.md",
+          name: "tasks.md",
+          content: "- [ ] Alpha Task 1\n- [ ] Alpha Task 2",
+        },
+        {
+          path: "Projects/Beta/tasks.md",
+          name: "tasks.md",
+          content: "- [ ] Beta Task 1",
+        },
+        {
+          path: "RootTask.md",
+          name: "RootTask.md",
+          content: "- [ ] Root Task",
+        },
+      ];
+
+      const dashContent = `---
+title: Alpha Dashboard
+---`;
+
+      const schema = parseDashboardSchema(
+        dashContent,
+        "Projects/Alpha/alpha.dashboard.md"
+      );
+
+      const result = executeDashboardQuery(files, schema);
+      const allTasks = result.sections[0].groups.flatMap((g) => g.tasks);
+      expect(allTasks).toHaveLength(2);
+      expect(
+        allTasks.every((t) => t.sourceFile.startsWith("Projects/Alpha/"))
+      ).toBe(true);
+    });
   });
 });

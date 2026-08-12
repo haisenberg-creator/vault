@@ -24,7 +24,7 @@ An actionable item within a Note, represented by a standard Markdown checkbox (`
 _Avoid_: To-do, checklist item, item
 
 **Dashboard**:
-A specialized plain-text Markdown file within the Vault configured via YAML frontmatter to aggregate, filter, and render Tasks across the Vault.
+A specialized plain-text Markdown file within the Vault configured via YAML frontmatter to aggregate, filter, and render Tasks. The scope of a Dashboard is its containing Folder (and sub-Folders). If placed at the root of the V-Folder, it aggregates Tasks across the entire Vault.
 _Avoid_: Report, filter view, query page, widget board
 
 **Dashboard Section**:
@@ -34,6 +34,10 @@ _Avoid_: Widget, query box, column
 **Wikilink**:
 A bidirectional link to another Note, enclosed in double brackets (e.g. `[[My Note]]`). Can be placed anywhere, including inside Tasks.
 _Avoid_: Internal link, page link, bracket link
+
+**Note Progress**:
+A completion percentage reflecting the proportion of completed Tasks versus total Tasks within a specific Note.
+_Avoid_: Workspace progress
 
 **Tag**:
 A hashtag (e.g. `#urgent`) used to categorize Notes or Tasks, placed directly in the text.

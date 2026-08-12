@@ -226,4 +226,64 @@ describe("SidebarTree Component", () => {
       "Projects/client-a.md"
     );
   });
+
+  it("handles dropping an item onto V-Folder root drop zone", () => {
+    const handleMove = vi.fn();
+    render(
+      <SidebarTree
+        nodes={sampleNodes}
+        onSelectFile={vi.fn()}
+        onCreateNote={vi.fn()}
+        onCreateFolder={vi.fn()}
+        onCreateDashboard={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onMovePath={handleMove}
+      />
+    );
+
+    const container = screen.getByTestId("sidebar-tree-container");
+    const dataTransfer = {
+      setData: vi.fn(),
+      getData: vi.fn().mockReturnValue("Projects/client-a.md"),
+      dropEffect: "",
+      effectAllowed: "",
+    };
+
+    fireEvent.dragOver(container, { dataTransfer });
+    expect(screen.getByTestId("root-drop-zone")).toBeInTheDocument();
+
+    fireEvent.drop(container, { dataTransfer });
+    expect(handleMove).toHaveBeenCalledWith("Projects/client-a.md", "");
+  });
+
+  it("prevents moving a parent folder into its own descendant folder", () => {
+    const handleMove = vi.fn();
+    render(
+      <SidebarTree
+        nodes={sampleNodes}
+        onSelectFile={vi.fn()}
+        onCreateNote={vi.fn()}
+        onCreateFolder={vi.fn()}
+        onCreateDashboard={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onMovePath={handleMove}
+      />
+    );
+
+    fireEvent.click(screen.getByText("Projects"));
+    const childNode = screen.getByTestId("tree-node-Projects/client-a.md");
+
+    const dataTransfer = {
+      setData: vi.fn(),
+      getData: vi.fn().mockReturnValue("Projects"),
+      dropEffect: "",
+      effectAllowed: "",
+    };
+
+    fireEvent.drop(childNode, { dataTransfer });
+    // Projects -> Projects/client-a.md parent is Projects, sourcePath === targetDir, so no move call
+    expect(handleMove).not.toHaveBeenCalled();
+  });
 });

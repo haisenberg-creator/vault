@@ -22,6 +22,7 @@ export interface DashboardSchema {
   type: "dashboard";
   title: string;
   sections: DashboardSectionConfig[];
+  dashboardFilePath?: string;
 }
 
 export interface TaskItemWithMetadata {

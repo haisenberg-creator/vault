@@ -205,6 +205,7 @@ export const ChecklistComponent: React.FC<ChecklistComponentProps> = ({
           sourceFile: activeFile || "",
         })
       );
+      e.dataTransfer.setData("text/plain", `task-drag:${taskTitle}`);
       e.dataTransfer.effectAllowed = "move";
     }
   };
