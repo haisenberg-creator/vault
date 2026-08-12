@@ -57,6 +57,19 @@ export const DashboardTaskItem: React.FC<DashboardTaskItemProps> = ({
   return (
     <div
       data-testid={`task-item-${task.id}`}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData(
+          "application/json",
+          JSON.stringify({
+            taskTitle: task.title,
+            sourceFile: task.sourceFile,
+            priority: task.priority,
+          })
+        );
+        e.dataTransfer.setData("text/plain", `task-drag:${task.title}`);
+        e.dataTransfer.effectAllowed = "move";
+      }}
       style={{
         display: "flex",
         alignItems: "center",
@@ -67,6 +80,7 @@ export const DashboardTaskItem: React.FC<DashboardTaskItemProps> = ({
         backgroundColor: "var(--rose-bg-overlay)",
         border: "1px solid rgba(110, 106, 134, 0.25)",
         transition: "var(--transition-fast)",
+        cursor: "grab",
       }}
       className="tactile-card"
     >

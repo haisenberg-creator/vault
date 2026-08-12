@@ -14,7 +14,8 @@ export interface SidebarTreeProps {
   onMoveTaskToNote?: (
     taskTitle: string,
     sourceFile: string,
-    targetNotePath: string
+    targetNotePath: string,
+    priority?: string
   ) => void;
   workspaceDir?: string;
 }
@@ -138,12 +139,14 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
     const taskDataStr = e.dataTransfer.getData("application/json");
     let payloadTitle = "";
     let payloadSource = "";
+    let payloadPriority: string | undefined = undefined;
     if (taskDataStr && taskDataStr.trim().startsWith("{")) {
       try {
         const payload = JSON.parse(taskDataStr);
         if (payload && payload.taskTitle) {
           payloadTitle = payload.taskTitle;
           payloadSource = payload.sourceFile || "";
+          payloadPriority = payload.priority || undefined;
         }
       } catch (err) {
         console.warn("Failed to parse task payload:", err);
@@ -153,7 +156,12 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
     const finalTaskTitle = payloadTitle || taskTitleFromFallback;
     if (finalTaskTitle) {
       if (targetNode.kind === "file" && targetNode.path.endsWith(".md")) {
-        onMoveTaskToNote?.(finalTaskTitle, payloadSource, targetNode.path);
+        onMoveTaskToNote?.(
+          finalTaskTitle,
+          payloadSource,
+          targetNode.path,
+          payloadPriority
+        );
       }
       return;
     }

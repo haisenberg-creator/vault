@@ -8,6 +8,7 @@ export interface DashboardFilter {
   tags?: string[];
   folder?: string;
   recursive?: boolean;
+  priority?: string[];
 }
 
 export interface DashboardSectionConfig {
@@ -35,6 +36,7 @@ export interface TaskItemWithMetadata {
   folderPath: string;
   noteName: string;
   lineIndex: number;
+  priority?: string;
 }
 
 export interface TaskGroup {

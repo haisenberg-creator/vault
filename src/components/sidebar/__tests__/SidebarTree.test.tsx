@@ -204,6 +204,7 @@ describe("SidebarTree Component", () => {
     const taskPayload = JSON.stringify({
       taskTitle: "Set up Dual Column layout shell with Rosé Pine tokens",
       sourceFile: "root-note.md",
+      priority: "urgent",
     });
 
     const dataTransfer = {
@@ -223,7 +224,8 @@ describe("SidebarTree Component", () => {
     expect(handleMoveTaskToNote).toHaveBeenCalledWith(
       "Set up Dual Column layout shell with Rosé Pine tokens",
       "root-note.md",
-      "Projects/client-a.md"
+      "Projects/client-a.md",
+      "urgent"
     );
   });
 

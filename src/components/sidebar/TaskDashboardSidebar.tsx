@@ -30,6 +30,7 @@ export interface TaskItem {
   title: string;
   sourceFile: string;
   state: TaskState;
+  priority?: string;
 }
 
 export interface TaskDashboardSidebarProps {
@@ -44,7 +45,8 @@ export interface TaskDashboardSidebarProps {
   onMoveTaskToNote?: (
     taskTitle: string,
     sourceFile: string,
-    targetNotePath: string
+    targetNotePath: string,
+    priority?: string
   ) => void;
   onDeleteTask?: (taskId: string) => void;
 }
@@ -512,7 +514,12 @@ sections:
                       JSON.stringify({
                         taskTitle: task.title,
                         sourceFile: task.sourceFile,
+                        priority: task.priority,
                       })
+                    );
+                    e.dataTransfer.setData(
+                      "text/plain",
+                      `task-drag:${task.title}`
                     );
                     e.dataTransfer.effectAllowed = "move";
                   }}
@@ -1118,7 +1125,8 @@ sections:
                     onMoveTaskToNote(
                       movingTask.title,
                       movingTask.sourceFile,
-                      selectedTargetNote
+                      selectedTargetNote,
+                      movingTask.priority
                     );
                   }
                   setMovingTask(null);

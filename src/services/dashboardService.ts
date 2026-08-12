@@ -98,6 +98,18 @@ export function parseDashboardSchema(
           });
         }
 
+        const priority: string[] = [];
+        if (Array.isArray(rawFilter.priority)) {
+          rawFilter.priority.forEach((pr: any) => {
+            if (typeof pr === "string" && pr.trim()) {
+              const pStr = pr.trim().toLowerCase();
+              if (pStr === "urgent" || pStr === "high" || pStr === "low") {
+                priority.push(pStr);
+              }
+            }
+          });
+        }
+
         const folder =
           typeof rawFilter.folder === "string"
             ? normalizePath(rawFilter.folder)
@@ -109,6 +121,7 @@ export function parseDashboardSchema(
         filter = {
           ...(state.length > 0 ? { state } : {}),
           ...(tags.length > 0 ? { tags } : {}),
+          ...(priority.length > 0 ? { priority } : {}),
           ...(folder !== undefined ? { folder } : {}),
           recursive,
         };
@@ -188,8 +201,23 @@ export function parseTasksFromVaultFiles(
     const noteName = pathParts.pop() || normPath;
     const folderPath = pathParts.join("/");
 
+    let currentPriority: string | undefined = undefined;
     const lines = file.content.split(/\r?\n/);
     lines.forEach((line, index) => {
+      const headerMatch = line.match(/^(##|###)\s+(.*)$/);
+      if (headerMatch) {
+        const headingText = headerMatch[2].trim().toLowerCase();
+        if (
+          headingText === "urgent" ||
+          headingText === "high" ||
+          headingText === "low"
+        ) {
+          currentPriority = headingText;
+        } else {
+          currentPriority = undefined;
+        }
+      }
+
       const match = line.match(/^(\s*[-*+]\s+)?\[([ x\->X])\]\s*(.*)$/);
       if (match) {
         const flag = match[2];
@@ -216,6 +244,7 @@ export function parseTasksFromVaultFiles(
           folderPath,
           noteName,
           lineIndex: index,
+          priority: currentPriority,
         });
       }
     });
@@ -253,7 +282,20 @@ export function queryTasks(
       }
     }
 
-    // 3. Folder scope filter
+    // 3. Priority filter
+    if (filter.priority && filter.priority.length > 0) {
+      const normalizedFilterPriority = filter.priority.map((p) =>
+        p.toLowerCase()
+      );
+      if (
+        !task.priority ||
+        !normalizedFilterPriority.includes(task.priority.toLowerCase())
+      ) {
+        return false;
+      }
+    }
+
+    // 4. Folder scope filter
     if (filter.folder !== undefined && filter.folder !== null) {
       const targetFolder = normalizePath(filter.folder);
       const taskFolder = normalizePath(task.folderPath);

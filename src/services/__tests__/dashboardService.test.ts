@@ -218,6 +218,23 @@ invalid_yaml: [ [ [ broken syntax:
       });
       expect(result.map((t) => t.id)).toEqual(["1"]);
     });
+
+    it("filters tasks by priority", () => {
+      const priorityTasks = [
+        { ...sampleTasks[0], priority: "urgent" },
+        { ...sampleTasks[1], priority: "high" },
+        { ...sampleTasks[2], priority: "low" },
+        { ...sampleTasks[3] },
+      ];
+
+      const resultUrgent = queryTasks(priorityTasks, { priority: ["urgent"] });
+      expect(resultUrgent.map((t) => t.id)).toEqual(["1"]);
+
+      const resultHighLow = queryTasks(priorityTasks, {
+        priority: ["high", "low"],
+      });
+      expect(resultHighLow.map((t) => t.id)).toEqual(["2", "3"]);
+    });
   });
 
   describe("groupAndSortTasks", () => {

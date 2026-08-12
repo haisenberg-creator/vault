@@ -223,7 +223,12 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
   );
 
   const handleMoveTaskToNote = useCallback(
-    async (taskTitle: string, sourceFile: string, targetNotePath: string) => {
+    async (
+      taskTitle: string,
+      sourceFile: string,
+      targetNotePath: string,
+      priority?: string
+    ) => {
       try {
         const rawSource = sourceFile || activeFilename;
         const normSource = normalizePath(rawSource);
@@ -293,7 +298,8 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
 
         const newTargetContent = appendTaskToMarkdown(
           targetContent,
-          removedTaskLine || `- [ ] ${taskTitle}`
+          removedTaskLine || `- [ ] ${taskTitle}`,
+          priority
         );
 
         await writeMarkdownFile(resolvedTargetPath, newTargetContent);

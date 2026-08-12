@@ -51,6 +51,42 @@ describe("workspaceService", () => {
     });
   });
 
+  it("extracts priority from nearest preceding priority header (## or ###) and resets on other headers", () => {
+    const markdown = `# Document Title
+## Urgent
+- [ ] Fix critical production crash
+### High
+- [-] Performance optimization
+## Other Heading
+- [ ] Task without priority
+## Low
+- [x] Minor documentation fix
+`;
+
+    const tasks = parseTasksFromMarkdown(markdown, "tasks.md");
+    expect(tasks).toHaveLength(4);
+
+    expect(tasks[0]).toMatchObject({
+      title: "Fix critical production crash",
+      priority: "urgent",
+    });
+
+    expect(tasks[1]).toMatchObject({
+      title: "Performance optimization",
+      priority: "high",
+    });
+
+    expect(tasks[2]).toMatchObject({
+      title: "Task without priority",
+      priority: undefined,
+    });
+
+    expect(tasks[3]).toMatchObject({
+      title: "Minor documentation fix",
+      priority: "low",
+    });
+  });
+
   it("toggles task state in raw markdown content sequentially", () => {
     const initialMarkdown = `- [ ] Implement feature`;
 
@@ -117,5 +153,38 @@ describe("workspaceService", () => {
     expect(newTarget).toBe(
       "# test-dragging.md\n- [ ] Initial task\n- [x] Set up Dual Column layout shell with Rosé Pine tokens"
     );
+  });
+
+  describe("smart appendTaskToMarkdown with priority", () => {
+    it("appends task under an existing matching priority header without mangling other sections", () => {
+      const targetMarkdown = `# Project Notes\n\n## Urgent\n- [ ] Fix critical bug\n\n## Low\n- [ ] Minor cleanup`;
+      const result = appendTaskToMarkdown(
+        targetMarkdown,
+        "- [ ] Patch security issue",
+        "urgent"
+      );
+
+      expect(result).toBe(
+        `# Project Notes\n\n## Urgent\n- [ ] Fix critical bug\n- [ ] Patch security issue\n\n## Low\n- [ ] Minor cleanup`
+      );
+    });
+
+    it("appends a new priority header and task to bottom if matching header does not exist", () => {
+      const targetMarkdown = `# Project Notes\n\n## Low\n- [ ] Minor cleanup`;
+      const result = appendTaskToMarkdown(
+        targetMarkdown,
+        "- [ ] Urgent hotfix",
+        "urgent"
+      );
+
+      expect(result).toBe(
+        `# Project Notes\n\n## Low\n- [ ] Minor cleanup\n\n## Urgent\n- [ ] Urgent hotfix`
+      );
+    });
+
+    it("handles empty target content when appending with priority", () => {
+      const result = appendTaskToMarkdown("", "- [ ] Urgent hotfix", "urgent");
+      expect(result).toBe("## Urgent\n- [ ] Urgent hotfix");
+    });
   });
 });
