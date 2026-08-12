@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { FileTreeNode } from "../../types/workspaceTree";
+import { isSameFilePath } from "../../services/fileService";
 
 export interface SidebarTreeProps {
   nodes: FileTreeNode[];
@@ -210,7 +211,11 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
     const isFolder = node.kind === "folder";
     const isDashboard = node.kind === "dashboard" || node.isDashboard;
     const isExpanded = expandedPaths.has(node.path);
-    const isActive = activeFilePath === node.path;
+    const isActive = isSameFilePath(
+      activeFilePath || "",
+      node.path,
+      workspaceDir
+    );
     const isDragTarget = dragOverPath === node.path;
 
     return (

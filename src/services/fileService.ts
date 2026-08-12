@@ -81,6 +81,62 @@ export function normalizePath(path: string): string {
 }
 
 /**
+ * Strip optional workspace directory prefix from path (e.g. "workspace/" or "workspaceDir/")
+ */
+function stripWorkspacePrefix(
+  path: string,
+  workspaceDir: string = "workspace"
+): string {
+  const norm = normalizePath(path);
+  const normWs = normalizePath(workspaceDir);
+  if (normWs && norm.startsWith(normWs + "/")) {
+    return norm.substring(normWs.length + 1);
+  }
+  if (norm.startsWith("workspace/")) {
+    return norm.substring("workspace/".length);
+  }
+  return norm;
+}
+
+/**
+ * Compares two file paths to determine if they refer to the same file,
+ * handling backslashes, forward slashes, and optional workspace directory prefixes.
+ */
+export function isSameFilePath(
+  pathA: string,
+  pathB: string,
+  workspaceDir: string = "workspace"
+): boolean {
+  if (!pathA || !pathB) return false;
+  const normA = normalizePath(pathA);
+  const normB = normalizePath(pathB);
+  if (normA === normB) return true;
+
+  const strippedA = stripWorkspacePrefix(normA, workspaceDir);
+  const strippedB = stripWorkspacePrefix(normB, workspaceDir);
+  return strippedA === strippedB;
+}
+
+/**
+ * Finds matching mock storage key if present
+ */
+function findMockStorageKey(
+  path: string,
+  workspaceDir: string = "workspace"
+): string | null {
+  const normPath = normalizePath(path);
+  if (mockStorage.has(normPath)) return normPath;
+  if (mockStorage.has(path)) return path;
+
+  for (const key of mockStorage.keys()) {
+    if (isSameFilePath(key, path, workspaceDir)) {
+      return key;
+    }
+  }
+  return null;
+}
+
+/**
  * Check if running inside a Tauri application environment
  */
 export function isTauriEnvironment(): boolean {
@@ -106,12 +162,27 @@ export async function getWorkspaceDir(): Promise<string> {
 /**
  * Reads markdown text content from the specified file path.
  */
-export async function readMarkdownFile(path: string): Promise<string> {
+export async function readMarkdownFile(
+  path: string,
+  workspaceDir: string = "workspace"
+): Promise<string> {
   const normPath = normalizePath(path);
   if (isTauriEnvironment()) {
     try {
       return await invoke<string>("read_file", { path: normPath });
     } catch (error) {
+      if (
+        !normPath.startsWith(workspaceDir + "/") &&
+        !normPath.startsWith("workspace/")
+      ) {
+        try {
+          return await invoke<string>("read_file", {
+            path: `${workspaceDir}/${normPath}`,
+          });
+        } catch {
+          // ignore fallback failure
+        }
+      }
       console.warn(
         "Tauri invoke read_file failed, falling back to mock storage:",
         error
@@ -119,11 +190,9 @@ export async function readMarkdownFile(path: string): Promise<string> {
     }
   }
 
-  if (mockStorage.has(normPath)) {
-    return mockStorage.get(normPath)!;
-  }
-  if (mockStorage.has(path)) {
-    return mockStorage.get(path)!;
+  const existingKey = findMockStorageKey(path, workspaceDir);
+  if (existingKey) {
+    return mockStorage.get(existingKey)!;
   }
 
   // Return empty default document if path not in mock storage
@@ -135,13 +204,15 @@ export async function readMarkdownFile(path: string): Promise<string> {
  */
 export async function writeMarkdownFile(
   path: string,
-  content: string
+  content: string,
+  workspaceDir: string = "workspace"
 ): Promise<void> {
   const normPath = normalizePath(path);
   if (isTauriEnvironment()) {
     try {
       await invoke("write_file", { path: normPath, content });
-      mockStorage.set(normPath, content);
+      const targetKey = findMockStorageKey(path, workspaceDir) || normPath;
+      mockStorage.set(targetKey, content);
       notifyWorkspaceChange();
       return;
     } catch (error) {
@@ -152,7 +223,8 @@ export async function writeMarkdownFile(
     }
   }
 
-  mockStorage.set(normPath, content);
+  const targetKey = findMockStorageKey(path, workspaceDir) || normPath;
+  mockStorage.set(targetKey, content);
   notifyWorkspaceChange();
 }
 
@@ -493,18 +565,26 @@ function notifyWorkspaceChange() {
 /**
  * Helper to set initial or mock content in memory (useful for tests)
  */
-export function setMockFileContent(path: string, content: string): void {
+export function setMockFileContent(
+  path: string,
+  content: string,
+  workspaceDir: string = "workspace"
+): void {
+  const existingKey = findMockStorageKey(path, workspaceDir);
   const normPath = normalizePath(path);
-  mockStorage.set(normPath, content);
+  mockStorage.set(existingKey || normPath, content);
   notifyWorkspaceChange();
 }
 
 /**
  * Helper to get mock content from memory (useful for tests)
  */
-export function getMockFileContent(path: string): string | undefined {
-  const normPath = normalizePath(path);
-  return mockStorage.get(normPath) ?? mockStorage.get(path);
+export function getMockFileContent(
+  path: string,
+  workspaceDir: string = "workspace"
+): string | undefined {
+  const key = findMockStorageKey(path, workspaceDir);
+  return key ? mockStorage.get(key) : undefined;
 }
 
 /**

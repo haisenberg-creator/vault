@@ -14,6 +14,7 @@ import {
   movePath,
   subscribeToWorkspaceChanges,
   normalizePath,
+  isSameFilePath,
 } from "../../services/fileService";
 import {
   getThemeMode,
@@ -114,7 +115,7 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
   const availableNotes = collectNotes(treeNodes).filter(
     (n) =>
       movingTask &&
-      n.path !== movingTask.sourceFile &&
+      !isSameFilePath(n.path, movingTask.sourceFile, workspaceDir) &&
       n.name !== movingTask.sourceFile
   );
 
@@ -427,8 +428,8 @@ sections:
     }
 
     // Note Node
-    const allNoteTasks = tasks.filter(
-      (t) => normalizePath(t.sourceFile) === node.path
+    const allNoteTasks = tasks.filter((t) =>
+      isSameFilePath(t.sourceFile, node.path, workspaceDir)
     );
     const noteCompletedCount = allNoteTasks.filter(
       (t) => t.state === "completed"

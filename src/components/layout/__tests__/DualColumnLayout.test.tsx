@@ -163,4 +163,29 @@ describe("DualColumnLayout Integration", () => {
       );
     });
   });
+
+  it("resolves subfolder note content and tasks without displaying New Note template", async () => {
+    const subfolderNoteContent = `# Lucky Draw Project\n\n- [ ] Subfolder Task Item`;
+    fileService.setMockFileContent(
+      "Projects/Lucky Draw.md",
+      subfolderNoteContent
+    );
+
+    render(<DualColumnLayout />);
+    fireEvent.click(screen.getByTestId("tab-tasks"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Subfolder Task Item")).toBeInTheDocument();
+    });
+
+    // Click on the subfolder note in the task tree to select it
+    const noteHeader = screen.getByText("📄 Lucky Draw.md");
+    fireEvent.click(noteHeader);
+
+    // Verify the editor loads the actual content and does NOT display "New Note"
+    await waitFor(() => {
+      expect(screen.getByText("Lucky Draw Project")).toBeInTheDocument();
+      expect(screen.queryByText(/New Note/i)).not.toBeInTheDocument();
+    });
+  });
 });

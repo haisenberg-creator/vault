@@ -4,8 +4,8 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Tasks located inside markdown files within subfolders (e.g., `Projects/Lucky Draw.md`) accurately report their completion progress.
-- [ ] Clicking a task located inside a subfolder from the Task Dashboard correctly opens the existing note and its contents in the editor.
-- [ ] The editor does not incorrectly display "New Note" when opening a valid file from a subfolder.
+- [x] Tasks located inside markdown files within subfolders (e.g., `Projects/Lucky Draw.md`) accurately report their completion progress.
+- [x] Clicking a task located inside a subfolder from the Task Dashboard correctly opens the existing note and its contents in the editor.
+- [x] The editor does not incorrectly display "New Note" when opening a valid file from a subfolder.

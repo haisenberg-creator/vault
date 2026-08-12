@@ -162,6 +162,33 @@ describe("TaskDashboardSidebar Component", () => {
     );
   });
 
+  it("calculates progress percentage correctly for subfolder notes in tasks tab", async () => {
+    const subfolderTasks: TaskItem[] = [
+      {
+        id: "sub-1",
+        title: "Subfolder task open",
+        sourceFile: "workspace/Projects/Lucky Draw.md",
+        state: "open",
+      },
+      {
+        id: "sub-2",
+        title: "Subfolder task completed",
+        sourceFile: "workspace/Projects/Lucky Draw.md",
+        state: "completed",
+      },
+    ];
+
+    await act(async () => {
+      render(
+        <TaskDashboardSidebar tasks={subfolderTasks} initialTab="tasks" />
+      );
+    });
+
+    expect(
+      screen.getByTestId("note-progress-Projects/Lucky Draw.md")
+    ).toHaveTextContent("50%");
+  });
+
   it("applies task-completed-text class to completed tasks in Tasks tab", async () => {
     await act(async () => {
       render(<TaskDashboardSidebar tasks={sampleTasks} initialTab="tasks" />);

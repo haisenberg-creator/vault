@@ -13,6 +13,7 @@ import {
   writeMarkdownFile,
   readMarkdownFile,
   normalizePath,
+  isSameFilePath,
   WorkspaceFile,
 } from "../../services/fileService";
 import {
@@ -60,9 +61,8 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
     if (workspaceFiles.length === 0) return;
     setActiveFilename((prev) => {
       if (!prev) return workspaceFiles[0].path;
-      const normPrev = normalizePath(prev);
       const exists = workspaceFiles.some(
-        (f) => normalizePath(f.path) === normPrev || f.name === prev
+        (f) => isSameFilePath(f.path, prev, workspaceDir) || f.name === prev
       );
       if (!exists) return workspaceFiles[0].path;
       return prev;
@@ -86,7 +86,9 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
   // Determine if active file is a Dashboard
   const normActivePath = normalizePath(activeFilename);
   const activeFileObj = workspaceFiles.find(
-    (f) => normalizePath(f.path) === normActivePath || f.name === activeFilename
+    (f) =>
+      isSameFilePath(f.path, activeFilename, workspaceDir) ||
+      f.name === activeFilename
   );
   const isDashboardFile =
     normActivePath.endsWith(".dashboard.md") ||
@@ -103,7 +105,8 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
   workspaceFiles.forEach((file) => {
     const normP = normalizePath(file.path);
     const isThisActiveFile =
-      normP === normActivePath || file.name === activeFilename;
+      isSameFilePath(file.path, activeFilename, workspaceDir) ||
+      file.name === activeFilename;
     if (
       !isThisActiveFile &&
       !normP.endsWith(".dashboard.md") &&
@@ -134,7 +137,7 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
 
       const activeBaseName = activeFilename.split(/[/\\]/).pop();
       const isActiveFile =
-        targetTask.sourceFile === activeFilename ||
+        isSameFilePath(targetTask.sourceFile, activeFilename, workspaceDir) ||
         targetTask.sourceFile === activeBaseName ||
         normalizePath(targetTask.sourceFile) === normActivePath;
 
@@ -143,9 +146,8 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
       } else {
         const fileToUpdate = workspaceFiles.find(
           (f) =>
-            f.name === targetTask.sourceFile ||
-            f.path === targetTask.sourceFile ||
-            normalizePath(f.path) === normalizePath(targetTask.sourceFile)
+            isSameFilePath(f.path, targetTask.sourceFile, workspaceDir) ||
+            f.name === targetTask.sourceFile
         );
         const currentContent = fileToUpdate
           ? fileToUpdate.content
@@ -182,7 +184,7 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
 
       const activeBaseName = activeFilename.split(/[/\\]/).pop();
       const isActiveFile =
-        targetTask.sourceFile === activeFilename ||
+        isSameFilePath(targetTask.sourceFile, activeFilename, workspaceDir) ||
         targetTask.sourceFile === activeBaseName;
 
       if (isActiveFile && !isDashboardFile) {
@@ -197,7 +199,8 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
       } else {
         const fileToUpdate = workspaceFiles.find(
           (f) =>
-            f.name === targetTask.sourceFile || f.path === targetTask.sourceFile
+            isSameFilePath(f.path, targetTask.sourceFile, workspaceDir) ||
+            f.name === targetTask.sourceFile
         );
         const currentContent = fileToUpdate
           ? fileToUpdate.content
@@ -231,20 +234,16 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
     ) => {
       try {
         const rawSource = sourceFile || activeFilename;
-        const normSource = normalizePath(rawSource);
-        const normTarget = normalizePath(targetNotePath);
 
         const sourceFileObj = workspaceFiles.find(
           (f) =>
-            normalizePath(f.path) === normSource ||
-            f.name === rawSource ||
-            normalizePath(f.path).endsWith("/" + normSource)
+            isSameFilePath(f.path, rawSource, workspaceDir) ||
+            f.name === rawSource
         );
         const targetFileObj = workspaceFiles.find(
           (f) =>
-            normalizePath(f.path) === normTarget ||
-            f.name === targetNotePath ||
-            normalizePath(f.path).endsWith("/" + normTarget)
+            isSameFilePath(f.path, targetNotePath, workspaceDir) ||
+            f.name === targetNotePath
         );
 
         const resolvedSourcePath = sourceFileObj
@@ -254,11 +253,8 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
           ? targetFileObj.path
           : targetNotePath;
 
-        const normActive = normalizePath(activeFilename);
-        const normResolvedSource = normalizePath(resolvedSourcePath);
         const isActiveSource =
-          normResolvedSource === normActive ||
-          resolvedSourcePath === activeFilename ||
+          isSameFilePath(resolvedSourcePath, activeFilename, workspaceDir) ||
           sourceFileObj?.name === activeFilename;
 
         let removedTaskLine: string | null = null;
