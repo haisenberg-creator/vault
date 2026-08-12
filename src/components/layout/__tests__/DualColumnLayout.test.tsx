@@ -188,4 +188,47 @@ describe("DualColumnLayout Integration", () => {
       expect(screen.queryByText(/New Note/i)).not.toBeInTheDocument();
     });
   });
+
+  it("removes task from active source note on disk and appends to target note when moved", async () => {
+    const activeNoteContent = `- [ ] Active Task To Move\n- [ ] Keep In Active`;
+    const targetNoteContent = `# Target Note\n- [ ] Existing Target Task`;
+
+    fileService.setMockFileContent("active-note.md", activeNoteContent);
+    fileService.setMockFileContent("target-note.md", targetNoteContent);
+
+    render(<DualColumnLayout />);
+
+    // Wait for active note editor to load
+    await waitFor(() => {
+      expect(screen.getByTestId("editor-contenteditable")).toBeInTheDocument();
+    });
+
+    const targetNode = await screen.findByTestId("tree-node-target-note.md");
+    const taskPayload = JSON.stringify({
+      taskTitle: "Active Task To Move",
+      sourceFile: "active-note.md",
+      priority: "high",
+    });
+
+    const dataTransfer = {
+      getData: (format: string) => {
+        if (format === "application/json") return taskPayload;
+        if (format === "text/plain") return "task-drag:Active Task To Move";
+        return "";
+      },
+    };
+
+    fireEvent.drop(targetNode, { dataTransfer });
+
+    await waitFor(() => {
+      expect(fileService.writeMarkdownFile).toHaveBeenCalledWith(
+        "active-note.md",
+        expect.not.stringContaining("Active Task To Move")
+      );
+      expect(fileService.writeMarkdownFile).toHaveBeenCalledWith(
+        "target-note.md",
+        expect.stringContaining("Active Task To Move")
+      );
+    });
+  });
 });

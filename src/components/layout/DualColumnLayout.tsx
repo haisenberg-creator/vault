@@ -253,6 +253,12 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
           ? targetFileObj.path
           : targetNotePath;
 
+        if (
+          isSameFilePath(resolvedSourcePath, resolvedTargetPath, workspaceDir)
+        ) {
+          return;
+        }
+
         const isActiveSource =
           isSameFilePath(resolvedSourcePath, activeFilename, workspaceDir) ||
           sourceFileObj?.name === activeFilename;
@@ -274,17 +280,15 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
           }
         }
 
+        const sourceContent = sourceFileObj
+          ? sourceFileObj.content
+          : await readMarkdownFile(resolvedSourcePath);
+
+        const { updatedContent: newSourceContent, removedTaskLine: taskLine } =
+          removeTaskFromMarkdown(sourceContent, taskTitle);
+
+        await writeMarkdownFile(resolvedSourcePath, newSourceContent);
         if (!removedTaskLine) {
-          const sourceContent = sourceFileObj
-            ? sourceFileObj.content
-            : await readMarkdownFile(resolvedSourcePath);
-
-          const {
-            updatedContent: newSourceContent,
-            removedTaskLine: taskLine,
-          } = removeTaskFromMarkdown(sourceContent, taskTitle);
-
-          await writeMarkdownFile(resolvedSourcePath, newSourceContent);
           removedTaskLine = taskLine;
         }
 
@@ -305,7 +309,13 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
         console.error("Failed to move task to note:", err);
       }
     },
-    [activeFilename, workspaceFiles, isDashboardFile, loadWorkspaceFiles]
+    [
+      activeFilename,
+      workspaceFiles,
+      isDashboardFile,
+      loadWorkspaceFiles,
+      workspaceDir,
+    ]
   );
 
   return (
