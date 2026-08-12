@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] When dragging a note over a folder in the sidebar, the visual drop indicator (e.g., highlight or outline) does not shift the height or layout of the tree node.
-- [ ] Hovering exactly on the boundary between a folder node and the root space does not cause rapid visual flickering or infinite loop re-renders.
+- [x] When dragging a note over a folder in the sidebar, the visual drop indicator (e.g., highlight or outline) does not shift the height or layout of the tree node.
+- [x] Hovering exactly on the boundary between a folder node and the root space does not cause rapid visual flickering or infinite loop re-renders.

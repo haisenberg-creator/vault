@@ -120,7 +120,10 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
   const handleRootDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (dragOverPath === "__root__") {
+    if (
+      dragOverPath === "__root__" &&
+      !e.currentTarget.contains(e.relatedTarget as Node)
+    ) {
       setDragOverPath(null);
     }
   };
@@ -484,14 +487,20 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
           : "1px solid transparent",
         borderRadius: "var(--radius-sm)",
         transition: "all 150ms ease",
+        position: "relative",
       }}
     >
       {isRootDragTarget && (
         <div
           data-testid="root-drop-zone"
           style={{
+            position: "absolute",
+            top: "8px",
+            left: "8px",
+            right: "8px",
+            pointerEvents: "none",
+            zIndex: 10,
             padding: "6px 12px",
-            marginBottom: "8px",
             borderRadius: "var(--radius-sm)",
             backgroundColor: "rgba(156, 207, 216, 0.2)",
             border: "1px dashed var(--rose-foam)",
