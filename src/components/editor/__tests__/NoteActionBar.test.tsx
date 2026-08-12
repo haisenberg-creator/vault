@@ -38,4 +38,17 @@ describe("NoteActionBar", () => {
 
     expect(handleApplyPrefix).toHaveBeenCalledWith("★ ");
   });
+
+  it("triggers onInsertPriorityTemplate when Priority Template button is clicked", () => {
+    const handleInsertPriorityTemplate = vi.fn();
+    render(
+      <NoteActionBar onInsertPriorityTemplate={handleInsertPriorityTemplate} />
+    );
+
+    const templateBtn = screen.getByTestId("note-action-priority-template");
+    expect(templateBtn).toBeInTheDocument();
+    fireEvent.click(templateBtn);
+
+    expect(handleInsertPriorityTemplate).toHaveBeenCalledTimes(1);
+  });
 });

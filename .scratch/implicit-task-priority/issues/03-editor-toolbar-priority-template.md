@@ -4,8 +4,8 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] A "Priority Template" button exists on the editor action bar.
-- [ ] Clicking the button inserts the full Priority Header template (Urgent, High, Low) into the editor text.
-- [ ] The appended text correctly parses as priority headers once saved.
+- [x] A "Priority Template" button exists on the editor action bar.
+- [x] Clicking the button inserts the full Priority Header template (Urgent, High, Low) into the editor text.
+- [x] The appended text correctly parses as priority headers once saved.

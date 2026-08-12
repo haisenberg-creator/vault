@@ -5,6 +5,7 @@ export interface NoteActionBarProps {
   onAddTask?: () => void;
   onChangeTaskStatus?: (status: TaskState) => void;
   onApplyPrefix?: (prefix: string) => void;
+  onInsertPriorityTemplate?: () => void;
 }
 
 const MARKER_STYLES = [
@@ -23,6 +24,7 @@ export const NoteActionBar: React.FC<NoteActionBarProps> = ({
   onAddTask,
   onChangeTaskStatus,
   onApplyPrefix,
+  onInsertPriorityTemplate,
 }) => {
   const [showMarkerDropdown, setShowMarkerDropdown] = useState(false);
 
@@ -61,6 +63,29 @@ export const NoteActionBar: React.FC<NoteActionBarProps> = ({
       >
         <span>+</span>
         <span>New Task</span>
+      </button>
+
+      {/* Priority Template Button */}
+      <button
+        data-testid="note-action-priority-template"
+        onClick={onInsertPriorityTemplate}
+        className="tactile-btn"
+        style={{
+          padding: "4px 10px",
+          borderRadius: "var(--radius-sm)",
+          border: "1px solid var(--rose-gold)",
+          backgroundColor: "rgba(246, 193, 119, 0.15)",
+          color: "var(--rose-gold)",
+          fontSize: "11px",
+          fontWeight: 600,
+          cursor: "pointer",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "4px",
+        }}
+      >
+        <span>⚡</span>
+        <span>Priority Template</span>
       </button>
 
       <div

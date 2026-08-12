@@ -95,4 +95,26 @@ describe("EditorPane Component (Lexical)", () => {
       );
     });
   });
+
+  it("inserts priority headers template when priority template button is clicked", async () => {
+    const writeSpy = vi.spyOn(fileService, "writeMarkdownFile");
+    fileService.setMockFileContent("template-test.md", "Existing Content");
+
+    render(<EditorPane filename="template-test.md" />);
+
+    await screen.findByTestId("editor-contenteditable");
+
+    const templateBtn = screen.getByTestId("note-action-priority-template");
+    fireEvent.click(templateBtn);
+
+    await waitFor(
+      () => {
+        expect(writeSpy).toHaveBeenCalledWith(
+          "template-test.md",
+          "Existing Content\n\n## Urgent\n\n- [ ] \n\n## High\n\n- [ ] \n\n## Low\n\n- [ ] "
+        );
+      },
+      { timeout: 1000 }
+    );
+  });
 });

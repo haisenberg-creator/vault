@@ -381,6 +381,22 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
     [handleMarkdownChange]
   );
 
+  const handleActionBarInsertPriorityTemplate = useCallback(() => {
+    const template = `## Urgent\n- [ ] \n\n## High\n- [ ] \n\n## Low\n- [ ] `;
+    let lineToAdd = template;
+    if (currentContentRef.current) {
+      if (currentContentRef.current.endsWith("\n\n")) {
+        lineToAdd = template;
+      } else if (currentContentRef.current.endsWith("\n")) {
+        lineToAdd = "\n" + template;
+      } else {
+        lineToAdd = "\n\n" + template;
+      }
+    }
+    const updated = currentContentRef.current + lineToAdd;
+    handleMarkdownChange(updated);
+  }, [handleMarkdownChange]);
+
   return (
     <main
       style={{
@@ -480,6 +496,7 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
         onAddTask={handleActionBarAddTask}
         onChangeTaskStatus={handleActionBarChangeStatus}
         onApplyPrefix={handleActionBarApplyPrefix}
+        onInsertPriorityTemplate={handleActionBarInsertPriorityTemplate}
       />
 
       {/* Editor Content Area */}
