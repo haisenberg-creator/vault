@@ -16,10 +16,18 @@ import {
 } from "@lexical/markdown";
 import {
   KEY_DOWN_COMMAND,
+  KEY_ENTER_COMMAND,
   COMMAND_PRIORITY_HIGH,
   EditorState,
   $nodesOfType,
   $getNodeByKey,
+  $getSelection,
+  $isRangeSelection,
+  $getRoot,
+  $createParagraphNode,
+  $createTextNode,
+  $isElementNode,
+  TextNode,
 } from "lexical";
 
 import {
@@ -30,6 +38,7 @@ import { theme } from "./LexicalEditorTheme";
 import {
   ChecklistNode,
   $isChecklistNode,
+  $createChecklistNode,
   getNextTaskState,
   formatTaskState,
   ActiveFileContext,
@@ -166,6 +175,115 @@ function TaskRemoveHandlerPlugin({
   return null;
 }
 
+// Plugin to handle inserting a new task line from toolbar with focus
+function TaskInsertHandlerPlugin({
+  onRegisterAddTask,
+}: {
+  onRegisterAddTask?: (addTaskFn: () => void) => void;
+}) {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    if (!onRegisterAddTask) return;
+
+    onRegisterAddTask(() => {
+      editor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const checklistNode = $createChecklistNode("open");
+        const textNode = $createTextNode(" ");
+        paragraph.append(checklistNode, textNode);
+
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          const anchorNode = selection.anchor.getNode();
+          const blockNode = $isElementNode(anchorNode)
+            ? anchorNode
+            : anchorNode.getParent();
+          if (blockNode) {
+            blockNode.insertAfter(paragraph);
+          } else {
+            root.append(paragraph);
+          }
+        } else {
+          root.append(paragraph);
+        }
+
+        textNode.select(1, 1);
+      });
+      editor.focus();
+    });
+  }, [editor, onRegisterAddTask]);
+
+  return null;
+}
+
+// Plugin to handle Enter key on task lines (continue list or escape)
+function TaskKeyboardPlugin() {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    return editor.registerCommand(
+      KEY_ENTER_COMMAND,
+      (event: KeyboardEvent | null) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          return false;
+        }
+
+        const anchorNode = selection.anchor.getNode();
+        const blockNode = $isElementNode(anchorNode)
+          ? anchorNode
+          : anchorNode.getParent();
+        if (!blockNode) return false;
+
+        const children = blockNode.getChildren();
+        const checklistNode = children.find($isChecklistNode);
+        if (!checklistNode) return false;
+
+        if (event) {
+          event.preventDefault();
+        }
+
+        const rawText = blockNode.getTextContent();
+        const cleanText = rawText.replace(/\[([ x\->])\]/gi, "").trim();
+
+        if (cleanText === "") {
+          // Empty task line -> convert to standard empty paragraph (escape list)
+          blockNode.clear();
+          const emptyTextNode = $createTextNode("");
+          blockNode.append(emptyTextNode);
+          emptyTextNode.select();
+          return true;
+        } else {
+          // Non-empty task line -> insert new task line after
+          const newParagraph = $createParagraphNode();
+          const newChecklistNode = $createChecklistNode("open");
+
+          const anchorOffset = selection.anchor.offset;
+          let remainingText = "";
+          if (anchorNode instanceof TextNode) {
+            const fullText = anchorNode.getTextContent();
+            if (anchorOffset < fullText.length) {
+              remainingText = fullText.slice(anchorOffset);
+              anchorNode.setTextContent(fullText.slice(0, anchorOffset));
+            }
+          }
+
+          const newTextNode = $createTextNode(" " + remainingText);
+          newParagraph.append(newChecklistNode, newTextNode);
+          blockNode.insertAfter(newParagraph);
+          newTextNode.select(1, 1);
+          return true;
+        }
+      },
+      COMMAND_PRIORITY_HIGH
+    );
+  }, [editor]);
+
+  return null;
+}
+
 // Helper plugin to import markdown when external file content changes
 function MarkdownSyncPlugin({
   initialContent,
@@ -244,8 +362,13 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
   const activeFilenameRef = useRef(filename);
   const currentContentRef = useRef(markdownContent);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const addTaskFnRef = useRef<(() => void) | null>(null);
 
   currentContentRef.current = markdownContent;
+
+  const handleRegisterAddTask = useCallback((fn: () => void) => {
+    addTaskFnRef.current = fn;
+  }, []);
 
   // Load document on mount or when filename changes
   useEffect(() => {
@@ -348,12 +471,16 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
   };
 
   const handleActionBarAddTask = useCallback(() => {
-    const newTaskLine =
-      currentContentRef.current.endsWith("\n") || !currentContentRef.current
-        ? "- [ ] New task"
-        : "\n- [ ] New task";
-    const updated = currentContentRef.current + newTaskLine;
-    handleMarkdownChange(updated);
+    if (addTaskFnRef.current) {
+      addTaskFnRef.current();
+    } else {
+      const newTaskLine =
+        currentContentRef.current.endsWith("\n") || !currentContentRef.current
+          ? "- [ ] New task"
+          : "\n- [ ] New task";
+      const updated = currentContentRef.current + newTaskLine;
+      handleMarkdownChange(updated);
+    }
   }, [handleMarkdownChange]);
 
   const handleActionBarChangeStatus = useCallback(
@@ -572,6 +699,10 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
                 <TaskRemoveHandlerPlugin
                   onRegisterRemoveTask={onRegisterRemoveTask}
                 />
+                <TaskInsertHandlerPlugin
+                  onRegisterAddTask={handleRegisterAddTask}
+                />
+                <TaskKeyboardPlugin />
                 <MarkdownSyncPlugin
                   initialContent={markdownContent}
                   onMarkdownChange={handleMarkdownChange}

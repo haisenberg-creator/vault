@@ -117,4 +117,76 @@ describe("EditorPane Component (Lexical)", () => {
       { timeout: 1000 }
     );
   });
+
+  it("creates task and focuses editor when clicking New Task button", async () => {
+    fileService.setMockFileContent("task-focus.md", "Initial note");
+
+    render(<EditorPane filename="task-focus.md" />);
+
+    await screen.findByTestId("editor-contenteditable");
+    await waitFor(() => {
+      expect(screen.getByText("Initial note")).toBeInTheDocument();
+    });
+
+    const addBtn = screen.getByTestId("note-action-add-task");
+    fireEvent.click(addBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText("1 Tasks (0 Completed)")).toBeInTheDocument();
+      expect(screen.getByTestId("checklist-node-open")).toBeInTheDocument();
+    });
+  });
+
+  it("handles Enter key on non-empty and empty task lines", async () => {
+    fileService.setMockFileContent("enter-test.md", "- [ ] Task 1");
+
+    render(<EditorPane filename="enter-test.md" />);
+
+    const editor = await screen.findByTestId("editor-contenteditable");
+    await waitFor(() => {
+      expect(screen.getByText("Task 1")).toBeInTheDocument();
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const lexicalEditor = (editor as any).__lexicalEditor;
+    expect(lexicalEditor).toBeDefined();
+
+    // 1. Press Enter on non-empty task line -> creates new uncompleted task
+    act(() => {
+      lexicalEditor.update(() => {
+        const root = $getRoot();
+        const firstParagraph = root.getFirstChild();
+        if (firstParagraph) {
+          firstParagraph.selectEnd();
+        }
+      });
+    });
+
+    act(() => {
+      fireEvent.keyDown(editor, { key: "Enter", code: "Enter" });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("2 Tasks (0 Completed)")).toBeInTheDocument();
+    });
+
+    // 2. Press Enter on empty task line -> converts to standard paragraph (escapes list)
+    act(() => {
+      lexicalEditor.update(() => {
+        const root = $getRoot();
+        const lastParagraph = root.getLastChild();
+        if (lastParagraph) {
+          lastParagraph.selectEnd();
+        }
+      });
+    });
+
+    act(() => {
+      fireEvent.keyDown(editor, { key: "Enter", code: "Enter" });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("1 Tasks (0 Completed)")).toBeInTheDocument();
+    });
+  });
 });
