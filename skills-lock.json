@@ -31,6 +31,12 @@
       "skillPath": "skills/engineering/commit-and-push/SKILL.md",
       "computedHash": "575a6415bc45675db05b7f96c64ca22fab5c241f3a34513b6da994781fdba1fe"
     },
+    "create-github-release": {
+      "source": "haisenberg-creator/skills",
+      "sourceType": "github",
+      "skillPath": "skills/create-github-release/SKILL.md",
+      "computedHash": "024176aeeab2f2836b638be5ea189380f522a919067e65eea813e76978f79b50"
+    },
     "design-an-interface": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
