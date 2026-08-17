@@ -126,4 +126,31 @@ describe("EditorPane with Custom Checklist Nodes", () => {
       { timeout: 1500 }
     );
   });
+
+  it("disables dragging for completed tasks in the editor", async () => {
+    const markdownContent = "- [ ] Open Task\n- [x] Completed Task";
+    vi.mocked(fileService.readMarkdownFile).mockResolvedValue(markdownContent);
+
+    render(<EditorPane filename="test-drag.md" />);
+
+    await waitFor(() => {
+      expect(screen.queryByText("Loading document...")).not.toBeInTheDocument();
+    });
+
+    const openBadge = await screen.findByTestId("checklist-node-open");
+    expect(openBadge).toHaveAttribute("draggable", "true");
+
+    const completedBadge = await screen.findByTestId(
+      "checklist-node-completed"
+    );
+    expect(completedBadge).toHaveAttribute("draggable", "false");
+
+    const setDataSpy = vi.fn();
+    fireEvent.dragStart(completedBadge, {
+      dataTransfer: {
+        setData: setDataSpy,
+      },
+    });
+    expect(setDataSpy).not.toHaveBeenCalled();
+  });
 });

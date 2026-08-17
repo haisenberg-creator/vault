@@ -665,3 +665,43 @@ export function clearMockStorage(): void {
   }
   notifyWorkspaceChange();
 }
+
+/**
+ * Imports an external folder and its files into the workspace.
+ * Converts any .txt files into .md files automatically.
+ */
+export async function importFolderFiles(
+  files: { path: string; content: string }[] | FileList
+): Promise<string[]> {
+  const importedPaths: string[] = [];
+
+  if (typeof FileList !== "undefined" && files instanceof FileList) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      let relPath = file.webkitRelativePath || file.name;
+      if (!relPath) continue;
+
+      relPath = normalizePath(relPath);
+
+      if (relPath.toLowerCase().endsWith(".txt")) {
+        relPath = relPath.slice(0, -4) + ".md";
+      }
+
+      const content = await file.text();
+      await writeMarkdownFile(relPath, content);
+      importedPaths.push(relPath);
+    }
+  } else if (Array.isArray(files)) {
+    for (const item of files) {
+      let relPath = normalizePath(item.path);
+      if (relPath.toLowerCase().endsWith(".txt")) {
+        relPath = relPath.slice(0, -4) + ".md";
+      }
+      await writeMarkdownFile(relPath, item.content);
+      importedPaths.push(relPath);
+    }
+  }
+
+  notifyWorkspaceChange();
+  return importedPaths;
+}

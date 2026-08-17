@@ -30,10 +30,12 @@ import {
   $getRoot,
   $createParagraphNode,
   $createTextNode,
+  $isTextNode,
   $isElementNode,
   TextNode,
   LexicalNode,
 } from "lexical";
+import { $isListItemNode, $isListNode } from "@lexical/list";
 
 import {
   readMarkdownFile,
@@ -48,6 +50,11 @@ import {
   formatTaskState,
   ActiveFileContext,
 } from "./ChecklistNode";
+import {
+  CustomListItemNode,
+  $createCustomListItemNode,
+  $isCustomListItemNode,
+} from "./CustomListItemNode";
 import { ALL_TRANSFORMERS } from "./checklistTransformer";
 import { TaskItem, TaskState } from "../sidebar/TaskDashboardSidebar";
 import { NoteActionBar } from "./NoteActionBar";
@@ -64,6 +71,7 @@ const EDITOR_NODES = [
   QuoteNode,
   ListNode,
   ListItemNode,
+  CustomListItemNode,
   CodeNode,
   CodeHighlightNode,
   LinkNode,
@@ -505,6 +513,113 @@ function MarkdownSyncPlugin({
   return <OnChangePlugin onChange={handleChange} ignoreSelectionChange />;
 }
 
+// Helper plugin to handle Enter key inside Checklist tasks to create a sibling task at the same indentation level
+function ChecklistEnterPlugin() {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    return editor.registerCommand(
+      KEY_ENTER_COMMAND,
+      (event: KeyboardEvent | null) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          return false;
+        }
+
+        const anchorNode = selection.anchor.getNode();
+        let targetListItem: ListItemNode | null = null;
+        let curr: LexicalNode | null = anchorNode;
+        while (curr) {
+          if ($isListItemNode(curr)) {
+            targetListItem = curr;
+            break;
+          }
+          curr = curr.getParent();
+        }
+
+        if (targetListItem) {
+          const children = targetListItem.getChildren();
+          const checklistChild = children.find((c) => $isChecklistNode(c));
+
+          if (checklistChild && $isChecklistNode(checklistChild)) {
+            event?.preventDefault();
+
+            // Check if item is empty (only checklist node, or checklist node + whitespace text)
+            const pureText = targetListItem
+              .getTextContent()
+              .replace(/\[([ x\->])\]/gi, "")
+              .trim();
+
+            if (!pureText && children.length <= 2) {
+              const parentList = targetListItem.getParent();
+              if ($isListNode(parentList)) {
+                targetListItem.remove();
+                const p = $createParagraphNode();
+                parentList.insertAfter(p);
+                p.select();
+                return true;
+              }
+            }
+
+            const marker = $isCustomListItemNode(targetListItem)
+              ? targetListItem.getMarker()
+              : "-";
+            const newListItem = $createCustomListItemNode(
+              undefined,
+              undefined,
+              marker
+            );
+            const newChecklist = $createChecklistNode("open");
+            newListItem.append(newChecklist);
+
+            const anchorOffset = selection.anchor.offset;
+            const isAnchorText = anchorNode.getType() === "text";
+
+            if (isAnchorText) {
+              const anchorIndex = children.indexOf(anchorNode);
+              const textContent = anchorNode.getTextContent();
+              const firstPartText = textContent.slice(0, anchorOffset);
+              const remainingText = textContent.slice(anchorOffset);
+
+              (anchorNode as any).setTextContent(firstPartText);
+
+              if (remainingText) {
+                newListItem.append($createTextNode(remainingText));
+              }
+
+              for (let i = anchorIndex + 1; i < children.length; i++) {
+                newListItem.append(children[i]);
+              }
+            }
+
+            targetListItem.insertAfter(newListItem);
+
+            if (newListItem.getChildrenSize() === 1) {
+              const emptyText = $createTextNode(" ");
+              newListItem.append(emptyText);
+              emptyText.select(1, 1);
+            } else {
+              const secondChild = newListItem.getChildAtIndex(1);
+              if ($isTextNode(secondChild)) {
+                secondChild.select(0, 0);
+              } else {
+                newListItem.select();
+              }
+            }
+
+            return true;
+          }
+        }
+
+        return false;
+      },
+      COMMAND_PRIORITY_HIGH
+    );
+  }, [editor]);
+
+  return null;
+}
+
 // Helper plugin for Ctrl+S / Cmd+S keyboard shortcut
 function KeyboardSavePlugin({ onSave }: { onSave: () => void }) {
   const [editor] = useLexicalComposerContext();
@@ -915,6 +1030,7 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
                 <MarkdownShortcutPlugin transformers={ALL_TRANSFORMERS} />
                 <PriorityHeaderPlugin />
                 <TaskDragDropPlugin />
+                <ChecklistEnterPlugin />
                 <KeyboardSavePlugin onSave={handleManualSave} />
               </div>
             </LexicalComposer>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import bookIcon from "../../assets/book.png";
 import enchantedBookIcon from "../../assets/enchanted-book.png";
 import { FileTreeNode } from "../../types/workspaceTree";
@@ -17,6 +17,7 @@ import {
   normalizePath,
   isSameFilePath,
   stripWorkspacePrefix,
+  importFolderFiles,
 } from "../../services/fileService";
 import {
   getThemeMode,
@@ -101,6 +102,25 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
   const [movingTask, setMovingTask] = useState<TaskItem | null>(null);
   const [selectedTargetNote, setSelectedTargetNote] = useState<string>("");
 
+  const importFolderInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleImportFolder = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    try {
+      const importedPaths = await importFolderFiles(files);
+      if (importedPaths.length > 0 && onSelectFile) {
+        onSelectFile(importedPaths[0]);
+      }
+      await loadTree();
+    } catch (err) {
+      console.warn("Failed to import folder:", err);
+    }
+    if (e.target) {
+      e.target.value = "";
+    }
+  };
+
   const collectNotes = useCallback((nodes: FileTreeNode[]): FileTreeNode[] => {
     const result: FileTreeNode[] = [];
     nodes.forEach((n) => {
@@ -179,17 +199,6 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
     setModalTargetPath(targetFolderPath);
     setModalInitialValue("");
     setModalOpen(true);
-  };
-
-  const handleImportFolder = async () => {
-    try {
-      const result = await importFolder();
-      if (result.success) {
-        await loadTree();
-      }
-    } catch (err) {
-      console.error("Failed to import folder:", err);
-    }
   };
 
   const handleOpenRenameModal = (node: FileTreeNode) => {
@@ -517,8 +526,12 @@ sections:
                   key={task.id}
                   data-testid={`sidebar-task-item-${task.id}`}
                   data-task-state={task.state}
-                  draggable
+                  draggable={!isCompleted}
                   onDragStart={(e) => {
+                    if (isCompleted) {
+                      e.preventDefault();
+                      return;
+                    }
                     e.dataTransfer.setData(
                       "application/json",
                       JSON.stringify({
@@ -857,9 +870,10 @@ sections:
             style={{
               padding: "8px 10px",
               display: "flex",
-              gap: "6px",
+              gap: "4px",
               borderBottom: "1px solid rgba(110, 106, 134, 0.15)",
               backgroundColor: "rgba(38, 35, 58, 0.3)",
+              flexWrap: "wrap",
             }}
           >
             <button
@@ -867,7 +881,7 @@ sections:
               onClick={() => handleOpenCreateModal("create-note")}
               className="tactile-btn"
               style={{
-                flex: 1,
+                flex: "1 1 auto",
                 fontSize: "11px",
                 fontWeight: 600,
                 padding: "4px 6px",
@@ -885,7 +899,7 @@ sections:
               onClick={() => handleOpenCreateModal("create-folder")}
               className="tactile-btn"
               style={{
-                flex: 1,
+                flex: "1 1 auto",
                 fontSize: "11px",
                 fontWeight: 600,
                 padding: "4px 6px",
@@ -899,11 +913,30 @@ sections:
               + Folder
             </button>
             <button
+              data-testid="sidebar-action-import-folder"
+              onClick={() => importFolderInputRef.current?.click()}
+              className="tactile-btn"
+              title="Import folder (.txt files will be converted to .md)"
+              style={{
+                flex: "1 1 auto",
+                fontSize: "11px",
+                fontWeight: 600,
+                padding: "4px 6px",
+                borderRadius: "var(--radius-sm)",
+                border: "1px solid rgba(156, 207, 216, 0.3)",
+                backgroundColor: "rgba(156, 207, 216, 0.15)",
+                color: "var(--rose-foam)",
+                cursor: "pointer",
+              }}
+            >
+              Import Folder
+            </button>
+            <button
               data-testid="sidebar-action-new-dashboard"
               onClick={() => handleOpenCreateModal("create-dashboard")}
               className="tactile-btn"
               style={{
-                flex: 1,
+                flex: "1 1 auto",
                 fontSize: "11px",
                 fontWeight: 600,
                 padding: "4px 6px",
@@ -916,25 +949,15 @@ sections:
             >
               + Dashboard
             </button>
-            <button
-              data-testid="sidebar-action-import-folder"
-              onClick={handleImportFolder}
-              className="tactile-btn"
-              style={{
-                flex: 1,
-                fontSize: "11px",
-                fontWeight: 600,
-                padding: "4px 6px",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid rgba(56, 189, 248, 0.3)",
-                backgroundColor: "rgba(56, 189, 248, 0.15)",
-                color: "var(--rose-foam, #9ccfd8)",
-                cursor: "pointer",
-              }}
-              title="Import folder into workspace"
-            >
-              Import Folder
-            </button>
+            <input
+              type="file"
+              data-testid="import-folder-input"
+              ref={importFolderInputRef}
+              style={{ display: "none" }}
+              {...({ webkitdirectory: "", directory: "" } as any)}
+              multiple
+              onChange={handleImportFolder}
+            />
           </div>
 
           {/* Tree Component */}

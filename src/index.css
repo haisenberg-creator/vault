@@ -290,10 +290,34 @@ body,
   margin-bottom: 0.3em;
 }
 
+.lexical-list-ul li[data-marker],
+.lexical-listitem[data-marker] {
+  list-style-type: none;
+  position: relative;
+}
+
+.lexical-list-ul li[data-marker]::before,
+.lexical-listitem[data-marker]::before {
+  content: attr(data-marker);
+  position: absolute;
+  left: -18px;
+  color: var(--rose-rose);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: inherit;
+  user-select: none;
+}
+
 .lexical-list-ul li:has([data-task-state]),
 .lexical-listitem:has([data-task-state]) {
   list-style-type: none;
   margin-left: -12px;
+}
+
+.lexical-list-ul li:has([data-task-state])::before,
+.lexical-listitem:has([data-task-state])::before {
+  display: none !important;
+  content: "" !important;
 }
 
 .lexical-text-bold {
