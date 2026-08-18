@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.3.0] - 2026-08-18
+
+### Highlights & Features ✨
+
+- **Editor List Ergonomics & Custom Markers**:
+  - Support custom unordered list markers (`-`, `*`, `+`, `•`, `◦`, `▪`, `→`, `★`) with markdown attribute preservation.
+  - Sibling task indentation preservation and smart escape on Enter key inside task items.
+  - Bidirectional text transformation for arrow symbols (`=>` ↔ `⇒`).
+- **Sidebar & Folder Import**:
+  - WebKit folder directory import with automatic `.txt` to `.md` format conversion.
+  - Drag constraints to prevent accidental dragging of completed tasks.
+
+### Documentation & Setup 📖
+
+- Added interactive setup wizard reference to `SETUP.md`.
+- Recommended VSCode extensions configuration for Tauri, Rust, and Vitest.
+
+---
+
 ## [v0.2.0] - 2026-08-13
 
 ### Highlights & Features ✨

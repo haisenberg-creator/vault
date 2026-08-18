@@ -12,7 +12,6 @@ import {
   renamePath,
   deletePath,
   movePath,
-  importFolder,
   subscribeToWorkspaceChanges,
   normalizePath,
   isSameFilePath,
