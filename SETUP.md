@@ -8,6 +8,18 @@ This guide covers all the commands and prerequisite steps required to set up, de
 
 ## ⚡ Quick Start (TL;DR)
 
+### 🧙‍♂️ Interactive Setup Wizard
+
+Run the automated bootstrap wizard (checks toolchains, installs dependencies, and runs smoke tests):
+
+```bash
+./scripts/bootstrap.sh
+```
+
+---
+
+### Manual Setup
+
 If you already have **Node.js (v18+)** and **Rust** installed:
 
 ```bash
