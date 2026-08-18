@@ -121,6 +121,63 @@ export function formatShortPath(
 }
 
 /**
+ * Resolve the full absolute path of a file given its relative or absolute path and workspaceDir.
+ */
+export function resolveAbsolutePath(
+  path: string,
+  workspaceDir: string = "workspace"
+): string {
+  if (!path) return "";
+  const normPath = normalizePath(path);
+  if (/^[a-zA-Z]:\//.test(normPath) || normPath.startsWith("/")) {
+    return normPath;
+  }
+  const normWs = normalizePath(workspaceDir);
+  const relative = stripWorkspacePrefix(normPath, workspaceDir);
+  if (normWs) {
+    return `${normWs}/${relative}`;
+  }
+  return relative;
+}
+
+/**
+ * Copies text to the system clipboard using navigator.clipboard.
+ */
+export async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    if (typeof navigator !== "undefined" && navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (err) {
+    console.warn("Failed to copy to clipboard:", err);
+  }
+  return false;
+}
+
+/**
+ * Reveal a file in the OS file explorer using Tauri's opener plugin or browser fallback.
+ */
+export async function revealFileInExplorer(
+  filePath: string,
+  workspaceDir: string = "workspace"
+): Promise<void> {
+  const fullPath = resolveAbsolutePath(filePath, workspaceDir);
+  if (!fullPath) return;
+
+  if (isTauriEnvironment()) {
+    try {
+      const { revealItemInDir } = await import("@tauri-apps/plugin-opener");
+      await revealItemInDir(fullPath);
+      return;
+    } catch (err) {
+      console.warn("Failed to reveal file in explorer via Tauri opener:", err);
+    }
+  }
+  console.info("[fileService] Reveal in File Explorer:", fullPath);
+}
+
+/**
  * Compares two file paths to determine if they refer to the same file,
  * handling backslashes, forward slashes, and optional workspace directory prefixes.
  */

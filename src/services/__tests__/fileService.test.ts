@@ -16,6 +16,9 @@ import {
   normalizePath,
   stripWorkspacePrefix,
   formatShortPath,
+  resolveAbsolutePath,
+  copyToClipboard,
+  revealFileInExplorer,
 } from "../fileService";
 
 describe("fileService", () => {
@@ -221,5 +224,107 @@ describe("fileService", () => {
 
     expect(getMockFileContent("Imported/sub/details.md")).toBe("Sub details");
     expect(getMockFileContent("Imported/sub/details.TXT")).toBeUndefined();
+  });
+
+  describe("resolveAbsolutePath", () => {
+    it("returns empty string if given empty input", () => {
+      expect(resolveAbsolutePath("")).toBe("");
+    });
+
+    it("returns Windows absolute paths as-is (normalized)", () => {
+      expect(
+        resolveAbsolutePath("C:\\Users\\ANH-NTP\\workspace\\Projects\\Note.md")
+      ).toBe("C:/Users/ANH-NTP/workspace/Projects/Note.md");
+    });
+
+    it("returns Unix absolute paths as-is (normalized)", () => {
+      expect(resolveAbsolutePath("/home/user/workspace/Projects/Note.md")).toBe(
+        "/home/user/workspace/Projects/Note.md"
+      );
+    });
+
+    it("resolves relative path against workspaceDir", () => {
+      expect(
+        resolveAbsolutePath(
+          "Projects/Note.md",
+          "C:/Users/ANH-NTP/AppData/Local/com.user.vault-app/workspace"
+        )
+      ).toBe(
+        "C:/Users/ANH-NTP/AppData/Local/com.user.vault-app/workspace/Projects/Note.md"
+      );
+    });
+
+    it("handles relative path that starts with workspace prefix", () => {
+      expect(
+        resolveAbsolutePath(
+          "workspace/Projects/Note.md",
+          "C:/Users/ANH-NTP/AppData/Local/com.user.vault-app/workspace"
+        )
+      ).toBe(
+        "C:/Users/ANH-NTP/AppData/Local/com.user.vault-app/workspace/Projects/Note.md"
+      );
+    });
+  });
+
+  describe("copyToClipboard", () => {
+    it("copies text using navigator.clipboard.writeText when available", async () => {
+      const writeTextMock = vi.fn().mockResolvedValue(undefined);
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: writeTextMock,
+        },
+      });
+
+      const success = await copyToClipboard("sample text");
+      expect(success).toBe(true);
+      expect(writeTextMock).toHaveBeenCalledWith("sample text");
+    });
+
+    it("returns false and catches error if clipboard API rejects", async () => {
+      const writeTextMock = vi
+        .fn()
+        .mockRejectedValue(new Error("Permission denied"));
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: writeTextMock,
+        },
+      });
+
+      const success = await copyToClipboard("sample text");
+      expect(success).toBe(false);
+    });
+  });
+
+  describe("revealFileInExplorer", () => {
+    it("logs message in browser/non-Tauri mode without erroring", async () => {
+      const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+      await revealFileInExplorer(
+        "Projects/Note.md",
+        "C:/Users/ANH-NTP/workspace"
+      );
+      expect(infoSpy).toHaveBeenCalled();
+      infoSpy.mockRestore();
+    });
+
+    it("calls revealItemInDir in Tauri environment", async () => {
+      const revealMock = vi.fn().mockResolvedValue(undefined);
+      vi.doMock("@tauri-apps/plugin-opener", () => ({
+        revealItemInDir: revealMock,
+      }));
+
+      // Simulate Tauri environment
+      Object.assign(window, { __TAURI_INTERNALS__: {} });
+
+      await revealFileInExplorer(
+        "Projects/Note.md",
+        "C:/Users/ANH-NTP/workspace"
+      );
+
+      expect(revealMock).toHaveBeenCalledWith(
+        "C:/Users/ANH-NTP/workspace/Projects/Note.md"
+      );
+
+      delete (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
+    });
   });
 });
