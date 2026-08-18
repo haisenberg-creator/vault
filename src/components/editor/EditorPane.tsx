@@ -95,7 +95,19 @@ function TaskExtractorPlugin({
 
     const extractAndEmit = () => {
       editor.getEditorState().read(() => {
-        const checklistNodes = $nodesOfType(ChecklistNode);
+        const checklistNodes: ChecklistNode[] = [];
+        const traverse = (node: LexicalNode) => {
+          if ($isChecklistNode(node)) {
+            checklistNodes.push(node);
+          }
+          if ($isElementNode(node)) {
+            for (const child of node.getChildren()) {
+              traverse(child);
+            }
+          }
+        };
+        traverse($getRoot());
+
         const extracted: TaskItem[] = checklistNodes.map((node) => {
           const key = node.getKey();
           const parent = node.getParent();
@@ -572,13 +584,64 @@ function TaskDragDropPlugin() {
 
           if (parsedKey) {
             const checklistNode = $getNodeByKey(parsedKey);
-            if (checklistNode) {
+            if (checklistNode && $isChecklistNode(checklistNode)) {
               const draggedBlock = checklistNode.getParent();
-              if (
-                draggedBlock &&
-                draggedBlock.getKey() !== targetNode.getKey()
-              ) {
+              if (draggedBlock) {
+                // Check if target is draggedBlock, checklistNode, or any child/descendant of draggedBlock
+                let isSelf =
+                  targetNode.getKey() === draggedBlock.getKey() ||
+                  targetNode.getKey() === checklistNode.getKey();
+
+                if (!isSelf) {
+                  let curr: LexicalNode | null = targetNode;
+                  while (curr) {
+                    if (curr.getKey() === draggedBlock.getKey()) {
+                      isSelf = true;
+                      break;
+                    }
+                    curr = curr.getParent();
+                  }
+                }
+
+                if (isSelf) {
+                  // Dropping on self is a safe no-op
+                  return;
+                }
+
+                // Check if target is the immediately previous sibling (leaves position unchanged)
+                const prevSibling = draggedBlock.getPreviousSibling();
+                if (
+                  prevSibling &&
+                  prevSibling.getKey() === targetNode.getKey()
+                ) {
+                  // Dropping after previous sibling is a safe no-op
+                  return;
+                }
+
+                // Check if target is parent list and draggedBlock is already inside it
+                if ($isListNode(targetNode)) {
+                  const sourceParent = draggedBlock.getParent();
+                  if (
+                    sourceParent &&
+                    sourceParent.getKey() === targetNode.getKey()
+                  ) {
+                    return;
+                  }
+                }
+
+                // Valid cross-position move
+                const sourceParent = draggedBlock.getParent();
                 targetNode.insertAfter(draggedBlock);
+
+                // Clean up empty source parent list if needed
+                if (
+                  sourceParent &&
+                  $isListNode(sourceParent) &&
+                  sourceParent.getChildrenSize() === 0
+                ) {
+                  sourceParent.remove();
+                }
+
                 return;
               }
             }

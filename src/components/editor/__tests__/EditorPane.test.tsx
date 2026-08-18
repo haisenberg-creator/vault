@@ -332,6 +332,177 @@ describe("EditorPane Component (Lexical)", () => {
     );
   });
 
+  it("treats self-adjacent DnD drops as safe no-ops without duplicating tasks", async () => {
+    const onTasksChange = vi.fn();
+    fileService.setMockFileContent(
+      "self-drop.md",
+      "- [ ] Task Alpha\n- [ ] Task Beta\n- [ ] Task Gamma"
+    );
+
+    render(
+      <EditorPane filename="self-drop.md" onTasksChange={onTasksChange} />
+    );
+
+    await screen.findByTestId("editor-contenteditable");
+    await waitFor(() => {
+      expect(screen.getByText("Task Alpha")).toBeInTheDocument();
+      expect(screen.getByText("Task Beta")).toBeInTheDocument();
+      expect(screen.getByText("Task Gamma")).toBeInTheDocument();
+    });
+
+    const taskPills = screen.getAllByTestId("checklist-node-open");
+    const betaPill = taskPills[1]; // Task Beta
+
+    const dataTransfer = {
+      data: {} as Record<string, string>,
+      setData(type: string, val: string) {
+        this.data[type] = val;
+      },
+      getData(type: string) {
+        return this.data[type] || "";
+      },
+      effectAllowed: "",
+      dropEffect: "",
+    };
+
+    // 1. Drag Task Beta and drop directly onto itself
+    fireEvent.dragStart(betaPill, { dataTransfer });
+    fireEvent.dragOver(betaPill, { dataTransfer });
+    fireEvent.drop(betaPill, { dataTransfer });
+
+    // Verify task count is still 3 and onTasksChange does not have duplicates
+    await waitFor(() => {
+      const calls = onTasksChange.mock.calls;
+      const lastTasks = calls[calls.length - 1][0];
+      expect(lastTasks).toHaveLength(3);
+      expect(lastTasks.map((t: any) => t.title)).toEqual([
+        "Task Alpha",
+        "Task Beta",
+        "Task Gamma",
+      ]);
+    });
+
+    // 2. Drag Task Beta and drop onto immediately preceding sibling (Task Alpha)
+    const alphaPill = screen.getAllByTestId("checklist-node-open")[0];
+    fireEvent.dragStart(betaPill, { dataTransfer });
+    fireEvent.dragOver(alphaPill, { dataTransfer });
+    fireEvent.drop(alphaPill, { dataTransfer });
+
+    await waitFor(() => {
+      const calls = onTasksChange.mock.calls;
+      const lastTasks = calls[calls.length - 1][0];
+      expect(lastTasks).toHaveLength(3);
+      expect(lastTasks.map((t: any) => t.title)).toEqual([
+        "Task Alpha",
+        "Task Beta",
+        "Task Gamma",
+      ]);
+    });
+
+    // Verify header task stats display
+    expect(screen.getByText("3 Tasks (0 Completed)")).toBeInTheDocument();
+  });
+
+  it("moves a task cleanly on cross-position DnD drop without creating phantom duplicates", async () => {
+    const onTasksChange = vi.fn();
+    fileService.setMockFileContent(
+      "cross-drop.md",
+      "- [ ] Task Alpha\n- [ ] Task Beta\n- [ ] Task Gamma"
+    );
+
+    render(
+      <EditorPane filename="cross-drop.md" onTasksChange={onTasksChange} />
+    );
+
+    await screen.findByTestId("editor-contenteditable");
+    await waitFor(() => {
+      expect(screen.getByText("Task Alpha")).toBeInTheDocument();
+      expect(screen.getByText("Task Beta")).toBeInTheDocument();
+      expect(screen.getByText("Task Gamma")).toBeInTheDocument();
+    });
+
+    const taskPills = screen.getAllByTestId("checklist-node-open");
+    const alphaPill = taskPills[0];
+    const gammaPill = taskPills[2];
+
+    const dataTransfer = {
+      data: {} as Record<string, string>,
+      setData(type: string, val: string) {
+        this.data[type] = val;
+      },
+      getData(type: string) {
+        return this.data[type] || "";
+      },
+      effectAllowed: "",
+      dropEffect: "",
+    };
+
+    // Drag Task Alpha and drop onto Task Gamma
+    fireEvent.dragStart(alphaPill, { dataTransfer });
+    fireEvent.dragOver(gammaPill, { dataTransfer });
+    fireEvent.drop(gammaPill, { dataTransfer });
+
+    // Verify task count is still 3 and reordered cleanly: Beta, Gamma, Alpha
+    await waitFor(() => {
+      const calls = onTasksChange.mock.calls;
+      const lastTasks = calls[calls.length - 1][0];
+      expect(lastTasks).toHaveLength(3);
+      expect(lastTasks.map((t: any) => t.title)).toEqual([
+        "Task Beta",
+        "Task Gamma",
+        "Task Alpha",
+      ]);
+    });
+  });
+
+  it("inserts a new task when dropped from an external source (sidebar/cross-note)", async () => {
+    const onTasksChange = vi.fn();
+    fileService.setMockFileContent("external-drop.md", "- [ ] Existing Task");
+
+    render(
+      <EditorPane filename="external-drop.md" onTasksChange={onTasksChange} />
+    );
+
+    await screen.findByTestId("editor-contenteditable");
+    await waitFor(() => {
+      expect(screen.getByText("Existing Task")).toBeInTheDocument();
+    });
+
+    const existingPill = screen.getByTestId("checklist-node-open");
+
+    const dataTransfer = {
+      data: {
+        "application/json": JSON.stringify({
+          taskTitle: "External Imported Task",
+          sourceFile: "other-note.md",
+          state: "open",
+        }),
+        "text/plain": "task-drag:External Imported Task",
+      } as Record<string, string>,
+      setData(type: string, val: string) {
+        this.data[type] = val;
+      },
+      getData(type: string) {
+        return this.data[type] || "";
+      },
+      effectAllowed: "",
+      dropEffect: "",
+    };
+
+    fireEvent.dragOver(existingPill, { dataTransfer });
+    fireEvent.drop(existingPill, { dataTransfer });
+
+    await waitFor(() => {
+      const calls = onTasksChange.mock.calls;
+      const lastTasks = calls[calls.length - 1][0];
+      expect(lastTasks).toHaveLength(2);
+      expect(lastTasks.map((t: any) => t.title)).toEqual([
+        "Existing Task",
+        "External Imported Task",
+      ]);
+    });
+  });
+
   it("creates task via status toolbar buttons (Open, In Progress, Blocked, Done) and deletes cleanly without phantom dot marker", async () => {
     const onTasksChange = vi.fn();
     const writeSpy = vi.spyOn(fileService, "writeMarkdownFile");
