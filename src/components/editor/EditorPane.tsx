@@ -18,6 +18,7 @@ import {
 import {
   KEY_DOWN_COMMAND,
   KEY_ENTER_COMMAND,
+  KEY_BACKSPACE_COMMAND,
   DRAGOVER_COMMAND,
   DROP_COMMAND,
   COMMAND_PRIORITY_HIGH,
@@ -188,11 +189,15 @@ function TaskRemoveHandlerPlugin({
   return null;
 }
 
-// Plugin to handle inserting a new task line from toolbar with focus
+// Plugin to handle inserting a new task line from toolbar or changing active task status with focus
 function TaskInsertHandlerPlugin({
   onRegisterAddTask,
+  onRegisterChangeStatus,
 }: {
   onRegisterAddTask?: (addTaskFn: () => void) => void;
+  onRegisterChangeStatus?: (
+    changeStatusFn: (status: TaskState) => void
+  ) => void;
 }) {
   const [editor] = useLexicalComposerContext();
 
@@ -228,15 +233,74 @@ function TaskInsertHandlerPlugin({
     });
   }, [editor, onRegisterAddTask]);
 
+  useEffect(() => {
+    if (!onRegisterChangeStatus) return;
+
+    onRegisterChangeStatus((status: TaskState) => {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          const anchorNode = selection.anchor.getNode();
+          let curr: LexicalNode | null = anchorNode;
+          let existingChecklistNode: ChecklistNode | null = null;
+
+          while (curr) {
+            if ($isChecklistNode(curr)) {
+              existingChecklistNode = curr;
+              break;
+            }
+            if ($isElementNode(curr)) {
+              const checklistChild = curr.getChildren().find($isChecklistNode);
+              if (checklistChild && $isChecklistNode(checklistChild)) {
+                existingChecklistNode = checklistChild;
+                break;
+              }
+            }
+            curr = curr.getParent();
+          }
+
+          if (existingChecklistNode) {
+            existingChecklistNode.setState(status);
+            return;
+          }
+
+          const blockNode = $isElementNode(anchorNode)
+            ? anchorNode
+            : anchorNode.getParent();
+          const paragraph = $createParagraphNode();
+          const checklistNode = $createChecklistNode(status);
+          const textNode = $createTextNode(" ");
+          paragraph.append(checklistNode, textNode);
+
+          if (blockNode) {
+            blockNode.insertAfter(paragraph);
+          } else {
+            $getRoot().append(paragraph);
+          }
+          textNode.select(1, 1);
+        } else {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          const checklistNode = $createChecklistNode(status);
+          const textNode = $createTextNode(" ");
+          paragraph.append(checklistNode, textNode);
+          root.append(paragraph);
+          textNode.select(1, 1);
+        }
+      });
+      editor.focus();
+    });
+  }, [editor, onRegisterChangeStatus]);
+
   return null;
 }
 
-// Plugin to handle Enter key on task lines (continue list or escape)
+// Plugin to handle Enter and Backspace keys on task lines
 function TaskKeyboardPlugin() {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    return editor.registerCommand(
+    const unregisterEnter = editor.registerCommand(
       KEY_ENTER_COMMAND,
       (event: KeyboardEvent | null) => {
         const selection = $getSelection();
@@ -292,6 +356,77 @@ function TaskKeyboardPlugin() {
       },
       COMMAND_PRIORITY_HIGH
     );
+
+    const unregisterBackspace = editor.registerCommand(
+      KEY_BACKSPACE_COMMAND,
+      (event: KeyboardEvent) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          return false;
+        }
+
+        const anchorNode = selection.anchor.getNode();
+        let targetListItem: ListItemNode | null = null;
+        let curr: LexicalNode | null = anchorNode;
+        while (curr) {
+          if ($isListItemNode(curr)) {
+            targetListItem = curr;
+            break;
+          }
+          curr = curr.getParent();
+        }
+
+        if (targetListItem) {
+          const rawText = targetListItem.getTextContent();
+          const pureText = rawText.replace(/\[([ x\->])\]/gi, "").trim();
+
+          if (selection.anchor.offset === 0 || pureText === "") {
+            const parentList = targetListItem.getParent();
+            if ($isListNode(parentList)) {
+              event?.preventDefault();
+              const p = $createParagraphNode();
+              if (pureText) {
+                p.append($createTextNode(pureText));
+              }
+              targetListItem.replace(p);
+              if (parentList.getChildrenSize() === 0) {
+                parentList.remove();
+              }
+              p.select();
+              return true;
+            }
+          }
+        } else {
+          const blockNode = $isElementNode(anchorNode)
+            ? anchorNode
+            : anchorNode.getParent();
+          if (blockNode) {
+            const children = blockNode.getChildren();
+            const checklistChild = children.find($isChecklistNode);
+            if (checklistChild && selection.anchor.offset <= 1) {
+              const rawText = blockNode.getTextContent();
+              const pureText = rawText.replace(/\[([ x\->])\]/gi, "").trim();
+              if (pureText === "") {
+                event?.preventDefault();
+                blockNode.clear();
+                const emptyTextNode = $createTextNode("");
+                blockNode.append(emptyTextNode);
+                emptyTextNode.select();
+                return true;
+              }
+            }
+          }
+        }
+
+        return false;
+      },
+      COMMAND_PRIORITY_HIGH
+    );
+
+    return () => {
+      unregisterEnter();
+      unregisterBackspace();
+    };
   }, [editor]);
 
   return null;
@@ -556,6 +691,9 @@ function ChecklistEnterPlugin() {
                 targetListItem.remove();
                 const p = $createParagraphNode();
                 parentList.insertAfter(p);
+                if (parentList.getChildrenSize() === 0) {
+                  parentList.remove();
+                }
                 p.select();
                 return true;
               }
@@ -662,12 +800,20 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
   const currentContentRef = useRef(markdownContent);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const addTaskFnRef = useRef<(() => void) | null>(null);
+  const changeStatusFnRef = useRef<((status: TaskState) => void) | null>(null);
 
   currentContentRef.current = markdownContent;
 
   const handleRegisterAddTask = useCallback((fn: () => void) => {
     addTaskFnRef.current = fn;
   }, []);
+
+  const handleRegisterChangeStatus = useCallback(
+    (fn: (status: TaskState) => void) => {
+      changeStatusFnRef.current = fn;
+    },
+    []
+  );
 
   // Load document on mount or when filename changes
   useEffect(() => {
@@ -775,8 +921,8 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
     } else {
       const newTaskLine =
         currentContentRef.current.endsWith("\n") || !currentContentRef.current
-          ? "- [ ] New task"
-          : "\n- [ ] New task";
+          ? "[ ] New task"
+          : "\n[ ] New task";
       const updated = currentContentRef.current + newTaskLine;
       handleMarkdownChange(updated);
     }
@@ -784,13 +930,17 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
 
   const handleActionBarChangeStatus = useCallback(
     (status: TaskState) => {
-      const syntax = formatTaskState(status);
-      const lineToAdd =
-        currentContentRef.current.endsWith("\n") || !currentContentRef.current
-          ? `- ${syntax} Task item`
-          : `\n- ${syntax} Task item`;
-      const updated = currentContentRef.current + lineToAdd;
-      handleMarkdownChange(updated);
+      if (changeStatusFnRef.current) {
+        changeStatusFnRef.current(status);
+      } else {
+        const syntax = formatTaskState(status);
+        const lineToAdd =
+          currentContentRef.current.endsWith("\n") || !currentContentRef.current
+            ? `${syntax} Task item`
+            : `\n${syntax} Task item`;
+        const updated = currentContentRef.current + lineToAdd;
+        handleMarkdownChange(updated);
+      }
     },
     [handleMarkdownChange]
   );
@@ -1021,6 +1171,7 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
                 />
                 <TaskInsertHandlerPlugin
                   onRegisterAddTask={handleRegisterAddTask}
+                  onRegisterChangeStatus={handleRegisterChangeStatus}
                 />
                 <TaskKeyboardPlugin />
                 <MarkdownSyncPlugin

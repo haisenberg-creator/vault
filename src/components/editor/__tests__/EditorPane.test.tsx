@@ -331,4 +331,104 @@ describe("EditorPane Component (Lexical)", () => {
       { timeout: 1000 }
     );
   });
+
+  it("creates task via status toolbar buttons (Open, In Progress, Blocked, Done) and deletes cleanly without phantom dot marker", async () => {
+    const onTasksChange = vi.fn();
+    const writeSpy = vi.spyOn(fileService, "writeMarkdownFile");
+    fileService.setMockFileContent("status-btn-test.md", "");
+
+    const { container } = render(
+      <EditorPane filename="status-btn-test.md" onTasksChange={onTasksChange} />
+    );
+
+    const editor = await screen.findByTestId("editor-contenteditable");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const lexicalEditor = (editor as any).__lexicalEditor;
+    expect(lexicalEditor).toBeDefined();
+
+    // 1. Click In Progress status button to create task
+    const inProgressBtn = screen.getByTestId("note-status-in_progress");
+    fireEvent.click(inProgressBtn);
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("checklist-node-in_progress")
+      ).toBeInTheDocument();
+    });
+
+    // 2. Verify onTasksChange receives 1 task
+    await waitFor(() => {
+      const lastTasksCall =
+        onTasksChange.mock.calls[onTasksChange.mock.calls.length - 1][0];
+      expect(lastTasksCall.length).toBe(1);
+      expect(lastTasksCall[0].state).toBe("in_progress");
+    });
+
+    // 3. Delete the task
+    act(() => {
+      lexicalEditor.update(() => {
+        const root = $getRoot();
+        root.clear();
+        const p = $createParagraphNode();
+        root.append(p);
+        p.select();
+      });
+    });
+
+    // 4. Verify onTasksChange fires with 0 tasks
+    await waitFor(() => {
+      const lastTasksCall =
+        onTasksChange.mock.calls[onTasksChange.mock.calls.length - 1][0];
+      expect(lastTasksCall.length).toBe(0);
+    });
+
+    // 5. Verify no stray • or bullet markers in container or markdown output
+    expect(container.textContent).not.toContain("•");
+    await waitFor(
+      () => {
+        if (writeSpy.mock.calls.length > 0) {
+          const savedContent =
+            writeSpy.mock.calls[writeSpy.mock.calls.length - 1][1];
+          expect(savedContent).not.toContain("•");
+          expect(savedContent).not.toContain("[-]");
+        }
+      },
+      { timeout: 1000 }
+    );
+  });
+
+  it("updates existing task status in place when status button is clicked while focused on task", async () => {
+    fileService.setMockFileContent("status-update.md", "- [ ] Existing task");
+
+    render(<EditorPane filename="status-update.md" />);
+
+    const editor = await screen.findByTestId("editor-contenteditable");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const lexicalEditor = (editor as any).__lexicalEditor;
+    expect(lexicalEditor).toBeDefined();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("checklist-node-open")).toBeInTheDocument();
+    });
+
+    // Select inside the existing task
+    act(() => {
+      lexicalEditor.update(() => {
+        const root = $getRoot();
+        const firstChild = root.getFirstChild();
+        firstChild?.selectStart();
+      });
+    });
+
+    // Click "Blocked" status button
+    const blockedBtn = screen.getByTestId("note-status-blocked");
+    fireEvent.click(blockedBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("checklist-node-blocked")).toBeInTheDocument();
+      expect(
+        screen.queryByTestId("checklist-node-open")
+      ).not.toBeInTheDocument();
+    });
+  });
 });

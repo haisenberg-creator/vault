@@ -52,3 +52,27 @@ A visual theme mode featuring pixel/arcade typography (`Pixelify Sans`), retro s
 
 **Working Mode**:
 The default visual theme mode featuring clean modern typography (`Plus Jakarta Sans` and `JetBrains Mono`) and standard interface icons (Normal Book).
+
+**Theme**:
+A named color palette applied globally to the app's visual style. Distinct from Mode — a Theme controls colors; a Mode controls typography and icon set.
+_Avoid_: Skin, color scheme
+
+**Live Background**:
+A user-supplied image or animated GIF applied as the visual backdrop of the entire app, layered behind all panels.
+_Avoid_: Wallpaper, background image
+
+**Note Cover**:
+An optional banner image or animated GIF displayed at the top of a specific Note, set per-note.
+_Avoid_: Header image, cover photo
+
+**Split View**:
+A layout mode in which two Notes are displayed side-by-side in independently editable, resizable panes.
+_Avoid_: Dual pane, side-by-side mode
+
+**Graph View**:
+A read-only visual graph rendering the wikilink connections between Notes in the V-Folder. Does not support editing or mind-mapping.
+_Avoid_: Mind map, knowledge graph
+
+**Quick Switcher**:
+A command-palette overlay (default `Ctrl+P`) for searching and jumping to any Note by name.
+_Avoid_: Command palette, file finder

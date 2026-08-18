@@ -10,12 +10,7 @@ import {
   $isListNode,
   ListItemNode,
 } from "@lexical/list";
-import {
-  $isElementNode,
-  $isTextNode,
-  ElementNode,
-  LexicalNode,
-} from "lexical";
+import { $isElementNode, $isTextNode, ElementNode, LexicalNode } from "lexical";
 import {
   CustomListItemNode,
   $createCustomListItemNode,
@@ -86,13 +81,17 @@ export const CUSTOM_UNORDERED_LIST: ElementTransformer = {
       if ($isCustomListItemNode(child)) {
         const marker = child.getMarker() || "-";
         const content = traverseChildren(child);
-        lines.push(`${marker} ${content}`);
+        if (content.trim().length > 0) {
+          lines.push(`${marker} ${content}`);
+        }
       } else if ($isElementNode(child)) {
         const content = traverseChildren(child);
-        lines.push(`- ${content}`);
+        if (content.trim().length > 0) {
+          lines.push(`- ${content}`);
+        }
       }
     }
-    return lines.join("\n");
+    return lines.length > 0 ? lines.join("\n") : null;
   },
   regExp: /^(\s*)([-*+•◦▪→★])\s/,
   replace: (parentNode, children, match) => {
