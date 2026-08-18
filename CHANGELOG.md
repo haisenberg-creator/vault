@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.0.0] - 2026-08-18
+
+### Highlights & Features ✨
+
+- **TitleBar Redesign & Breadcrumb Cleanup**:
+  - Truncated displayed note paths to at most the last two path segments (e.g. `Projects/Vault.md`) for clean, instant note recognition.
+  - Relocated the `WORKING / ARCADE` mode toggle into the title bar chrome with themed icon indicators.
+  - Added right-click context menu on the Note lectern icon with `Copy Path`, `Copy Relative Path`, and `Reveal in File Explorer` (powered by Tauri opener plugin).
+- **Accurate Note-Scoped Task Dashboard Count**:
+  - Scoped the `Tasks (N)` sidebar tab badge strictly to the currently active Note's tasks.
+  - Preserved multi-file task aggregation, filtering, and cross-note task moving within the dashboard.
+- **Unified Theme Mode State**:
+  - Lifted theme mode state management to the shared layout parent to seamlessly synchronize window chrome and sidebar.
+
+### Bug Fixes 🐛
+
+- **Fixed Phantom Task Copy on DnD**: Prevented duplicate task creation when dragging a task near its original location in the Lexical editor.
+- **Fixed Stray Dot Marker on Task Deletion**: Cleaned up leftover `•` bullet markers when deleting tasks created via the status toolbar buttons.
+
+---
+
 ## [v0.4.0] - 2026-08-18
 
 ### Highlights & Features ✨
