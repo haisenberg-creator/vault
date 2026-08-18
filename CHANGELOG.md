@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.4.0] - 2026-08-18
+
+### Highlights & Features ✨
+
+- **Automatic Updates via GitHub Releases**:
+  - Added background update checking on application startup using Tauri's updater plugin.
+  - Implemented custom in-app `UpdateNotification` UI styled seamlessly with Vault's Rosé Pine / Arcade aesthetic.
+  - One-click "Install Now" downloading, background verification, and seamless restart.
+- **Release & Signing Pipeline**:
+  - Configured cryptographic ED25519 binary signing in GitHub Actions workflow (`release.yml`).
+  - Automated `latest.json` release manifest generation for seamless desktop updates.
+
+---
+
 ## [v0.3.0] - 2026-08-18
 
 ### Highlights & Features ✨

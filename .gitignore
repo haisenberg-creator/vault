@@ -26,3 +26,7 @@ dist-ssr
 # Scratch temporary helper scripts
 .scratch/*.ps1
 
+# Tauri updater keys
+*.key
+*.key.pub
+
