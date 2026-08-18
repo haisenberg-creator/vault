@@ -38,6 +38,7 @@ export interface TaskItem {
 
 export interface TaskDashboardSidebarProps {
   tasks?: TaskItem[];
+  activeFileTasks?: TaskItem[];
   activeFilter?: TaskState | "all";
   onFilterChange?: (filter: TaskState | "all") => void;
   onToggleTask?: (taskId: string) => void;
@@ -56,6 +57,7 @@ export interface TaskDashboardSidebarProps {
 
 export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
   tasks = [],
+  activeFileTasks,
   activeFilter: propsFilter,
   onFilterChange,
   onToggleTask,
@@ -850,7 +852,7 @@ sections:
             cursor: "pointer",
           }}
         >
-          Tasks ({tasks.length})
+          Tasks ({(activeFileTasks ?? tasks).length})
         </button>
       </div>
 

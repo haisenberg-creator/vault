@@ -38,6 +38,42 @@ describe("TaskDashboardSidebar Component", () => {
     expect(screen.getByText("TASK DASHBOARD")).toBeInTheDocument();
     expect(screen.getByTestId("tab-files")).toBeInTheDocument();
     expect(screen.getByTestId("tab-tasks")).toBeInTheDocument();
+    expect(screen.getByTestId("tab-tasks")).toHaveTextContent("Tasks (4)");
+  });
+
+  it("renders Tasks tab label scoped to activeFileTasks count when provided", async () => {
+    const tenTasks: TaskItem[] = [
+      { id: "1", title: "T1", sourceFile: "note1.md", state: "open" },
+      { id: "2", title: "T2", sourceFile: "note1.md", state: "open" },
+      { id: "3", title: "T3", sourceFile: "note1.md", state: "open" },
+      { id: "4", title: "T4", sourceFile: "note2.md", state: "open" },
+      { id: "5", title: "T5", sourceFile: "note2.md", state: "open" },
+      { id: "6", title: "T6", sourceFile: "note2.md", state: "open" },
+      { id: "7", title: "T7", sourceFile: "note2.md", state: "open" },
+      { id: "8", title: "T8", sourceFile: "note3.md", state: "open" },
+      { id: "9", title: "T9", sourceFile: "note3.md", state: "open" },
+      { id: "10", title: "T10", sourceFile: "note3.md", state: "open" },
+    ];
+    const threeActiveTasks = tenTasks.slice(0, 3);
+
+    await act(async () => {
+      render(
+        <TaskDashboardSidebar
+          tasks={tenTasks}
+          activeFileTasks={threeActiveTasks}
+        />
+      );
+    });
+
+    expect(screen.getByTestId("tab-tasks")).toHaveTextContent("Tasks (3)");
+  });
+
+  it("renders Tasks (0) when activeFileTasks is empty array while tasks is non-empty", async () => {
+    await act(async () => {
+      render(<TaskDashboardSidebar tasks={sampleTasks} activeFileTasks={[]} />);
+    });
+
+    expect(screen.getByTestId("tab-tasks")).toHaveTextContent("Tasks (0)");
   });
 
   it("switches between Files and Tasks tabs", async () => {

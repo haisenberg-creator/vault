@@ -83,6 +83,11 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
     []
   );
 
+  const handleSelectFile = useCallback((path: string) => {
+    setActiveEditorTasks([]);
+    setActiveFilename(path);
+  }, []);
+
   // Determine if active file is a Dashboard
   const normActivePath = normalizePath(activeFilename);
   const activeFileObj = workspaceFiles.find(
@@ -121,7 +126,18 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
 
   // Add tasks from active document if it's not a dashboard
   if (!isDashboardFile) {
-    if (activeEditorTasks.length > 0) {
+    const isEditorTasksMatchingActive =
+      activeEditorTasks.length > 0 &&
+      activeEditorTasks.every((t) => {
+        const activeBaseName = activeFilename.split(/[/\\]/).pop();
+        return (
+          isSameFilePath(t.sourceFile, activeFilename, workspaceDir) ||
+          t.sourceFile === activeBaseName ||
+          normalizePath(t.sourceFile) === normActivePath
+        );
+      });
+
+    if (isEditorTasksMatchingActive) {
       aggregatedTasks.push(...activeEditorTasks);
     } else if (activeFileObj) {
       aggregatedTasks.push(
@@ -129,6 +145,18 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
       );
     }
   }
+
+  // Filter tasks for the currently active open Note
+  const activeFileTasks = activeFilename
+    ? aggregatedTasks.filter((task) => {
+        const activeBaseName = activeFilename.split(/[/\\]/).pop();
+        return (
+          isSameFilePath(task.sourceFile, activeFilename, workspaceDir) ||
+          task.sourceFile === activeBaseName ||
+          normalizePath(task.sourceFile) === normActivePath
+        );
+      })
+    : [];
 
   const handleDeleteTask = useCallback(
     async (taskId: string) => {
@@ -341,11 +369,12 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
       >
         <TaskDashboardSidebar
           tasks={aggregatedTasks}
+          activeFileTasks={activeFileTasks}
           activeFilter={activeFilter}
           onFilterChange={setActiveFilter}
           onToggleTask={handleToggleTask}
           activeFilePath={activeFilename}
-          onSelectFile={(path) => setActiveFilename(path)}
+          onSelectFile={handleSelectFile}
           workspaceDir={workspaceDir}
           onMoveTaskToNote={handleMoveTaskToNote}
           onDeleteTask={handleDeleteTask}
@@ -356,7 +385,7 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
               key={activeFilename}
               filePath={activeFilename}
               workspaceFiles={workspaceFiles}
-              onSelectFile={(path) => setActiveFilename(path)}
+              onSelectFile={handleSelectFile}
               onRefreshWorkspace={loadWorkspaceFiles}
               onTasksChange={setActiveEditorTasks}
               onRegisterToggleTask={handleRegisterToggleTask}

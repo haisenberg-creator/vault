@@ -231,4 +231,43 @@ describe("DualColumnLayout Integration", () => {
       );
     });
   });
+
+  it("scopes Tasks tab count to active open note and updates when switching notes", async () => {
+    const note1Content = `# Note 1\n\n- [ ] Task 1A\n- [ ] Task 1B\n`;
+    const note2Content = `# Note 2\n\n- [ ] Task 2A\n- [ ] Task 2B\n- [ ] Task 2C\n`;
+
+    fileService.setMockFileContent("note1.md", note1Content);
+    fileService.setMockFileContent("note2.md", note2Content);
+
+    render(<DualColumnLayout />);
+
+    // By default, note1.md is selected (first file in mock storage)
+    await waitFor(() => {
+      expect(screen.getByTestId("editor-contenteditable")).toBeInTheDocument();
+    });
+
+    // Check Tasks tab button label reflects Note 1's 2 tasks
+    await waitFor(() => {
+      expect(screen.getByTestId("tab-tasks")).toHaveTextContent("Tasks (2)");
+    });
+
+    // Switch to note2.md
+    const note2TreeItem = await screen.findByTestId("tree-node-note2.md");
+    fireEvent.click(note2TreeItem);
+
+    // Check Tasks tab button label updates immediately to Note 2's 3 tasks
+    await waitFor(() => {
+      expect(screen.getByTestId("tab-tasks")).toHaveTextContent("Tasks (3)");
+    });
+
+    // When switching to Tasks tab, all 5 tasks across the vault remain present
+    fireEvent.click(screen.getByTestId("tab-tasks"));
+    await waitFor(() => {
+      expect(screen.getByText("Task 1A")).toBeInTheDocument();
+      expect(screen.getByText("Task 1B")).toBeInTheDocument();
+      expect(screen.getByText("Task 2A")).toBeInTheDocument();
+      expect(screen.getByText("Task 2B")).toBeInTheDocument();
+      expect(screen.getByText("Task 2C")).toBeInTheDocument();
+    });
+  });
 });
