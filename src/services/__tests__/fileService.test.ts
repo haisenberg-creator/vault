@@ -15,6 +15,7 @@ import {
   clearMockStorage,
   normalizePath,
   stripWorkspacePrefix,
+  formatShortPath,
 } from "../fileService";
 
 describe("fileService", () => {
@@ -48,6 +49,23 @@ describe("fileService", () => {
     expect(stripWorkspacePrefix("Projects/Eucerin.md")).toBe(
       "Projects/Eucerin.md"
     );
+  });
+
+  it("formats short paths displaying at most the last two path segments", () => {
+    expect(formatShortPath("")).toBe("");
+    expect(formatShortPath("test-note.md")).toBe("test-note.md");
+    expect(formatShortPath("/test-note.md")).toBe("test-note.md");
+    expect(formatShortPath("Projects/Vault.md")).toBe("Projects/Vault.md");
+    expect(
+      formatShortPath("workspace/Projects/Subfolder/DeepNote.md", "workspace")
+    ).toBe("Subfolder/DeepNote.md");
+    expect(
+      formatShortPath(
+        "C:/Users/ANH-NTP/AppData/Local/com.user.vault-app/workspace/Projects/Nested/Deep/Task.md",
+        "C:/Users/ANH-NTP/AppData/Local/com.user.vault-app/workspace"
+      )
+    ).toBe("Deep/Task.md");
+    expect(formatShortPath("a/b/c/d/e.md")).toBe("d/e.md");
   });
 
   it("reads mock content when in browser mode", async () => {

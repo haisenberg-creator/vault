@@ -1,8 +1,10 @@
 import React from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import bookIcon from "../../assets/book.png";
+import enchantedBookIcon from "../../assets/enchanted-book.png";
 import {
   isTauriEnvironment,
-  stripWorkspacePrefix,
+  formatShortPath,
 } from "../../services/fileService";
 import { ThemeMode } from "../../services/themeService";
 
@@ -16,10 +18,10 @@ export interface TitleBarProps {
 export const TitleBar: React.FC<TitleBarProps> = ({
   activeFilename = "workspace-note.md",
   workspaceDir,
-  themeMode: _themeMode,
-  onToggleThemeMode: _onToggleThemeMode,
+  themeMode = "working",
+  onToggleThemeMode,
 }) => {
-  const displayFilename = stripWorkspacePrefix(activeFilename, workspaceDir);
+  const displayFilename = formatShortPath(activeFilename, workspaceDir);
   const handleMinimize = async () => {
     if (!isTauriEnvironment()) {
       console.info("[TitleBar] Minimize clicked in browser dev mode.");
@@ -146,17 +148,92 @@ export const TitleBar: React.FC<TitleBarProps> = ({
         }}
       />
 
-      {/* Right: Window Controls */}
+      {/* Right: Mode Toggle + Window Controls */}
       <div
         style={
           {
             display: "flex",
             alignItems: "center",
-            gap: "4px",
+            gap: "6px",
             WebkitAppRegion: "no-drag",
           } as React.CSSProperties
         }
       >
+        <button
+          data-testid="theme-mode-toggle-btn"
+          onClick={onToggleThemeMode}
+          className="tactile-btn"
+          style={
+            {
+              padding: "3px 8px",
+              borderRadius: "var(--radius-sm)",
+              border:
+                themeMode === "arcade"
+                  ? "1px solid var(--rose-pink)"
+                  : "1px solid rgba(110, 106, 134, 0.3)",
+              backgroundColor:
+                themeMode === "arcade"
+                  ? "rgba(235, 111, 146, 0.2)"
+                  : "rgba(38, 35, 58, 0.6)",
+              color:
+                themeMode === "arcade"
+                  ? "var(--rose-pink)"
+                  : "var(--rose-text)",
+              fontSize: "10px",
+              fontWeight: 700,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              WebkitAppRegion: "no-drag",
+            } as React.CSSProperties
+          }
+          title={
+            themeMode === "arcade"
+              ? "Switch to Working Mode"
+              : "Switch to Arcade Mode"
+          }
+        >
+          {themeMode === "arcade" ? (
+            <>
+              <img
+                src={enchantedBookIcon}
+                alt="Arcade Mode Icon"
+                style={{
+                  width: "14px",
+                  height: "14px",
+                  objectFit: "contain",
+                  filter: "drop-shadow(0 0 4px var(--rose-pink))",
+                }}
+              />
+              <span>ARCADE</span>
+            </>
+          ) : (
+            <>
+              <img
+                src={bookIcon}
+                alt="Working Mode Icon"
+                style={{
+                  width: "14px",
+                  height: "14px",
+                  objectFit: "contain",
+                }}
+              />
+              <span>WORKING</span>
+            </>
+          )}
+        </button>
+
+        {/* Divider */}
+        <div
+          style={{
+            width: "1px",
+            height: "16px",
+            backgroundColor: "rgba(110, 106, 134, 0.3)",
+            margin: "0 2px",
+          }}
+        />
+
         <button
           data-testid="window-minimize"
           onClick={handleMinimize}

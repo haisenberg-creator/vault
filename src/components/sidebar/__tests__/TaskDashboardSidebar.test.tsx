@@ -30,12 +30,12 @@ describe("TaskDashboardSidebar Component", () => {
     },
   ];
 
-  it("renders header and navigation tabs", async () => {
+  it("renders navigation tabs without redundant TASK DASHBOARD header", async () => {
     await act(async () => {
       render(<TaskDashboardSidebar tasks={sampleTasks} />);
     });
 
-    expect(screen.getByText("TASK DASHBOARD")).toBeInTheDocument();
+    expect(screen.queryByText("TASK DASHBOARD")).not.toBeInTheDocument();
     expect(screen.getByTestId("tab-files")).toBeInTheDocument();
     expect(screen.getByTestId("tab-tasks")).toBeInTheDocument();
     expect(screen.getByTestId("tab-tasks")).toHaveTextContent("Tasks (4)");
@@ -338,43 +338,13 @@ describe("TaskDashboardSidebar Component", () => {
     windowConfirmSpy.mockRestore();
   });
 
-  it("renders with external themeMode prop", async () => {
-    let renderResult: ReturnType<typeof render>;
+  it("does not render theme-mode-toggle-btn inside TaskDashboardSidebar (relocated to TitleBar)", async () => {
     await act(async () => {
-      renderResult = render(
-        <TaskDashboardSidebar tasks={sampleTasks} themeMode="arcade" />
-      );
+      render(<TaskDashboardSidebar tasks={sampleTasks} />);
     });
 
-    const toggleBtn = screen.getByTestId("theme-mode-toggle-btn");
-    expect(toggleBtn).toHaveTextContent("ARCADE");
-
-    await act(async () => {
-      renderResult.rerender(
-        <TaskDashboardSidebar tasks={sampleTasks} themeMode="working" />
-      );
-    });
-    expect(toggleBtn).toHaveTextContent("WORKING");
-  });
-
-  it("calls onToggleThemeMode callback prop when theme toggle button is clicked", async () => {
-    const handleToggle = vi.fn();
-
-    await act(async () => {
-      render(
-        <TaskDashboardSidebar
-          tasks={sampleTasks}
-          themeMode="working"
-          onToggleThemeMode={handleToggle}
-        />
-      );
-    });
-
-    const toggleBtn = screen.getByTestId("theme-mode-toggle-btn");
-    await act(async () => {
-      fireEvent.click(toggleBtn);
-    });
-
-    expect(handleToggle).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByTestId("theme-mode-toggle-btn")
+    ).not.toBeInTheDocument();
   });
 });

@@ -36,7 +36,7 @@ describe("DualColumnLayout Integration", () => {
 
     // Wait for document to load and editor to render
     await waitFor(() => {
-      expect(screen.getByText("TASK DASHBOARD")).toBeInTheDocument();
+      expect(screen.getByTestId("sidebar-container")).toBeInTheDocument();
     });
 
     // Check that extracted tasks appear in sidebar

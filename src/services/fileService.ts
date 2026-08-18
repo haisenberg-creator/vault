@@ -104,6 +104,23 @@ export function stripWorkspacePrefix(
 }
 
 /**
+ * Format path for TitleBar to display at most the last two path segments (e.g. "Projects/Vault.md").
+ * Single segment paths display as-is without leading slashes.
+ */
+export function formatShortPath(
+  path: string,
+  workspaceDir: string = "workspace"
+): string {
+  if (!path) return "";
+  const relative = stripWorkspacePrefix(path, workspaceDir);
+  const segments = relative.split("/").filter(Boolean);
+  if (segments.length <= 2) {
+    return segments.join("/");
+  }
+  return segments.slice(-2).join("/");
+}
+
+/**
  * Compares two file paths to determine if they refer to the same file,
  * handling backslashes, forward slashes, and optional workspace directory prefixes.
  */

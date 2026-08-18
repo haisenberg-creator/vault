@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import bookIcon from "../../assets/book.png";
-import enchantedBookIcon from "../../assets/enchanted-book.png";
 import { FileTreeNode } from "../../types/workspaceTree";
 import { PinnedDashboards } from "./PinnedDashboards";
 import { SidebarTree } from "./SidebarTree";
@@ -18,12 +16,7 @@ import {
   stripWorkspacePrefix,
   importFolderFiles,
 } from "../../services/fileService";
-import {
-  getThemeMode,
-  toggleThemeMode,
-  applyThemeMode,
-  ThemeMode,
-} from "../../services/themeService";
+import { ThemeMode } from "../../services/themeService";
 
 export type TaskState = "open" | "in_progress" | "blocked" | "completed";
 
@@ -69,36 +62,15 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
   initialTab = "files",
   onMoveTaskToNote,
   onDeleteTask,
-  themeMode: propsThemeMode,
-  onToggleThemeMode,
 }) => {
   const [activeTab, setActiveTab] = useState<"files" | "tasks">(initialTab);
   const [treeNodes, setTreeNodes] = useState<FileTreeNode[]>([]);
   const [internalFilter, setInternalFilter] = useState<TaskState | "all">(
     "all"
   );
-  const [internalThemeMode, setInternalThemeMode] = useState<ThemeMode>(() =>
-    getThemeMode()
-  );
-  const themeMode = propsThemeMode ?? internalThemeMode;
   const [collapsedTaskNodes, setCollapsedTaskNodes] = useState<Set<string>>(
     new Set()
   );
-
-  useEffect(() => {
-    if (propsThemeMode === undefined) {
-      applyThemeMode(internalThemeMode);
-    }
-  }, [propsThemeMode, internalThemeMode]);
-
-  const handleToggleThemeMode = () => {
-    if (onToggleThemeMode) {
-      onToggleThemeMode();
-    } else {
-      const next = toggleThemeMode();
-      setInternalThemeMode(next);
-    }
-  };
 
   // Modal State for file operations
   const [modalOpen, setModalOpen] = useState(false);
@@ -702,103 +674,6 @@ sections:
         userSelect: "none",
       }}
     >
-      {/* Header Bar */}
-      <div
-        className="rose-glow-animated"
-        style={{
-          padding: "16px",
-          borderBottom: "1px solid rgba(110, 106, 134, 0.25)",
-          backgroundColor: "var(--rose-bg-overlay)",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <h2
-              style={{
-                fontFamily:
-                  themeMode === "arcade"
-                    ? "var(--font-pixel)"
-                    : "var(--font-ui)",
-                fontSize: "15px",
-                letterSpacing: "0.5px",
-                color: "var(--rose-pink)",
-                margin: 0,
-              }}
-            >
-              TASK DASHBOARD
-            </h2>
-          </div>
-
-          <button
-            data-testid="theme-mode-toggle-btn"
-            onClick={handleToggleThemeMode}
-            className="tactile-btn"
-            style={{
-              padding: "4px 8px",
-              borderRadius: "var(--radius-sm)",
-              border:
-                themeMode === "arcade"
-                  ? "1px solid var(--rose-pink)"
-                  : "1px solid rgba(110, 106, 134, 0.3)",
-              backgroundColor:
-                themeMode === "arcade"
-                  ? "rgba(235, 111, 146, 0.2)"
-                  : "rgba(38, 35, 58, 0.6)",
-              color:
-                themeMode === "arcade"
-                  ? "var(--rose-pink)"
-                  : "var(--rose-text)",
-              fontSize: "10px",
-              fontWeight: 700,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-            }}
-            title={
-              themeMode === "arcade"
-                ? "Switch to Working Mode"
-                : "Switch to Arcade Mode"
-            }
-          >
-            {themeMode === "arcade" ? (
-              <>
-                <img
-                  src={enchantedBookIcon}
-                  alt="Arcade Mode Icon"
-                  style={{
-                    width: "14px",
-                    height: "14px",
-                    objectFit: "contain",
-                    filter: "drop-shadow(0 0 4px var(--rose-pink))",
-                  }}
-                />
-                <span>ARCADE</span>
-              </>
-            ) : (
-              <>
-                <img
-                  src={bookIcon}
-                  alt="Working Mode Icon"
-                  style={{
-                    width: "14px",
-                    height: "14px",
-                    objectFit: "contain",
-                  }}
-                />
-                <span>WORKING</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
       {/* Pinned Dashboards Bar */}
       <PinnedDashboards
         dashboards={pinnedDashboards}
