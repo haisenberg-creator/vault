@@ -337,4 +337,44 @@ describe("TaskDashboardSidebar Component", () => {
 
     windowConfirmSpy.mockRestore();
   });
+
+  it("renders with external themeMode prop", async () => {
+    let renderResult: ReturnType<typeof render>;
+    await act(async () => {
+      renderResult = render(
+        <TaskDashboardSidebar tasks={sampleTasks} themeMode="arcade" />
+      );
+    });
+
+    const toggleBtn = screen.getByTestId("theme-mode-toggle-btn");
+    expect(toggleBtn).toHaveTextContent("ARCADE");
+
+    await act(async () => {
+      renderResult.rerender(
+        <TaskDashboardSidebar tasks={sampleTasks} themeMode="working" />
+      );
+    });
+    expect(toggleBtn).toHaveTextContent("WORKING");
+  });
+
+  it("calls onToggleThemeMode callback prop when theme toggle button is clicked", async () => {
+    const handleToggle = vi.fn();
+
+    await act(async () => {
+      render(
+        <TaskDashboardSidebar
+          tasks={sampleTasks}
+          themeMode="working"
+          onToggleThemeMode={handleToggle}
+        />
+      );
+    });
+
+    const toggleBtn = screen.getByTestId("theme-mode-toggle-btn");
+    await act(async () => {
+      fireEvent.click(toggleBtn);
+    });
+
+    expect(handleToggle).toHaveBeenCalledTimes(1);
+  });
 });

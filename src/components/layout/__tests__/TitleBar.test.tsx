@@ -49,4 +49,17 @@ describe("TitleBar Component", () => {
 
     expect(screen.getByText("Projects/Eucerin.md")).toBeInTheDocument();
   });
+
+  it("accepts themeMode and onToggleThemeMode props", () => {
+    const onToggle = vi.fn();
+    render(
+      <TitleBar
+        activeFilename="test-note.md"
+        themeMode="arcade"
+        onToggleThemeMode={onToggle}
+      />
+    );
+
+    expect(screen.getByText("VAULT")).toBeInTheDocument();
+  });
 });

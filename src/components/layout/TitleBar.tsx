@@ -4,15 +4,20 @@ import {
   isTauriEnvironment,
   stripWorkspacePrefix,
 } from "../../services/fileService";
+import { ThemeMode } from "../../services/themeService";
 
 export interface TitleBarProps {
   activeFilename?: string;
   workspaceDir?: string;
+  themeMode?: ThemeMode;
+  onToggleThemeMode?: () => void;
 }
 
 export const TitleBar: React.FC<TitleBarProps> = ({
   activeFilename = "workspace-note.md",
   workspaceDir,
+  themeMode: _themeMode,
+  onToggleThemeMode: _onToggleThemeMode,
 }) => {
   const displayFilename = stripWorkspacePrefix(activeFilename, workspaceDir);
   const handleMinimize = async () => {

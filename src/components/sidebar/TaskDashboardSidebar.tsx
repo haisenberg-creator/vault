@@ -53,6 +53,8 @@ export interface TaskDashboardSidebarProps {
     priority?: string
   ) => void;
   onDeleteTask?: (taskId: string) => void;
+  themeMode?: ThemeMode;
+  onToggleThemeMode?: () => void;
 }
 
 export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
@@ -67,26 +69,35 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
   initialTab = "files",
   onMoveTaskToNote,
   onDeleteTask,
+  themeMode: propsThemeMode,
+  onToggleThemeMode,
 }) => {
   const [activeTab, setActiveTab] = useState<"files" | "tasks">(initialTab);
   const [treeNodes, setTreeNodes] = useState<FileTreeNode[]>([]);
   const [internalFilter, setInternalFilter] = useState<TaskState | "all">(
     "all"
   );
-  const [themeMode, setThemeModeState] = useState<ThemeMode>(() =>
+  const [internalThemeMode, setInternalThemeMode] = useState<ThemeMode>(() =>
     getThemeMode()
   );
+  const themeMode = propsThemeMode ?? internalThemeMode;
   const [collapsedTaskNodes, setCollapsedTaskNodes] = useState<Set<string>>(
     new Set()
   );
 
   useEffect(() => {
-    applyThemeMode(themeMode);
-  }, [themeMode]);
+    if (propsThemeMode === undefined) {
+      applyThemeMode(internalThemeMode);
+    }
+  }, [propsThemeMode, internalThemeMode]);
 
   const handleToggleThemeMode = () => {
-    const next = toggleThemeMode();
-    setThemeModeState(next);
+    if (onToggleThemeMode) {
+      onToggleThemeMode();
+    } else {
+      const next = toggleThemeMode();
+      setInternalThemeMode(next);
+    }
   };
 
   // Modal State for file operations

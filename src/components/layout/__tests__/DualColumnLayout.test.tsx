@@ -270,4 +270,21 @@ describe("DualColumnLayout Integration", () => {
       expect(screen.getByText("Task 2C")).toBeInTheDocument();
     });
   });
+
+  it("manages themeMode state and toggles mode between working and arcade", async () => {
+    render(<DualColumnLayout />);
+
+    const toggleBtn = screen.getByTestId("theme-mode-toggle-btn");
+    expect(toggleBtn).toBeInTheDocument();
+    const initialText = toggleBtn.textContent;
+
+    fireEvent.click(toggleBtn);
+
+    await waitFor(() => {
+      const updatedText = screen.getByTestId(
+        "theme-mode-toggle-btn"
+      ).textContent;
+      expect(updatedText).not.toBe(initialText);
+    });
+  });
 });

@@ -22,6 +22,12 @@ import {
   removeTaskFromMarkdown,
   appendTaskToMarkdown,
 } from "../../services/workspaceService";
+import {
+  getThemeMode,
+  toggleThemeMode,
+  applyThemeMode,
+  ThemeMode,
+} from "../../services/themeService";
 
 export interface DualColumnLayoutProps {
   workspaceDir?: string;
@@ -34,8 +40,20 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
   const [activeEditorTasks, setActiveEditorTasks] = useState<TaskItem[]>([]);
   const [workspaceFiles, setWorkspaceFiles] = useState<WorkspaceFile[]>([]);
   const [activeFilter, setActiveFilter] = useState<TaskState | "all">("all");
+  const [themeMode, setThemeModeState] = useState<ThemeMode>(() =>
+    getThemeMode()
+  );
   const toggleTaskFnRef = useRef<((nodeKey: string) => void) | null>(null);
   const removeTaskFnRef = useRef<((taskTitle: string) => boolean) | null>(null);
+
+  useEffect(() => {
+    applyThemeMode(themeMode);
+  }, [themeMode]);
+
+  const handleToggleThemeMode = useCallback(() => {
+    const next = toggleThemeMode();
+    setThemeModeState(next);
+  }, []);
 
   const loadWorkspaceFiles = useCallback(async () => {
     try {
@@ -357,7 +375,12 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
         backgroundColor: "var(--rose-bg-base)",
       }}
     >
-      <TitleBar activeFilename={activeFilename} workspaceDir={workspaceDir} />
+      <TitleBar
+        activeFilename={activeFilename}
+        workspaceDir={workspaceDir}
+        themeMode={themeMode}
+        onToggleThemeMode={handleToggleThemeMode}
+      />
       <div
         style={{
           display: "flex",
@@ -378,6 +401,8 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
           workspaceDir={workspaceDir}
           onMoveTaskToNote={handleMoveTaskToNote}
           onDeleteTask={handleDeleteTask}
+          themeMode={themeMode}
+          onToggleThemeMode={handleToggleThemeMode}
         />
         {activeFilename ? (
           isDashboardFile ? (
