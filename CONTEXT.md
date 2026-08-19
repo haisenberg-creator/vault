@@ -76,3 +76,15 @@ _Avoid_: Mind map, knowledge graph
 **Quick Switcher**:
 A command-palette overlay (default `Ctrl+P`) for searching and jumping to any Note by name.
 _Avoid_: Command palette, file finder
+
+**Settings Modal**:
+A central dialog window to configure app-wide preferences like Themes and Live Backgrounds.
+_Avoid_: Preferences pane, options screen
+
+**Global Shortcut**:
+A keyboard shortcut registered with the operating system that triggers Vault actions even when the app is in the background (e.g., `Ctrl+Alt+N`).
+_Avoid_: OS hotkey, system shortcut
+
+**Local Shortcut**:
+A keyboard shortcut that only triggers when the Vault application window is in focus (e.g., `Ctrl+N`).
+_Avoid_: App hotkey, window shortcut

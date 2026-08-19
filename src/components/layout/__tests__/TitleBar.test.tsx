@@ -28,11 +28,12 @@ describe("TitleBar Component", () => {
     });
   });
 
-  it("renders branding title and active filename", () => {
+  it("renders branding title and theme mode toggle without file path text", () => {
     render(<TitleBar activeFilename="test-note.md" />);
 
     expect(screen.getByText("VAULT")).toBeInTheDocument();
-    expect(screen.getByText("test-note.md")).toBeInTheDocument();
+    expect(screen.getByTestId("theme-mode-toggle-btn")).toBeInTheDocument();
+    expect(screen.queryByText("test-note.md")).not.toBeInTheDocument();
   });
 
   it("renders window action buttons for minimize, maximize, and close", () => {
@@ -59,26 +60,13 @@ describe("TitleBar Component", () => {
     fireEvent.click(closeBtn);
   });
 
-  it("displays clean relative path when activeFilename is an absolute system path", () => {
-    render(
-      <TitleBar activeFilename="C:/Users/ANH-NTP/AppData/Local/com.user.vault-app/workspace/Projects/Eucerin.md" />
-    );
-
-    expect(screen.getByText("Projects/Eucerin.md")).toBeInTheDocument();
-  });
-
-  it("displays only the last two path segments when activeFilename is a deeply nested absolute path", () => {
+  it("does not render path text even when activeFilename is a deep path", () => {
     render(
       <TitleBar activeFilename="C:/Users/ANH-NTP/AppData/Local/com.user.vault-app/workspace/Projects/Nested/Deep/Task.md" />
     );
 
-    expect(screen.getByText("Deep/Task.md")).toBeInTheDocument();
-  });
-
-  it("displays single segment paths cleanly without leading slash", () => {
-    render(<TitleBar activeFilename="single-note.md" />);
-
-    expect(screen.getByText("single-note.md")).toBeInTheDocument();
+    expect(screen.queryByText("Deep/Task.md")).not.toBeInTheDocument();
+    expect(screen.queryByText("Task.md")).not.toBeInTheDocument();
   });
 
   it("renders theme mode toggle button in TitleBar and handles clicks", () => {

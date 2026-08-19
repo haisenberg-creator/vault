@@ -14,10 +14,10 @@ describe("NoteActionBar", () => {
     expect(handleAddTask).toHaveBeenCalledTimes(1);
   });
 
-  it("renders status buttons cleanly without markdown brackets", () => {
+  it("renders status buttons cleanly without redundant Open button", () => {
     render(<NoteActionBar />);
 
-    expect(screen.getByTestId("note-status-open")).toHaveTextContent("Open");
+    expect(screen.queryByTestId("note-status-open")).not.toBeInTheDocument();
     expect(screen.getByTestId("note-status-in_progress")).toHaveTextContent(
       "In Progress"
     );

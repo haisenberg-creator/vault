@@ -164,41 +164,35 @@ export const NoteActionBar: React.FC<NoteActionBarProps> = ({
         >
           STATUS:
         </span>
-        {(["open", "in_progress", "blocked", "completed"] as const).map(
-          (st) => (
-            <button
-              key={st}
-              data-testid={`note-status-${st}`}
-              onClick={() => onChangeTaskStatus?.(st)}
-              className="tactile-btn"
-              style={{
-                padding: "3px 7px",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid rgba(110, 106, 134, 0.25)",
-                backgroundColor: "var(--rose-bg-surface)",
-                color:
-                  st === "open"
-                    ? "var(--rose-iris)"
-                    : st === "in_progress"
-                      ? "var(--rose-gold)"
-                      : st === "blocked"
-                        ? "var(--rose-love)"
-                        : "var(--rose-foam)",
-                fontSize: "10px",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              {st === "open"
-                ? "Open"
-                : st === "in_progress"
-                  ? "In Progress"
+        {(["in_progress", "blocked", "completed"] as const).map((st) => (
+          <button
+            key={st}
+            data-testid={`note-status-${st}`}
+            onClick={() => onChangeTaskStatus?.(st)}
+            className="tactile-btn"
+            style={{
+              padding: "3px 7px",
+              borderRadius: "var(--radius-sm)",
+              border: "1px solid rgba(110, 106, 134, 0.25)",
+              backgroundColor: "var(--rose-bg-surface)",
+              color:
+                st === "in_progress"
+                  ? "var(--rose-gold)"
                   : st === "blocked"
-                    ? "Blocked"
-                    : "Done"}
-            </button>
-          )
-        )}
+                    ? "var(--rose-love)"
+                    : "var(--rose-foam)",
+              fontSize: "10px",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            {st === "in_progress"
+              ? "In Progress"
+              : st === "blocked"
+                ? "Blocked"
+                : "Done"}
+          </button>
+        ))}
       </div>
 
       <div

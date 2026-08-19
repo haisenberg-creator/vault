@@ -24,7 +24,6 @@ export const TitleBar: React.FC<TitleBarProps> = ({
   themeMode = "working",
   onToggleThemeMode,
 }) => {
-  const displayFilename = formatShortPath(activeFilename, workspaceDir);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number }>({
     top: 0,
@@ -143,15 +142,16 @@ export const TitleBar: React.FC<TitleBarProps> = ({
         zIndex: 1000,
       }}
     >
-      {/* Left: Brand Lectern Icon + App Title + Active File Badge */}
+      {/* Left: Brand Lectern Icon + App Title + Mode Toggle */}
       <div
-        data-tauri-drag-region
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          pointerEvents: "none",
-        }}
+        style={
+          {
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            WebkitAppRegion: "no-drag",
+          } as React.CSSProperties
+        }
       >
         {/* Lectern / Book Icon with Context Menu */}
         <div
@@ -211,42 +211,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
           VAULT
         </span>
 
-        <span style={{ color: "var(--rose-muted)", fontSize: "12px" }}>/</span>
-
-        <span
-          style={{
-            fontSize: "11px",
-            color: "var(--rose-subtle)",
-            backgroundColor: "rgba(38, 35, 58, 0.6)",
-            padding: "2px 8px",
-            borderRadius: "var(--radius-sm)",
-            border: "1px solid rgba(110, 106, 134, 0.2)",
-          }}
-        >
-          {displayFilename}
-        </span>
-      </div>
-
-      {/* Middle: Draggable space */}
-      <div
-        data-tauri-drag-region
-        style={{
-          flex: 1,
-          height: "100%",
-        }}
-      />
-
-      {/* Right: Mode Toggle + Window Controls */}
-      <div
-        style={
-          {
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            WebkitAppRegion: "no-drag",
-          } as React.CSSProperties
-        }
-      >
+        {/* Mode Toggle Button positioned directly next to VAULT title */}
         <button
           data-testid="theme-mode-toggle-btn"
           onClick={onToggleThemeMode}
@@ -273,6 +238,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
               display: "flex",
               alignItems: "center",
               gap: "4px",
+              pointerEvents: "auto",
               WebkitAppRegion: "no-drag",
             } as React.CSSProperties
           }
@@ -311,17 +277,28 @@ export const TitleBar: React.FC<TitleBarProps> = ({
             </>
           )}
         </button>
+      </div>
 
-        {/* Divider */}
-        <div
-          style={{
-            width: "1px",
-            height: "16px",
-            backgroundColor: "rgba(110, 106, 134, 0.3)",
-            margin: "0 2px",
-          }}
-        />
+      {/* Middle: Draggable space */}
+      <div
+        data-tauri-drag-region
+        style={{
+          flex: 1,
+          height: "100%",
+        }}
+      />
 
+      {/* Right: Window Controls */}
+      <div
+        style={
+          {
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            WebkitAppRegion: "no-drag",
+          } as React.CSSProperties
+        }
+      >
         <button
           data-testid="window-minimize"
           onClick={handleMinimize}
