@@ -60,6 +60,7 @@ import {
 import { ALL_TRANSFORMERS } from "./checklistTransformer";
 import { TaskItem, TaskState } from "../sidebar/TaskDashboardSidebar";
 import { NoteActionBar } from "./NoteActionBar";
+import { FormattingToolbar } from "./FormattingToolbar";
 
 export interface EditorPaneProps {
   filename?: string;
@@ -1210,6 +1211,7 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
                   position: "relative",
                 }}
               >
+                <FormattingToolbar />
                 <div
                   style={{ flex: 1, position: "relative", overflowY: "auto" }}
                 >

@@ -73,3 +73,54 @@ describe("ARROW_TRANSFORMER", () => {
     });
   });
 });
+
+describe("HIGHLIGHT and Rich Text Markdown Roundtrip", () => {
+  it("imports ==highlighted text== and sets highlight format on TextNode", () => {
+    const editor = createEditor({ nodes: EDITOR_NODES });
+    editor.update(() => {
+      $convertFromMarkdownString(
+        "Here is ==luminous highlight== in notes",
+        ALL_TRANSFORMERS
+      );
+      const root = $getRoot();
+      const paragraph = root.getFirstChild();
+      expect(paragraph).not.toBeNull();
+      const children = (paragraph as any).getChildren();
+      const highlightNode = children.find(
+        (child: any) => child.hasFormat && child.hasFormat("highlight")
+      );
+      expect(highlightNode).toBeDefined();
+      expect(highlightNode.getTextContent()).toBe("luminous highlight");
+    });
+  });
+
+  it("exports text with highlight format as ==text== without HTML tags", () => {
+    const editor = createEditor({ nodes: EDITOR_NODES });
+    editor.update(() => {
+      const root = $getRoot();
+      root.clear();
+      const p = $createParagraphNode();
+      const prefix = $createTextNode("Important: ");
+      const highlighted = $createTextNode("urgent point");
+      highlighted.toggleFormat("highlight");
+      p.append(prefix, highlighted);
+      root.append(p);
+
+      const markdown = $convertToMarkdownString(ALL_TRANSFORMERS);
+      expect(markdown).toBe("Important: ==urgent point==");
+      expect(markdown).not.toContain("<span");
+      expect(markdown).not.toContain("style=");
+    });
+  });
+
+  it("roundtrips combination of bold, italic, strikethrough, and highlight", () => {
+    const editor = createEditor({ nodes: EDITOR_NODES });
+    const original =
+      "Test with **bold**, *italic*, ~~strikethrough~~, and ==highlight==";
+    editor.update(() => {
+      $convertFromMarkdownString(original, ALL_TRANSFORMERS);
+      const exported = $convertToMarkdownString(ALL_TRANSFORMERS);
+      expect(exported).toBe(original);
+    });
+  });
+});

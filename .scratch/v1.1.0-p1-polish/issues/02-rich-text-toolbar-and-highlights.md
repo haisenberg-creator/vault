@@ -4,12 +4,12 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** closed
 
-- [ ] A fixed formatting toolbar renders above the Lexical editor with Bold, Italic, Strikethrough, and Highlight buttons
-- [ ] Clicking Bold, Italic, or Strikethrough toggles the respective formatting on the active selection
-- [ ] Keyboard shortcuts `Ctrl+B` and `Ctrl+I` toggle Bold and Italic formatting
-- [ ] Clicking Highlight wraps the selected text in `==highlight==` and renders it with a luminous accent background in the editor
-- [ ] Highlighting round-trips between Markdown text and Lexical editor without HTML tags (`<span style="...">`)
-- [ ] Existing task checkboxes, priority headers, and markdown import/export continue to function without regression
-- [ ] Automated tests verify formatting actions and markdown highlight round-tripping
+- [x] A fixed formatting toolbar renders above the Lexical editor with Bold, Italic, Strikethrough, and Highlight buttons
+- [x] Clicking Bold, Italic, or Strikethrough toggles the respective formatting on the active selection
+- [x] Keyboard shortcuts `Ctrl+B` and `Ctrl+I` toggle Bold and Italic formatting
+- [x] Clicking Highlight wraps the selected text in `==highlight==` and renders it with a luminous accent background in the editor
+- [x] Highlighting round-trips between Markdown text and Lexical editor without HTML tags (`<span style="...">`)
+- [x] Existing task checkboxes, priority headers, and markdown import/export continue to function without regression
+- [x] Automated tests verify formatting actions and markdown highlight round-tripping

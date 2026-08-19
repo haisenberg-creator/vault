@@ -336,6 +336,13 @@ body,
   text-decoration: line-through;
 }
 
+.lexical-text-highlight {
+  background-color: rgba(246, 193, 119, 0.3);
+  color: var(--rose-gold);
+  padding: 1px 3px;
+  border-radius: 3px;
+}
+
 .lexical-text-code {
   background-color: var(--rose-bg-overlay);
   color: var(--rose-gold);

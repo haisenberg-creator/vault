@@ -29,6 +29,7 @@ export const theme: EditorThemeClasses = {
     strikethrough: "lexical-text-strikethrough",
     underlineStrikethrough: "lexical-text-underline-strikethrough",
     code: "lexical-text-code",
+    highlight: "lexical-text-highlight",
   },
   code: "lexical-code-block",
 };

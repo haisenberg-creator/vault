@@ -625,4 +625,55 @@ describe("EditorPane Component (Lexical)", () => {
       ).not.toBeInTheDocument();
     });
   });
+
+  it("renders formatting toolbar with Bold, Italic, Strikethrough, and Highlight buttons", async () => {
+    fileService.setMockFileContent("format-test.md", "Sample text");
+
+    render(<EditorPane filename="format-test.md" />);
+
+    await screen.findByTestId("editor-contenteditable");
+
+    expect(screen.getByTestId("formatting-toolbar")).toBeInTheDocument();
+    expect(screen.getByTestId("formatting-bold-btn")).toBeInTheDocument();
+    expect(screen.getByTestId("formatting-italic-btn")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("formatting-strikethrough-btn")
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("formatting-highlight-btn")).toBeInTheDocument();
+  });
+
+  it("applies highlight format when highlight button is clicked on text selection", async () => {
+    const writeSpy = vi.spyOn(fileService, "writeMarkdownFile");
+    fileService.setMockFileContent("highlight-test.md", "Simple text");
+
+    render(<EditorPane filename="highlight-test.md" />);
+
+    const editor = await screen.findByTestId("editor-contenteditable");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const lexicalEditor = (editor as any).__lexicalEditor;
+    expect(lexicalEditor).toBeDefined();
+
+    // Select text in Lexical editor
+    act(() => {
+      lexicalEditor.update(() => {
+        const root = $getRoot();
+        const firstChild = root.getFirstChild();
+        const textNode = (firstChild as any)?.getFirstChild();
+        textNode?.select(0, 6);
+      });
+    });
+
+    const highlightBtn = screen.getByTestId("formatting-highlight-btn");
+    fireEvent.mouseDown(highlightBtn);
+    fireEvent.click(highlightBtn);
+
+    // Save with Ctrl+S
+    fireEvent.keyDown(window, { key: "s", ctrlKey: true });
+
+    await waitFor(() => {
+      expect(writeSpy).toHaveBeenCalled();
+      const lastSaved = writeSpy.mock.calls[writeSpy.mock.calls.length - 1][1];
+      expect(lastSaved).toContain("==Simple==");
+    });
+  });
 });
