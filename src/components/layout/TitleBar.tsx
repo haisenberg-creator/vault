@@ -16,6 +16,7 @@ export interface TitleBarProps {
   workspaceDir?: string;
   themeMode?: ThemeMode;
   onToggleThemeMode?: () => void;
+  onOpenQuickSwitcher?: () => void;
 }
 
 export const TitleBar: React.FC<TitleBarProps> = ({
@@ -23,6 +24,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
   workspaceDir,
   themeMode = "working",
   onToggleThemeMode,
+  onOpenQuickSwitcher,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number }>({
@@ -277,6 +279,60 @@ export const TitleBar: React.FC<TitleBarProps> = ({
             </>
           )}
         </button>
+
+        {/* Quick Switcher Button */}
+        {onOpenQuickSwitcher && (
+          <button
+            data-testid="titlebar-quick-switcher-btn"
+            onClick={onOpenQuickSwitcher}
+            className="tactile-btn"
+            style={
+              {
+                padding: "3px 8px",
+                borderRadius: "var(--radius-sm)",
+                border: "1px solid rgba(110, 106, 134, 0.25)",
+                backgroundColor: "rgba(38, 35, 58, 0.6)",
+                color: "var(--rose-subtle)",
+                fontSize: "10px",
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                pointerEvents: "auto",
+                WebkitAppRegion: "no-drag",
+              } as React.CSSProperties
+            }
+            title="Quick Switcher (Ctrl+P)"
+          >
+            <svg
+              width="11"
+              height="11"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <span>Search notes</span>
+            <span
+              style={{
+                fontSize: "9px",
+                fontFamily: "var(--font-mono)",
+                color: "var(--rose-muted)",
+                backgroundColor: "rgba(110, 106, 134, 0.2)",
+                padding: "1px 4px",
+                borderRadius: "2px",
+              }}
+            >
+              Ctrl+P
+            </span>
+          </button>
+        )}
       </div>
 
       {/* Middle: Draggable space */}

@@ -98,6 +98,24 @@ describe("TitleBar Component", () => {
     );
   });
 
+  it("renders Quick Switcher button when onOpenQuickSwitcher is provided and triggers callback on click", () => {
+    const onOpenQuickSwitcher = vi.fn();
+    render(
+      <TitleBar
+        activeFilename="test-note.md"
+        onOpenQuickSwitcher={onOpenQuickSwitcher}
+      />
+    );
+
+    const switcherBtn = screen.getByTestId("titlebar-quick-switcher-btn");
+    expect(switcherBtn).toBeInTheDocument();
+    expect(switcherBtn).toHaveTextContent("Search notes");
+    expect(switcherBtn).toHaveTextContent("Ctrl+P");
+
+    fireEvent.click(switcherBtn);
+    expect(onOpenQuickSwitcher).toHaveBeenCalledTimes(1);
+  });
+
   describe("Note icon right-click context menu", () => {
     const activeFile =
       "C:/Users/ANH-NTP/AppData/Local/com.user.vault-app/workspace/Projects/Marketing/Campaign.md";

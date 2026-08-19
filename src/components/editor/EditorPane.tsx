@@ -317,11 +317,139 @@ function TaskInsertHandlerPlugin({
   return null;
 }
 
-// Plugin to handle Enter and Backspace keys on task lines
+// Plugin to handle Enter, Backspace, Ctrl+T (insert task), and Alt+S (cycle status) on task lines
 function TaskKeyboardPlugin() {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
+    const unregisterKeyDown = editor.registerCommand(
+      KEY_DOWN_COMMAND,
+      (event: KeyboardEvent) => {
+        // 1. Ctrl+T / Cmd+T: Insert new Task checkbox at cursor
+        if (
+          (event.ctrlKey || event.metaKey) &&
+          !event.altKey &&
+          event.key.toLowerCase() === "t"
+        ) {
+          event.preventDefault();
+          editor.update(() => {
+            const root = $getRoot();
+            const selection = $getSelection();
+
+            if ($isRangeSelection(selection)) {
+              const anchorNode = selection.anchor.getNode();
+              const blockNode = $isElementNode(anchorNode)
+                ? anchorNode
+                : anchorNode.getParent();
+
+              if (blockNode) {
+                const checklistNode = blockNode
+                  .getChildren()
+                  .find($isChecklistNode);
+                if (checklistNode) {
+                  // Already a task line -> insert new task line after
+                  const newParagraph = $createParagraphNode();
+                  const newChecklist = $createChecklistNode("open");
+                  const newText = $createTextNode(" ");
+                  newParagraph.append(newChecklist, newText);
+                  blockNode.insertAfter(newParagraph);
+                  newText.select(1, 1);
+                } else {
+                  const text = blockNode.getTextContent().trim();
+                  if (!text) {
+                    // Empty line -> convert to task line
+                    blockNode.clear();
+                    const newChecklist = $createChecklistNode("open");
+                    const newText = $createTextNode(" ");
+                    blockNode.append(newChecklist, newText);
+                    newText.select(1, 1);
+                  } else {
+                    // Non-empty line -> prepend task checkbox
+                    const newChecklist = $createChecklistNode("open");
+                    const firstChild = blockNode.getFirstChild();
+                    if (firstChild) {
+                      firstChild.insertBefore(newChecklist);
+                      if ($isTextNode(firstChild)) {
+                        const val = firstChild.getTextContent();
+                        if (!val.startsWith(" ")) {
+                          firstChild.setTextContent(" " + val);
+                        }
+                      }
+                    } else {
+                      blockNode.append(newChecklist);
+                    }
+                  }
+                }
+              } else {
+                const paragraph = $createParagraphNode();
+                const checklistNode = $createChecklistNode("open");
+                const textNode = $createTextNode(" ");
+                paragraph.append(checklistNode, textNode);
+                root.append(paragraph);
+                textNode.select(1, 1);
+              }
+            } else {
+              const paragraph = $createParagraphNode();
+              const checklistNode = $createChecklistNode("open");
+              const textNode = $createTextNode(" ");
+              paragraph.append(checklistNode, textNode);
+              root.append(paragraph);
+              textNode.select(1, 1);
+            }
+          });
+          return true;
+        }
+
+        // 2. Alt+S: Cycle status of focused task (Open → In Progress → Blocked → Done → Open)
+        if (
+          event.altKey &&
+          !event.ctrlKey &&
+          !event.metaKey &&
+          event.key.toLowerCase() === "s"
+        ) {
+          let handled = false;
+          editor.update(() => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+              const anchorNode = selection.anchor.getNode();
+              let curr: LexicalNode | null = anchorNode;
+              let existingChecklistNode: ChecklistNode | null = null;
+
+              while (curr) {
+                if ($isChecklistNode(curr)) {
+                  existingChecklistNode = curr;
+                  break;
+                }
+                if ($isElementNode(curr)) {
+                  const checklistChild = curr
+                    .getChildren()
+                    .find($isChecklistNode);
+                  if (checklistChild && $isChecklistNode(checklistChild)) {
+                    existingChecklistNode = checklistChild;
+                    break;
+                  }
+                }
+                curr = curr.getParent();
+              }
+
+              if (existingChecklistNode) {
+                event.preventDefault();
+                const nextState = getNextTaskState(
+                  existingChecklistNode.getState()
+                );
+                existingChecklistNode.setState(nextState);
+                handled = true;
+              }
+            }
+          });
+          return handled;
+        }
+
+        return false;
+      },
+      COMMAND_PRIORITY_HIGH
+    );
+
     const unregisterEnter = editor.registerCommand(
       KEY_ENTER_COMMAND,
       (event: KeyboardEvent | null) => {
@@ -446,6 +574,7 @@ function TaskKeyboardPlugin() {
     );
 
     return () => {
+      unregisterKeyDown();
       unregisterEnter();
       unregisterBackspace();
     };

@@ -721,4 +721,108 @@ describe("EditorPane Component (Lexical)", () => {
       expect(handleSelectTag).toHaveBeenCalledWith("#urgent");
     }
   });
+
+  it("inserts a new task checkbox when pressing Ctrl+T", async () => {
+    fileService.setMockFileContent("ctrl-t-test.md", "Start typing notes");
+
+    render(<EditorPane filename="ctrl-t-test.md" />);
+
+    const editor = await screen.findByTestId("editor-contenteditable");
+    await waitFor(() => {
+      expect(screen.getByText("Start typing notes")).toBeInTheDocument();
+    });
+
+    fireEvent.keyDown(editor, { key: "t", ctrlKey: true });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("checklist-node-open")).toBeInTheDocument();
+    });
+  });
+
+  it("cycles task status when pressing Alt+S while focused on a task", async () => {
+    fileService.setMockFileContent(
+      "alt-s-test.md",
+      "- [ ] Review pull request"
+    );
+
+    render(<EditorPane filename="alt-s-test.md" />);
+
+    const editor = await screen.findByTestId("editor-contenteditable");
+    await waitFor(() => {
+      expect(screen.getByTestId("checklist-node-open")).toBeInTheDocument();
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const lexicalEditor = (editor as any).__lexicalEditor;
+    expect(lexicalEditor).toBeDefined();
+
+    act(() => {
+      lexicalEditor.update(() => {
+        const root = $getRoot();
+        const firstParagraph = root.getFirstChild();
+        if (firstParagraph) {
+          firstParagraph.selectEnd();
+        }
+      });
+    });
+
+    // 1st Alt+S: open -> in_progress
+    act(() => {
+      fireEvent.keyDown(editor, { key: "s", altKey: true });
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("checklist-node-in_progress")
+      ).toBeInTheDocument();
+    });
+
+    // 2nd Alt+S: in_progress -> completed
+    act(() => {
+      fireEvent.keyDown(editor, { key: "s", altKey: true });
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("checklist-node-completed")
+      ).toBeInTheDocument();
+    });
+
+    // 3rd Alt+S: completed -> blocked
+    act(() => {
+      fireEvent.keyDown(editor, { key: "s", altKey: true });
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("checklist-node-blocked")).toBeInTheDocument();
+    });
+
+    // 4th Alt+S: blocked -> open
+    act(() => {
+      fireEvent.keyDown(editor, { key: "s", altKey: true });
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("checklist-node-open")).toBeInTheDocument();
+    });
+  });
+
+  it("safely ignores Alt+S when not focused on a task line without error", async () => {
+    fileService.setMockFileContent(
+      "plain-text-note.md",
+      "Just a regular sentence without tasks"
+    );
+
+    render(<EditorPane filename="plain-text-note.md" />);
+
+    const editor = await screen.findByTestId("editor-contenteditable");
+    await waitFor(() => {
+      expect(
+        screen.getByText("Just a regular sentence without tasks")
+      ).toBeInTheDocument();
+    });
+
+    // Alt+S should not throw and not create checklist nodes
+    expect(() => {
+      fireEvent.keyDown(editor, { key: "s", altKey: true });
+    }).not.toThrow();
+
+    expect(screen.queryByTestId("checklist-node-open")).toBeNull();
+  });
 });

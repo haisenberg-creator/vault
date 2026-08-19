@@ -7,11 +7,13 @@ import {
 import { EditorPane } from "../editor/EditorPane";
 import { DashboardView } from "../dashboard/DashboardView";
 import { TitleBar } from "./TitleBar";
+import { QuickSwitcher } from "../ui/QuickSwitcher";
 import {
   readWorkspaceFiles,
   subscribeToWorkspaceChanges,
   writeMarkdownFile,
   readMarkdownFile,
+  createFile,
   normalizePath,
   isSameFilePath,
   WorkspaceFile,
@@ -41,6 +43,8 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
   const [workspaceFiles, setWorkspaceFiles] = useState<WorkspaceFile[]>([]);
   const [activeFilter, setActiveFilter] = useState<TaskState | "all">("all");
   const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
+  const [isQuickSwitcherOpen, setIsQuickSwitcherOpen] =
+    useState<boolean>(false);
   const [themeMode, setThemeModeState] = useState<ThemeMode>(() =>
     getThemeMode()
   );
@@ -114,6 +118,85 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
     setActiveEditorTasks([]);
     setActiveFilename(path);
   }, []);
+
+  const handleCreateNewNote = useCallback(async () => {
+    try {
+      const defaultDir = workspaceDir || "workspace";
+      let targetFolder = defaultDir;
+
+      if (activeFilename) {
+        const norm = normalizePath(activeFilename);
+        const lastSlash = norm.lastIndexOf("/");
+        if (lastSlash !== -1) {
+          targetFolder = norm.substring(0, lastSlash);
+        }
+      }
+
+      let noteIndex = 0;
+      let candidateName = "Untitled.md";
+      let candidateFullPath = `${targetFolder}/${candidateName}`;
+
+      const fileExists = (filePath: string) => {
+        return workspaceFiles.some(
+          (f) =>
+            isSameFilePath(f.path, filePath, workspaceDir) ||
+            f.name === candidateName ||
+            normalizePath(f.path) === normalizePath(filePath)
+        );
+      };
+
+      while (fileExists(candidateFullPath)) {
+        noteIndex++;
+        candidateName = `Untitled ${noteIndex}.md`;
+        candidateFullPath = `${targetFolder}/${candidateName}`;
+      }
+
+      const title = candidateName.replace(/\.md$/, "");
+      const initialContent = `# ${title}\n\n`;
+
+      await createFile(candidateFullPath, initialContent);
+      await loadWorkspaceFiles();
+      setActiveFilename(candidateFullPath);
+      setActiveEditorTasks([]);
+    } catch (err) {
+      console.error("Failed to create new note via shortcut:", err);
+    }
+  }, [activeFilename, workspaceDir, workspaceFiles, loadWorkspaceFiles]);
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // 1. Ctrl+P / Cmd+P -> Toggle Quick Switcher
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        !e.altKey &&
+        !e.shiftKey &&
+        e.key.toLowerCase() === "p"
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsQuickSwitcherOpen((prev) => !prev);
+        return;
+      }
+
+      // 2. Ctrl+N / Cmd+N -> Create New Note in active folder
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        !e.altKey &&
+        !e.shiftKey &&
+        e.key.toLowerCase() === "n"
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleCreateNewNote();
+        return;
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalKeyDown, true);
+    return () => {
+      window.removeEventListener("keydown", handleGlobalKeyDown, true);
+    };
+  }, [handleCreateNewNote]);
 
   // Determine if active file is a Dashboard
   const normActivePath = normalizePath(activeFilename);
@@ -389,6 +472,7 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
         workspaceDir={workspaceDir}
         themeMode={themeMode}
         onToggleThemeMode={handleToggleThemeMode}
+        onOpenQuickSwitcher={() => setIsQuickSwitcherOpen(true)}
       />
       <div
         style={{
@@ -457,6 +541,14 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
           </div>
         )}
       </div>
+      <QuickSwitcher
+        isOpen={isQuickSwitcherOpen}
+        notes={workspaceFiles}
+        activeFilePath={activeFilename}
+        workspaceDir={workspaceDir}
+        onSelectNote={handleSelectFile}
+        onClose={() => setIsQuickSwitcherOpen(false)}
+      />
     </div>
   );
 };

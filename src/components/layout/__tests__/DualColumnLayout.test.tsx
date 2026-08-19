@@ -287,4 +287,99 @@ describe("DualColumnLayout Integration", () => {
       expect(updatedText).not.toBe(initialText);
     });
   });
+
+  it("opens Quick Switcher when pressing Ctrl+P and switches active note on selection", async () => {
+    fileService.setMockFileContent("first-note.md", "# First Note Content");
+    fileService.setMockFileContent(
+      "workspace/docs/second-note.md",
+      "# Second Note Content"
+    );
+
+    render(<DualColumnLayout />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("editor-contenteditable")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByTestId("quick-switcher-modal")).toBeNull();
+
+    // 1. Press Ctrl+P to open Quick Switcher
+    fireEvent.keyDown(window, { key: "p", ctrlKey: true });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("quick-switcher-modal")).toBeInTheDocument();
+      expect(screen.getByTestId("quick-switcher-input")).toBeInTheDocument();
+    });
+
+    // 2. Type query to filter
+    const input = screen.getByTestId("quick-switcher-input");
+    fireEvent.change(input, { target: { value: "second" } });
+
+    await waitFor(() => {
+      expect(screen.getByText("second-note.md")).toBeInTheDocument();
+    });
+
+    // 3. Press Enter to select
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("quick-switcher-modal")).toBeNull();
+      expect(screen.getByText("Second Note Content")).toBeInTheDocument();
+    });
+  });
+
+  it("creates a new Note in the active folder when pressing Ctrl+N and opens it for editing", async () => {
+    fileService.setMockFileContent(
+      "workspace/docs/guide.md",
+      "# Guide Note Content"
+    );
+
+    render(<DualColumnLayout />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Guide Note Content")).toBeInTheDocument();
+    });
+
+    // Press Ctrl+N to create new note in active directory (workspace/docs)
+    fireEvent.keyDown(window, { key: "n", ctrlKey: true });
+
+    await waitFor(() => {
+      expect(fileService.writeMarkdownFile).toHaveBeenCalledWith(
+        "workspace/docs/Untitled.md",
+        expect.stringContaining("# Untitled")
+      );
+    });
+
+    // If Untitled.md already exists, Ctrl+N creates Untitled 1.md
+    fileService.setMockFileContent(
+      "workspace/docs/Untitled.md",
+      "# Untitled\n\n"
+    );
+
+    fireEvent.keyDown(window, { key: "n", ctrlKey: true });
+
+    await waitFor(() => {
+      expect(fileService.writeMarkdownFile).toHaveBeenCalledWith(
+        "workspace/docs/Untitled 1.md",
+        expect.stringContaining("# Untitled 1")
+      );
+    });
+  });
+
+  it("opens Quick Switcher when clicking search button in TitleBar", async () => {
+    fileService.setMockFileContent("test-file.md", "# Test Content");
+
+    render(<DualColumnLayout />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("editor-contenteditable")).toBeInTheDocument();
+    });
+
+    const switcherBtn = screen.getByTestId("titlebar-quick-switcher-btn");
+    fireEvent.click(switcherBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("quick-switcher-modal")).toBeInTheDocument();
+    });
+  });
 });
