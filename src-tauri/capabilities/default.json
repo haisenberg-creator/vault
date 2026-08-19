@@ -13,6 +13,14 @@
     "core:window:allow-close",
     "core:window:allow-destroy",
     "core:window:allow-start-dragging",
-    "opener:default"
+    "core:window:allow-show",
+    "core:window:allow-set-focus",
+    "core:window:allow-is-minimized",
+    "core:window:allow-is-visible",
+    "opener:default",
+    "global-shortcut:allow-register",
+    "global-shortcut:allow-unregister",
+    "global-shortcut:allow-is-registered",
+    "global-shortcut:allow-unregister-all"
   ]
 }

@@ -4,11 +4,11 @@
 
 **Blocked by:** 04 — Local Keyboard Shortcuts & Quick Switcher
 
-**Status:** ready-for-agent
+**Status:** closed
 
-- [ ] `@tauri-apps/plugin-global-shortcut` is configured in Tauri v2 permissions and Rust backend
-- [ ] Pressing `Ctrl+Alt+N` globally (from any application) unminimizes/focuses Vault and creates a new Note
-- [ ] Pressing `Ctrl+Alt+P` globally (from any application) unminimizes/focuses Vault and opens the Quick Switcher
-- [ ] Global shortcuts are unregistered cleanly when the application exits
-- [ ] App falls back gracefully in web/browser mock environments without errors
-- [ ] Tests verify shortcut registration and fallback lifecycle
+- [x] `@tauri-apps/plugin-global-shortcut` is configured in Tauri v2 permissions and Rust backend
+- [x] Pressing `Ctrl+Alt+N` globally (from any application) unminimizes/focuses Vault and creates a new Note
+- [x] Pressing `Ctrl+Alt+P` globally (from any application) unminimizes/focuses Vault and opens the Quick Switcher
+- [x] Global shortcuts are unregistered cleanly when the application exits
+- [x] App falls back gracefully in web/browser mock environments without errors
+- [x] Tests verify shortcut registration and fallback lifecycle

@@ -30,6 +30,7 @@ import {
   applyThemeMode,
   ThemeMode,
 } from "../../services/themeService";
+import { useGlobalShortcuts } from "../../hooks/useGlobalShortcuts";
 
 export interface DualColumnLayoutProps {
   workspaceDir?: string;
@@ -197,6 +198,12 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
       window.removeEventListener("keydown", handleGlobalKeyDown, true);
     };
   }, [handleCreateNewNote]);
+
+  // System-wide Global OS Shortcuts (Ctrl+Alt+N / Cmd+Option+N and Ctrl+Alt+P / Cmd+Option+P)
+  useGlobalShortcuts({
+    onNewNote: handleCreateNewNote,
+    onOpenQuickSwitcher: () => setIsQuickSwitcherOpen(true),
+  });
 
   // Determine if active file is a Dashboard
   const normActivePath = normalizePath(activeFilename);

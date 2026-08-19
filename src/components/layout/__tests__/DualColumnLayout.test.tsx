@@ -1,4 +1,10 @@
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  act,
+} from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DualColumnLayout } from "../DualColumnLayout";
 import * as fileService from "../../../services/fileService";
@@ -381,5 +387,62 @@ describe("DualColumnLayout Integration", () => {
     await waitFor(() => {
       expect(screen.getByTestId("quick-switcher-modal")).toBeInTheDocument();
     });
+  });
+
+  it("handles global shortcut triggers for note creation and quick switcher", async () => {
+    let capturedHandlers: {
+      onNewNote?: () => void | Promise<void>;
+      onOpenQuickSwitcher?: () => void | Promise<void>;
+    } | null = null;
+    const registerSpy = vi
+      .spyOn(
+        await import("../../../services/globalShortcutService"),
+        "registerGlobalShortcuts"
+      )
+      .mockImplementation(async (handlers) => {
+        capturedHandlers = handlers;
+        return async () => {};
+      });
+
+    fileService.setMockFileContent(
+      "workspace/docs/root.md",
+      "# Root Doc Content"
+    );
+
+    render(<DualColumnLayout />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Root Doc Content")).toBeInTheDocument();
+      expect(capturedHandlers).not.toBeNull();
+    });
+
+    // 1. Trigger global shortcut for Quick Switcher
+    await act(async () => {
+      await capturedHandlers!.onOpenQuickSwitcher?.();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("quick-switcher-modal")).toBeInTheDocument();
+    });
+
+    // Close switcher
+    fireEvent.keyDown(window, { key: "Escape" });
+    await waitFor(() => {
+      expect(screen.queryByTestId("quick-switcher-modal")).toBeNull();
+    });
+
+    // 2. Trigger global shortcut for New Note
+    await act(async () => {
+      await capturedHandlers!.onNewNote?.();
+    });
+
+    await waitFor(() => {
+      expect(fileService.writeMarkdownFile).toHaveBeenCalledWith(
+        "workspace/docs/Untitled.md",
+        expect.stringContaining("# Untitled")
+      );
+    });
+
+    registerSpy.mockRestore();
   });
 });
