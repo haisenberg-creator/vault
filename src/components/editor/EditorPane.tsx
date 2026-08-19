@@ -11,6 +11,8 @@ import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { ListNode, ListItemNode } from "@lexical/list";
 import { CodeNode, CodeHighlightNode } from "@lexical/code-core";
 import { LinkNode, AutoLinkNode } from "@lexical/link";
+import { HashtagNode } from "@lexical/hashtag";
+import { HashtagPlugin } from "@lexical/react/LexicalHashtagPlugin";
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
@@ -43,6 +45,7 @@ import {
   writeMarkdownFile,
   formatShortPath,
 } from "../../services/fileService";
+import { extractTags } from "../../services/dashboardService";
 import { theme } from "./LexicalEditorTheme";
 import {
   ChecklistNode,
@@ -68,6 +71,7 @@ export interface EditorPaneProps {
   onTasksChange?: (tasks: TaskItem[]) => void;
   onRegisterToggleTask?: (toggleFn: (nodeKey: string) => void) => void;
   onRegisterRemoveTask?: (removeFn: (taskTitle: string) => boolean) => void;
+  onSelectTag?: (tag: string) => void;
 }
 
 const EDITOR_NODES = [
@@ -81,6 +85,7 @@ const EDITOR_NODES = [
   LinkNode,
   AutoLinkNode,
   ChecklistNode,
+  HashtagNode,
 ];
 
 // Plugin to extract ChecklistNode tasks from Lexical AST
@@ -117,6 +122,7 @@ function TaskExtractorPlugin({
           const fullText = parent ? parent.getTextContent() : "";
           const title =
             fullText.replace(/\[([ x\->])\]/gi, "").trim() || "Untitled Task";
+          const tags = extractTags(fullText);
 
           return {
             id: key,
@@ -124,6 +130,7 @@ function TaskExtractorPlugin({
             title,
             sourceFile: filename,
             state: node.getState(),
+            tags,
           };
         });
         onTasksChange(extracted);
@@ -849,12 +856,54 @@ function KeyboardSavePlugin({ onSave }: { onSave: () => void }) {
   return null;
 }
 
+// Helper plugin for clicking hashtag pills to trigger onSelectTag
+function TagClickHandlerPlugin({
+  onSelectTag,
+}: {
+  onSelectTag?: (tag: string) => void;
+}) {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    if (!onSelectTag) return;
+
+    return editor.registerRootListener(
+      (
+        rootElement: HTMLElement | null,
+        prevRootElement: HTMLElement | null
+      ) => {
+        const handleClick = (event: MouseEvent) => {
+          const target = event.target as HTMLElement | null;
+          if (!target) return;
+          const hashtagEl = target.closest(".lexical-hashtag");
+          if (hashtagEl) {
+            const rawText = hashtagEl.textContent?.trim() || "";
+            if (rawText.startsWith("#")) {
+              onSelectTag(rawText);
+            }
+          }
+        };
+
+        if (prevRootElement) {
+          prevRootElement.removeEventListener("click", handleClick);
+        }
+        if (rootElement) {
+          rootElement.addEventListener("click", handleClick);
+        }
+      }
+    );
+  }, [editor, onSelectTag]);
+
+  return null;
+}
+
 export const EditorPane: React.FC<EditorPaneProps> = ({
   filename = "workspace-note.md",
   workspaceDir,
   onTasksChange,
   onRegisterToggleTask,
   onRegisterRemoveTask,
+  onSelectTag,
 }) => {
   const displayFilename = formatShortPath(filename, workspaceDir);
   const [markdownContent, setMarkdownContent] = useState<string>("");
@@ -1248,6 +1297,8 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
                   onMarkdownChange={handleMarkdownChange}
                 />
                 <MarkdownShortcutPlugin transformers={ALL_TRANSFORMERS} />
+                <HashtagPlugin />
+                <TagClickHandlerPlugin onSelectTag={onSelectTag} />
                 <PriorityHeaderPlugin />
                 <TaskDragDropPlugin />
                 <ChecklistEnterPlugin />

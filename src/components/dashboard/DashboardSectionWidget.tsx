@@ -11,6 +11,7 @@ export interface DashboardSectionWidgetProps {
   filterConfig?: DashboardFilter;
   onToggleTaskState: (task: TaskItemWithMetadata) => void;
   onSelectFile?: (filePath: string) => void;
+  onSelectTag?: (tag: string) => void;
 }
 
 export const DashboardSectionWidget: React.FC<DashboardSectionWidgetProps> = ({
@@ -18,6 +19,7 @@ export const DashboardSectionWidget: React.FC<DashboardSectionWidgetProps> = ({
   filterConfig,
   onToggleTaskState,
   onSelectFile,
+  onSelectTag,
 }) => {
   // Track collapsed groups
   const [collapsedGroups, setCollapsedGroups] = useState<
@@ -214,6 +216,7 @@ export const DashboardSectionWidget: React.FC<DashboardSectionWidgetProps> = ({
                         task={task}
                         onToggleState={onToggleTaskState}
                         onSelectFile={onSelectFile}
+                        onSelectTag={onSelectTag}
                       />
                     ))}
                   </div>

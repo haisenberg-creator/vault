@@ -5,12 +5,14 @@ export interface DashboardTaskItemProps {
   task: TaskItemWithMetadata;
   onToggleState: (task: TaskItemWithMetadata) => void;
   onSelectFile?: (filePath: string) => void;
+  onSelectTag?: (tag: string) => void;
 }
 
 export const DashboardTaskItem: React.FC<DashboardTaskItemProps> = ({
   task,
   onToggleState,
   onSelectFile,
+  onSelectTag,
 }) => {
   const isCompleted = task.state === "completed";
 
@@ -145,6 +147,11 @@ export const DashboardTaskItem: React.FC<DashboardTaskItemProps> = ({
         {task.tags.map((tag) => (
           <span
             key={tag}
+            data-testid={`task-tag-badge-${tag}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectTag?.(tag);
+            }}
             style={{
               fontSize: "11px",
               padding: "2px 6px",
@@ -153,7 +160,9 @@ export const DashboardTaskItem: React.FC<DashboardTaskItemProps> = ({
               color: "var(--rose-iris)",
               border: "1px solid rgba(196, 167, 231, 0.3)",
               fontWeight: 500,
+              cursor: onSelectTag ? "pointer" : "default",
             }}
+            className={onSelectTag ? "tactile-btn" : undefined}
           >
             {tag}
           </span>

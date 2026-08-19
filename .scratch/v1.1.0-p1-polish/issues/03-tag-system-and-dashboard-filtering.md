@@ -4,12 +4,12 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** closed
 
-- [ ] Hashtags (e.g. `#urgent`, `#project-x`) typed into notes are automatically parsed and rendered as styled clickable pills in the editor
-- [ ] Tags save and export cleanly as standard `#tag` plain text in Markdown files
-- [ ] Clicking any tag pill sets the active tag filter in the app state
-- [ ] When a tag filter is active, the Task Dashboard displays an active filter banner showing `#tag` and a clear `(×)` button
-- [ ] When a tag filter is active, only tasks containing that specific `#tag` are displayed in the Dashboard
-- [ ] Clicking the `(×)` button on the filter banner clears the filter and restores all tasks
-- [ ] Automated tests verify hashtag parsing, click-to-filter propagation, and dashboard task filtering
+- [x] Hashtags (e.g. `#urgent`, `#project-x`) typed into notes are automatically parsed and rendered as styled clickable pills in the editor
+- [x] Tags save and export cleanly as standard `#tag` plain text in Markdown files
+- [x] Clicking any tag pill sets the active tag filter in the app state
+- [x] When a tag filter is active, the Task Dashboard displays an active filter banner showing `#tag` and a clear `(×)` button
+- [x] When a tag filter is active, only tasks containing that specific `#tag` are displayed in the Dashboard
+- [x] Clicking the `(×)` button on the filter banner clears the filter and restores all tasks
+- [x] Automated tests verify hashtag parsing, click-to-filter propagation, and dashboard task filtering

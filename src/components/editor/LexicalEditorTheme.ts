@@ -3,6 +3,7 @@ import type { EditorThemeClasses } from "lexical";
 export const theme: EditorThemeClasses = {
   paragraph: "lexical-paragraph",
   quote: "lexical-quote",
+  hashtag: "lexical-hashtag",
   heading: {
     h1: "lexical-h1",
     h2: "lexical-h2",

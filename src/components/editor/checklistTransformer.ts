@@ -17,11 +17,34 @@ import {
   $isCustomListItemNode,
 } from "./CustomListItemNode";
 import {
+  HashtagNode,
+  $createHashtagNode,
+  $isHashtagNode,
+} from "@lexical/hashtag";
+import {
   ChecklistNode,
   $createChecklistNode,
   $isChecklistNode,
   parseTaskState,
 } from "./ChecklistNode";
+
+export const HASHTAG_TRANSFORMER: TextMatchTransformer = {
+  dependencies: [HashtagNode],
+  export: (node) => {
+    if ($isHashtagNode(node)) {
+      return node.getTextContent();
+    }
+    return null;
+  },
+  importRegExp: /#[\w\d/_-]+/,
+  regExp: /#[\w\d/_-]+$/,
+  replace: (textNode, match) => {
+    const hashtagNode = $createHashtagNode(match[0]);
+    textNode.replace(hashtagNode);
+  },
+  trigger: "#",
+  type: "text-match",
+};
 
 export const CHECKLIST_TRANSFORMER: TextMatchTransformer = {
   dependencies: [ChecklistNode],
@@ -126,5 +149,6 @@ export const ALL_TRANSFORMERS = [
   CHECKLIST_TRANSFORMER,
   CUSTOM_UNORDERED_LIST,
   ARROW_TRANSFORMER,
+  HASHTAG_TRANSFORMER,
   ...baseTransformersWithoutUnordered,
 ];

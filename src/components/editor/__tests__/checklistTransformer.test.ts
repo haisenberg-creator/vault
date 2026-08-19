@@ -13,7 +13,9 @@ import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { ListNode, ListItemNode } from "@lexical/list";
 import { CodeNode, CodeHighlightNode } from "@lexical/code-core";
 import { LinkNode, AutoLinkNode } from "@lexical/link";
+import { HashtagNode, registerLexicalHashtag } from "@lexical/hashtag";
 import { ChecklistNode } from "../ChecklistNode";
+import { CustomListItemNode } from "../CustomListItemNode";
 import { ARROW_TRANSFORMER, ALL_TRANSFORMERS } from "../checklistTransformer";
 
 const EDITOR_NODES = [
@@ -21,11 +23,13 @@ const EDITOR_NODES = [
   QuoteNode,
   ListNode,
   ListItemNode,
+  CustomListItemNode,
   CodeNode,
   CodeHighlightNode,
   LinkNode,
   AutoLinkNode,
   ChecklistNode,
+  HashtagNode,
 ];
 
 describe("ARROW_TRANSFORMER", () => {
@@ -121,6 +125,39 @@ describe("HIGHLIGHT and Rich Text Markdown Roundtrip", () => {
       $convertFromMarkdownString(original, ALL_TRANSFORMERS);
       const exported = $convertToMarkdownString(ALL_TRANSFORMERS);
       expect(exported).toBe(original);
+    });
+  });
+});
+
+describe("HASHTAG and Markdown Roundtrip", () => {
+  it("preserves hashtags like #urgent and #project-x cleanly during roundtrip", () => {
+    const editor = createEditor({ nodes: EDITOR_NODES });
+    registerLexicalHashtag(editor);
+
+    const original =
+      "# Project Roadmap\n\n- [ ] Fix critical authentication bug #urgent #security\n- [-] Implement #v1.1-polish dashboard filtering";
+    editor.update(() => {
+      $convertFromMarkdownString(original, ALL_TRANSFORMERS);
+      const exported = $convertToMarkdownString(ALL_TRANSFORMERS);
+      expect(exported).toBe(original);
+    });
+  });
+
+  it("exports HashtagNode as standard #tag plain text without HTML wrapper tags", () => {
+    const editor = createEditor({ nodes: EDITOR_NODES });
+    registerLexicalHashtag(editor);
+
+    editor.update(() => {
+      const root = $getRoot();
+      root.clear();
+      const p = $createParagraphNode();
+      p.append($createTextNode("Task for "), $createTextNode("#backend"));
+      root.append(p);
+
+      const markdown = $convertToMarkdownString(ALL_TRANSFORMERS);
+      expect(markdown).toBe("Task for #backend");
+      expect(markdown).not.toContain("<span");
+      expect(markdown).not.toContain("<div");
     });
   });
 });

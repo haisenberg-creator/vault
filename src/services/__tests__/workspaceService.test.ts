@@ -24,6 +24,8 @@ describe("workspaceService", () => {
       title: "Open task item",
       sourceFile: "roadmap.md",
       state: "open",
+      tags: [],
+      priority: undefined,
     });
 
     expect(tasks[1]).toEqual({
@@ -32,6 +34,8 @@ describe("workspaceService", () => {
       title: "Task in progress",
       sourceFile: "roadmap.md",
       state: "in_progress",
+      tags: [],
+      priority: undefined,
     });
 
     expect(tasks[2]).toEqual({
@@ -40,6 +44,8 @@ describe("workspaceService", () => {
       title: "Blocked task item",
       sourceFile: "roadmap.md",
       state: "blocked",
+      tags: [],
+      priority: undefined,
     });
 
     expect(tasks[3]).toEqual({
@@ -48,7 +54,23 @@ describe("workspaceService", () => {
       title: "Completed task item",
       sourceFile: "roadmap.md",
       state: "completed",
+      tags: [],
+      priority: undefined,
     });
+  });
+
+  it("extracts hashtags into tags array on parsed tasks", () => {
+    const markdown = `# Tasks with hashtags
+- [ ] Implement dark mode #theme #ui/ux
+- [-] Fix payment webhook #urgent #backend
+- [x] Simple task without tags
+`;
+
+    const tasks = parseTasksFromMarkdown(markdown, "tags-note.md");
+    expect(tasks).toHaveLength(3);
+    expect(tasks[0].tags).toEqual(["#theme", "#ui/ux"]);
+    expect(tasks[1].tags).toEqual(["#urgent", "#backend"]);
+    expect(tasks[2].tags).toEqual([]);
   });
 
   it("extracts priority from nearest preceding priority header (## or ###) and resets on other headers", () => {

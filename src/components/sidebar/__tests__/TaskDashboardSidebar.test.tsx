@@ -347,4 +347,101 @@ describe("TaskDashboardSidebar Component", () => {
       screen.queryByTestId("theme-mode-toggle-btn")
     ).not.toBeInTheDocument();
   });
+
+  it("filters tasks by activeTagFilter and displays active tag filter banner", async () => {
+    const handleClearTagFilter = vi.fn();
+    const handleSelectTag = vi.fn();
+
+    const taggedTasks: TaskItem[] = [
+      {
+        id: "task-1",
+        title: "Fix bug #urgent",
+        sourceFile: "bugs.md",
+        state: "open",
+        tags: ["#urgent"],
+      },
+      {
+        id: "task-2",
+        title: "Write docs #documentation",
+        sourceFile: "docs.md",
+        state: "open",
+        tags: ["#documentation"],
+      },
+      {
+        id: "task-3",
+        title: "Refactor core #urgent #refactor",
+        sourceFile: "core.md",
+        state: "in_progress",
+        tags: ["#urgent", "#refactor"],
+      },
+    ];
+
+    await act(async () => {
+      render(
+        <TaskDashboardSidebar
+          tasks={taggedTasks}
+          initialTab="tasks"
+          activeTagFilter="#urgent"
+          onClearTagFilter={handleClearTagFilter}
+          onSelectTag={handleSelectTag}
+        />
+      );
+    });
+
+    // Check banner is rendered
+    const banner = screen.getByTestId("sidebar-tag-filter-banner");
+    expect(banner).toBeInTheDocument();
+    expect(banner).toHaveTextContent("Filtered by");
+    expect(banner).toHaveTextContent("#urgent");
+
+    // Only #urgent tasks should be displayed
+    expect(screen.getByText("Fix bug #urgent")).toBeInTheDocument();
+    expect(
+      screen.getByText("Refactor core #urgent #refactor")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Write docs #documentation")
+    ).not.toBeInTheDocument();
+
+    // Check clear filter button click
+    const clearBtn = screen.getByTestId("clear-tag-filter-btn");
+    await act(async () => {
+      fireEvent.click(clearBtn);
+    });
+    expect(handleClearTagFilter).toHaveBeenCalledTimes(1);
+  });
+
+  it("triggers onSelectTag callback when clicking a tag chip on a task item", async () => {
+    const handleSelectTag = vi.fn();
+
+    const taggedTasks: TaskItem[] = [
+      {
+        id: "task-1",
+        title: "Investigate performance #perf",
+        sourceFile: "perf.md",
+        state: "open",
+        tags: ["#perf"],
+      },
+    ];
+
+    await act(async () => {
+      render(
+        <TaskDashboardSidebar
+          tasks={taggedTasks}
+          initialTab="tasks"
+          onSelectTag={handleSelectTag}
+        />
+      );
+    });
+
+    const tagChip = screen.getByTestId("sidebar-task-tag-task-1-#perf");
+    expect(tagChip).toBeInTheDocument();
+    expect(tagChip).toHaveTextContent("#perf");
+
+    await act(async () => {
+      fireEvent.click(tagChip);
+    });
+
+    expect(handleSelectTag).toHaveBeenCalledWith("#perf");
+  });
 });

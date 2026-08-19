@@ -17,6 +17,7 @@ import {
   importFolderFiles,
 } from "../../services/fileService";
 import { ThemeMode } from "../../services/themeService";
+import { extractTags } from "../../services/dashboardService";
 
 export type TaskState = "open" | "in_progress" | "blocked" | "completed";
 
@@ -26,6 +27,7 @@ export interface TaskItem {
   title: string;
   sourceFile: string;
   state: TaskState;
+  tags?: string[];
   priority?: string;
 }
 
@@ -33,7 +35,10 @@ export interface TaskDashboardSidebarProps {
   tasks?: TaskItem[];
   activeFileTasks?: TaskItem[];
   activeFilter?: TaskState | "all";
+  activeTagFilter?: string | null;
   onFilterChange?: (filter: TaskState | "all") => void;
+  onClearTagFilter?: () => void;
+  onSelectTag?: (tag: string) => void;
   onToggleTask?: (taskId: string) => void;
   activeFilePath?: string;
   onSelectFile?: (filePath: string) => void;
@@ -54,7 +59,10 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
   tasks = [],
   activeFileTasks,
   activeFilter: propsFilter,
+  activeTagFilter,
   onFilterChange,
+  onClearTagFilter,
+  onSelectTag,
   onToggleTask,
   activeFilePath,
   onSelectFile,
@@ -275,10 +283,21 @@ sections:
     }
   };
 
-  const filteredTasks =
-    activeFilter === "all"
-      ? tasks
-      : tasks.filter((t) => t.state === activeFilter);
+  const normalizedTagFilter = activeTagFilter
+    ? activeTagFilter.startsWith("#")
+      ? activeTagFilter.toLowerCase()
+      : `#${activeTagFilter.toLowerCase()}`
+    : null;
+
+  const matchesTag = (t: TaskItem) => {
+    if (!normalizedTagFilter) return true;
+    const tags = t.tags && t.tags.length > 0 ? t.tags : extractTags(t.title);
+    return tags.some((tag) => tag.toLowerCase() === normalizedTagFilter);
+  };
+
+  const filteredTasks = tasks.filter(
+    (t) => (activeFilter === "all" || t.state === activeFilter) && matchesTag(t)
+  );
 
   const getBadgeStyle = (state: TaskState) => {
     switch (state) {
@@ -315,11 +334,13 @@ sections:
   };
 
   const counts = {
-    all: tasks.length,
-    open: tasks.filter((t) => t.state === "open").length,
-    in_progress: tasks.filter((t) => t.state === "in_progress").length,
-    blocked: tasks.filter((t) => t.state === "blocked").length,
-    completed: tasks.filter((t) => t.state === "completed").length,
+    all: tasks.filter(matchesTag).length,
+    open: tasks.filter((t) => t.state === "open" && matchesTag(t)).length,
+    in_progress: tasks.filter((t) => t.state === "in_progress" && matchesTag(t))
+      .length,
+    blocked: tasks.filter((t) => t.state === "blocked" && matchesTag(t)).length,
+    completed: tasks.filter((t) => t.state === "completed" && matchesTag(t))
+      .length,
   };
 
   interface TaskTreeNode {
@@ -635,6 +656,33 @@ sections:
                     >
                       🗑️
                     </button>
+                    {(task.tags && task.tags.length > 0
+                      ? task.tags
+                      : extractTags(task.title)
+                    ).map((tag) => (
+                      <span
+                        key={tag}
+                        data-testid={`sidebar-task-tag-${task.id}-${tag}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectTag?.(tag);
+                        }}
+                        className="tactile-btn"
+                        style={{
+                          fontSize: "10px",
+                          fontWeight: 500,
+                          padding: "1px 5px",
+                          borderRadius: "3px",
+                          backgroundColor: "rgba(196, 167, 231, 0.15)",
+                          color: "var(--rose-iris)",
+                          border: "1px solid rgba(196, 167, 231, 0.25)",
+                          cursor: onSelectTag ? "pointer" : "default",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
                     <span
                       style={{
                         fontSize: "10px",
@@ -680,6 +728,64 @@ sections:
         activeDashboardPath={activeFilePath}
         onSelectDashboard={(path) => onSelectFile?.(path)}
       />
+
+      {/* Active Tag Filter Banner */}
+      {activeTagFilter && (
+        <div
+          data-testid="sidebar-tag-filter-banner"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "8px 12px",
+            backgroundColor: "rgba(196, 167, 231, 0.15)",
+            borderBottom: "1px solid rgba(196, 167, 231, 0.3)",
+            color: "var(--rose-iris)",
+            fontSize: "12px",
+            fontWeight: 500,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span>Filtered by</span>
+            <span
+              style={{
+                backgroundColor: "rgba(196, 167, 231, 0.25)",
+                color: "var(--rose-iris)",
+                padding: "2px 6px",
+                borderRadius: "4px",
+                fontWeight: 600,
+                fontFamily: "var(--font-mono)",
+              }}
+            >
+              {activeTagFilter.startsWith("#")
+                ? activeTagFilter
+                : `#${activeTagFilter}`}
+            </span>
+          </div>
+          <button
+            type="button"
+            data-testid="clear-tag-filter-btn"
+            onClick={onClearTagFilter}
+            title="Clear tag filter"
+            className="tactile-btn"
+            style={{
+              background: "none",
+              border: "none",
+              color: "var(--rose-iris)",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: "bold",
+              padding: "2px 6px",
+              borderRadius: "4px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Navigation View Mode Tabs */}
       <div
@@ -738,7 +844,7 @@ sections:
             cursor: "pointer",
           }}
         >
-          Tasks ({(activeFileTasks ?? tasks).length})
+          Tasks ({(activeFileTasks ?? tasks).filter(matchesTag).length})
         </button>
       </div>
 

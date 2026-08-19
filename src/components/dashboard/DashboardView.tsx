@@ -18,6 +18,9 @@ import { DashboardSectionWidget } from "./DashboardSectionWidget";
 export interface DashboardViewProps {
   filePath: string;
   workspaceFiles: WorkspaceFile[];
+  activeTagFilter?: string | null;
+  onClearTagFilter?: () => void;
+  onSelectTag?: (tag: string) => void;
   onSelectFile?: (filePath: string) => void;
   onRefreshWorkspace?: () => void;
   onTasksChange?: (tasks: any[]) => void;
@@ -27,6 +30,9 @@ export interface DashboardViewProps {
 export const DashboardView: React.FC<DashboardViewProps> = ({
   filePath,
   workspaceFiles,
+  activeTagFilter,
+  onClearTagFilter,
+  onSelectTag,
   onSelectFile,
   onRefreshWorkspace,
   onTasksChange,
@@ -49,7 +55,30 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const schema = parseDashboardSchema(activeContent, filePath);
   const queryResult = executeDashboardQuery(workspaceFiles, schema);
 
-  const totalMatchingTasks = queryResult.sections.reduce(
+  const normalizedTag = activeTagFilter
+    ? activeTagFilter.startsWith("#")
+      ? activeTagFilter.toLowerCase()
+      : `#${activeTagFilter.toLowerCase()}`
+    : null;
+
+  const sectionsToRender = queryResult.sections.map((section) => {
+    if (!normalizedTag) return section;
+    const filteredGroups = section.groups
+      .map((group) => ({
+        ...group,
+        tasks: group.tasks.filter((task) =>
+          task.tags.some((t) => t.toLowerCase() === normalizedTag)
+        ),
+      }))
+      .filter((group) => group.tasks.length > 0);
+
+    return {
+      ...section,
+      groups: filteredGroups,
+    };
+  });
+
+  const totalMatchingTasks = sectionsToRender.reduce(
     (total, sec) =>
       total + sec.groups.reduce((gTotal, g) => gTotal + g.tasks.length, 0),
     0
@@ -259,6 +288,64 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
+      {/* Active Tag Filter Banner */}
+      {activeTagFilter && (
+        <div
+          data-testid="dashboard-tag-filter-banner"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "10px 24px",
+            backgroundColor: "rgba(196, 167, 231, 0.15)",
+            borderBottom: "1px solid rgba(196, 167, 231, 0.3)",
+            color: "var(--rose-iris)",
+            fontSize: "13px",
+            fontWeight: 500,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span>Filtered by tag:</span>
+            <span
+              style={{
+                backgroundColor: "rgba(196, 167, 231, 0.25)",
+                color: "var(--rose-iris)",
+                padding: "2px 8px",
+                borderRadius: "4px",
+                fontWeight: 600,
+                fontFamily: "var(--font-mono)",
+              }}
+            >
+              {activeTagFilter.startsWith("#")
+                ? activeTagFilter
+                : `#${activeTagFilter}`}
+            </span>
+          </div>
+          <button
+            type="button"
+            data-testid="clear-dashboard-tag-filter-btn"
+            onClick={onClearTagFilter}
+            title="Clear tag filter"
+            className="tactile-btn"
+            style={{
+              background: "none",
+              border: "none",
+              color: "var(--rose-iris)",
+              cursor: "pointer",
+              fontSize: "13px",
+              fontWeight: "bold",
+              padding: "2px 8px",
+              borderRadius: "4px",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+          >
+            ✕ Clear Filter
+          </button>
+        </div>
+      )}
+
       {/* Main View Area */}
       <div
         style={{
@@ -277,7 +364,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               alignItems: "start",
             }}
           >
-            {queryResult.sections.map((section, index) => {
+            {sectionsToRender.map((section, index) => {
               const secConfig = schema.sections[index];
               return (
                 <DashboardSectionWidget
@@ -286,6 +373,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   filterConfig={secConfig?.filter}
                   onToggleTaskState={handleToggleTaskState}
                   onSelectFile={onSelectFile}
+                  onSelectTag={onSelectTag}
                 />
               );
             })}
@@ -299,6 +387,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               filename={filePath}
               onTasksChange={onTasksChange}
               onRegisterToggleTask={onRegisterToggleTask}
+              onSelectTag={onSelectTag}
             />
           </div>
         )}

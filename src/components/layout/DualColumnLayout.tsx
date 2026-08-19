@@ -40,11 +40,20 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
   const [activeEditorTasks, setActiveEditorTasks] = useState<TaskItem[]>([]);
   const [workspaceFiles, setWorkspaceFiles] = useState<WorkspaceFile[]>([]);
   const [activeFilter, setActiveFilter] = useState<TaskState | "all">("all");
+  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
   const [themeMode, setThemeModeState] = useState<ThemeMode>(() =>
     getThemeMode()
   );
   const toggleTaskFnRef = useRef<((nodeKey: string) => void) | null>(null);
   const removeTaskFnRef = useRef<((taskTitle: string) => boolean) | null>(null);
+
+  const handleSelectTag = useCallback((tag: string) => {
+    setActiveTagFilter(tag);
+  }, []);
+
+  const handleClearTagFilter = useCallback(() => {
+    setActiveTagFilter(null);
+  }, []);
 
   useEffect(() => {
     applyThemeMode(themeMode);
@@ -394,7 +403,10 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
           tasks={aggregatedTasks}
           activeFileTasks={activeFileTasks}
           activeFilter={activeFilter}
+          activeTagFilter={activeTagFilter}
           onFilterChange={setActiveFilter}
+          onClearTagFilter={handleClearTagFilter}
+          onSelectTag={handleSelectTag}
           onToggleTask={handleToggleTask}
           activeFilePath={activeFilename}
           onSelectFile={handleSelectFile}
@@ -410,6 +422,9 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
               key={activeFilename}
               filePath={activeFilename}
               workspaceFiles={workspaceFiles}
+              activeTagFilter={activeTagFilter}
+              onClearTagFilter={handleClearTagFilter}
+              onSelectTag={handleSelectTag}
               onSelectFile={handleSelectFile}
               onRefreshWorkspace={loadWorkspaceFiles}
               onTasksChange={setActiveEditorTasks}
@@ -423,6 +438,7 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
               onTasksChange={setActiveEditorTasks}
               onRegisterToggleTask={handleRegisterToggleTask}
               onRegisterRemoveTask={handleRegisterRemoveTask}
+              onSelectTag={handleSelectTag}
             />
           )
         ) : (

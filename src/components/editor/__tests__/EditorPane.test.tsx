@@ -676,4 +676,49 @@ describe("EditorPane Component (Lexical)", () => {
       expect(lastSaved).toContain("==Simple==");
     });
   });
+
+  it("extracts tags in onTasksChange and triggers onSelectTag when clicking hashtag node", async () => {
+    const handleTasksChange = vi.fn();
+    const handleSelectTag = vi.fn();
+
+    fileService.setMockFileContent(
+      "tags-note.md",
+      "- [ ] Fix security vulnerability #urgent #security\n- [ ] Update readme"
+    );
+
+    render(
+      <EditorPane
+        filename="tags-note.md"
+        onTasksChange={handleTasksChange}
+        onSelectTag={handleSelectTag}
+      />
+    );
+
+    const editor = await screen.findByTestId("editor-contenteditable");
+    expect(editor).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(handleTasksChange).toHaveBeenCalled();
+      const lastEmitted =
+        handleTasksChange.mock.calls[
+          handleTasksChange.mock.calls.length - 1
+        ][0];
+      expect(lastEmitted).toHaveLength(2);
+      expect(lastEmitted[0].tags).toEqual(["#urgent", "#security"]);
+      expect(lastEmitted[1].tags).toEqual([]);
+    });
+
+    // Verify hashtag elements rendered in editor DOM
+    await waitFor(() => {
+      const hashtagPill = editor.querySelector(".lexical-hashtag");
+      expect(hashtagPill).not.toBeNull();
+      expect(hashtagPill?.textContent).toBe("#urgent");
+    });
+
+    const hashtagPill = editor.querySelector(".lexical-hashtag");
+    if (hashtagPill) {
+      fireEvent.click(hashtagPill);
+      expect(handleSelectTag).toHaveBeenCalledWith("#urgent");
+    }
+  });
 });

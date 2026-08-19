@@ -63,4 +63,22 @@ describe("DashboardTaskItem Component", () => {
       "task-drag:Urgent bugfix"
     );
   });
+
+  it("calls onSelectTag when a tag badge is clicked", () => {
+    const handleSelectTag = vi.fn();
+    render(
+      <DashboardTaskItem
+        task={sampleTask}
+        onToggleState={vi.fn()}
+        onSelectFile={vi.fn()}
+        onSelectTag={handleSelectTag}
+      />
+    );
+
+    const tagBadge = screen.getByTestId("task-tag-badge-#urgent");
+    expect(tagBadge).toBeInTheDocument();
+    fireEvent.click(tagBadge);
+
+    expect(handleSelectTag).toHaveBeenCalledWith("#urgent");
+  });
 });

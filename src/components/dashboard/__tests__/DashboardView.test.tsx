@@ -176,4 +176,34 @@ sections:
       expect(handleRefresh).toHaveBeenCalled();
     });
   });
+
+  it("filters dashboard sections by activeTagFilter and displays dismissible tag banner", () => {
+    const handleClear = vi.fn();
+    render(
+      <DashboardView
+        filePath="Projects/overview.dashboard.md"
+        workspaceFiles={mockWorkspaceFiles}
+        activeTagFilter="#bug"
+        onClearTagFilter={handleClear}
+      />
+    );
+
+    const banner = screen.getByTestId("dashboard-tag-filter-banner");
+    expect(banner).toBeInTheDocument();
+    expect(banner).toHaveTextContent("Filtered by tag:");
+    expect(banner).toHaveTextContent("#bug");
+
+    // Click clear button
+    const clearBtn = screen.getByTestId("clear-dashboard-tag-filter-btn");
+    fireEvent.click(clearBtn);
+    expect(handleClear).toHaveBeenCalledTimes(1);
+
+    // Only tasks with #bug should be in sections
+    expect(
+      screen.getAllByText("Implement user login #bug").length
+    ).toBeGreaterThan(0);
+    expect(
+      screen.queryByText("Fix database connection leak")
+    ).not.toBeInTheDocument();
+  });
 });

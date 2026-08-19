@@ -343,6 +343,26 @@ body,
   border-radius: 3px;
 }
 
+.lexical-hashtag {
+  background-color: rgba(196, 167, 231, 0.18);
+  color: var(--rose-iris);
+  border: 1px solid rgba(196, 167, 231, 0.35);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 0.9em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  display: inline-block;
+  line-height: 1.3;
+}
+
+.lexical-hashtag:hover {
+  background-color: rgba(196, 167, 231, 0.3);
+  border-color: var(--rose-iris);
+  box-shadow: 0 0 8px rgba(196, 167, 231, 0.3);
+}
+
 .lexical-text-code {
   background-color: var(--rose-bg-overlay);
   color: var(--rose-gold);

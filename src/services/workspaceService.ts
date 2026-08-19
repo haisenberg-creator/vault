@@ -3,6 +3,7 @@ import {
   TaskState,
 } from "../components/sidebar/TaskDashboardSidebar";
 import { getNextTaskState } from "../components/editor/ChecklistNode";
+import { extractTags } from "./dashboardService";
 
 /**
  * Interface representing a workspace file entry
@@ -58,12 +59,15 @@ export function parseTasksFromMarkdown(
         state = "blocked";
       }
 
+      const tags = extractTags(line);
+
       tasks.push({
         id: `${sourceFile}:${index}:${title}`,
         nodeKey: `${sourceFile}:${index}`,
         title,
         sourceFile,
         state,
+        tags,
         priority: currentPriority,
       });
     }
