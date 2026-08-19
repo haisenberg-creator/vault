@@ -16,10 +16,15 @@ import { ListNode } from "@lexical/list";
 import { ChecklistNode } from "../ChecklistNode";
 import * as fileService from "../../../services/fileService";
 
-vi.mock("../../../services/fileService", () => ({
-  readMarkdownFile: vi.fn(),
-  writeMarkdownFile: vi.fn(),
-}));
+vi.mock("../../../services/fileService", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../../services/fileService")>();
+  return {
+    ...actual,
+    readMarkdownFile: vi.fn(),
+    writeMarkdownFile: vi.fn(),
+  };
+});
 
 describe("CustomListItemNode & Custom List Markers", () => {
   it("creates and manages custom markers on CustomListItemNode", () => {

@@ -419,6 +419,7 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
             <EditorPane
               key={activeFilename}
               filename={activeFilename}
+              workspaceDir={workspaceDir}
               onTasksChange={setActiveEditorTasks}
               onRegisterToggleTask={handleRegisterToggleTask}
               onRegisterRemoveTask={handleRegisterRemoveTask}

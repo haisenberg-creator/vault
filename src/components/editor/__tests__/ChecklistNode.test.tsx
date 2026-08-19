@@ -12,10 +12,15 @@ import {
 } from "../ChecklistNode";
 import * as fileService from "../../../services/fileService";
 
-vi.mock("../../../services/fileService", () => ({
-  readMarkdownFile: vi.fn(),
-  writeMarkdownFile: vi.fn(),
-}));
+vi.mock("../../../services/fileService", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../../services/fileService")>();
+  return {
+    ...actual,
+    readMarkdownFile: vi.fn(),
+    writeMarkdownFile: vi.fn(),
+  };
+});
 
 describe("ChecklistNode utilities", () => {
   it("correctly parses raw syntax to TaskState", () => {

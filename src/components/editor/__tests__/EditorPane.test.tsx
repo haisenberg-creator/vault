@@ -602,4 +602,27 @@ describe("EditorPane Component (Lexical)", () => {
       ).not.toBeInTheDocument();
     });
   });
+
+  it("displays truncated short path in sub-header when filename is an absolute path", async () => {
+    fileService.setMockFileContent(
+      "Projects/Lucky Draw.md",
+      "# Lucky Draw Note"
+    );
+
+    render(
+      <EditorPane
+        filename="C:/Users/ANH-NTP/AppData/Roaming/com.user.vault-app/workspace/Projects/Lucky Draw.md"
+        workspaceDir="C:/Users/ANH-NTP/AppData/Roaming/com.user.vault-app/workspace"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Projects/Lucky Draw.md")).toBeInTheDocument();
+      expect(
+        screen.queryByText(
+          "C:/Users/ANH-NTP/AppData/Roaming/com.user.vault-app/workspace/Projects/Lucky Draw.md"
+        )
+      ).not.toBeInTheDocument();
+    });
+  });
 });

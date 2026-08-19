@@ -41,6 +41,7 @@ import { $isListItemNode, $isListNode } from "@lexical/list";
 import {
   readMarkdownFile,
   writeMarkdownFile,
+  formatShortPath,
 } from "../../services/fileService";
 import { theme } from "./LexicalEditorTheme";
 import {
@@ -62,6 +63,7 @@ import { NoteActionBar } from "./NoteActionBar";
 
 export interface EditorPaneProps {
   filename?: string;
+  workspaceDir?: string;
   onTasksChange?: (tasks: TaskItem[]) => void;
   onRegisterToggleTask?: (toggleFn: (nodeKey: string) => void) => void;
   onRegisterRemoveTask?: (removeFn: (taskTitle: string) => boolean) => void;
@@ -848,10 +850,12 @@ function KeyboardSavePlugin({ onSave }: { onSave: () => void }) {
 
 export const EditorPane: React.FC<EditorPaneProps> = ({
   filename = "workspace-note.md",
+  workspaceDir,
   onTasksChange,
   onRegisterToggleTask,
   onRegisterRemoveTask,
 }) => {
+  const displayFilename = formatShortPath(filename, workspaceDir);
   const [markdownContent, setMarkdownContent] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [saveStatus, setSaveStatus] = useState<
@@ -1104,7 +1108,7 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
               color: "var(--rose-rose)",
             }}
           >
-            {filename}
+            {displayFilename}
           </span>
           <span
             style={{
