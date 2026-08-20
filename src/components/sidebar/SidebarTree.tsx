@@ -296,8 +296,12 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
               : isDragTarget
                 ? "3px solid var(--rose-foam)"
                 : "3px solid transparent",
+            boxShadow: isActive
+              ? "0 0 12px var(--rose-pink-glow, rgba(235, 111, 146, 0.35))"
+              : "none",
             cursor: "pointer",
             marginBottom: "2px",
+            transition: "all var(--transition-fast, 150ms ease)",
           }}
         >
           {/* Left: Icon & Label */}

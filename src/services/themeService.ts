@@ -1,4 +1,5 @@
 export type ThemeMode = "working" | "arcade";
+export type LiveBackgroundScope = "full" | "sidebar";
 export type ThemePalette =
   | "rose-pine"
   | "nord"
@@ -11,6 +12,7 @@ export type ThemePalette =
 const THEME_MODE_KEY = "vault_theme_mode";
 const THEME_PALETTE_KEY = "vault_theme_palette";
 const LIVE_BG_KEY = "vault_live_background";
+const LIVE_BG_SCOPE_KEY = "vault_live_bg_scope";
 const LIVE_BG_OPACITY_KEY = "vault_live_bg_opacity";
 const LIVE_BG_BLUR_KEY = "vault_live_bg_blur";
 
@@ -103,6 +105,19 @@ export function getLiveBackground(): string | null {
   return localStorage.getItem(LIVE_BG_KEY);
 }
 
+export function getLiveBackgroundScope(): LiveBackgroundScope {
+  if (typeof window === "undefined") return "full";
+  const saved = localStorage.getItem(LIVE_BG_SCOPE_KEY);
+  return saved === "sidebar" ? "sidebar" : "full";
+}
+
+export function setLiveBackgroundScope(scope: LiveBackgroundScope): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(LIVE_BG_SCOPE_KEY, scope);
+  applyLiveBackground(getLiveBackground(), scope);
+  notifyListeners();
+}
+
 export function setLiveBackground(bgUrlOrData: string | null): void {
   if (typeof window === "undefined") return;
   if (bgUrlOrData) {
@@ -110,21 +125,31 @@ export function setLiveBackground(bgUrlOrData: string | null): void {
   } else {
     localStorage.removeItem(LIVE_BG_KEY);
   }
-  applyLiveBackground(bgUrlOrData);
+  applyLiveBackground(bgUrlOrData, getLiveBackgroundScope());
   notifyListeners();
 }
 
-export function applyLiveBackground(bgUrlOrData: string | null): void {
+export function applyLiveBackground(
+  bgUrlOrData: string | null,
+  scope: LiveBackgroundScope = getLiveBackgroundScope()
+): void {
   if (typeof window === "undefined" || !document.documentElement) return;
   if (bgUrlOrData) {
     document.documentElement.style.setProperty(
       "--live-bg-url",
       `url("${bgUrlOrData}")`
     );
-    document.documentElement.classList.add("has-live-bg");
+    if (scope === "sidebar") {
+      document.documentElement.classList.remove("has-live-bg");
+      document.documentElement.classList.add("has-sidebar-live-bg");
+    } else {
+      document.documentElement.classList.remove("has-sidebar-live-bg");
+      document.documentElement.classList.add("has-live-bg");
+    }
   } else {
     document.documentElement.style.removeProperty("--live-bg-url");
     document.documentElement.classList.remove("has-live-bg");
+    document.documentElement.classList.remove("has-sidebar-live-bg");
   }
 }
 
@@ -172,7 +197,7 @@ export function setLiveBackgroundBlur(blur: number): void {
 export function initTheme(): void {
   applyThemeMode(getThemeMode());
   applyThemePalette(getThemePalette());
-  applyLiveBackground(getLiveBackground());
+  applyLiveBackground(getLiveBackground(), getLiveBackgroundScope());
   setLiveBackgroundOpacity(getLiveBackgroundOpacity());
   setLiveBackgroundBlur(getLiveBackgroundBlur());
 }

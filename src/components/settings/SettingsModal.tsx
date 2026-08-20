@@ -12,12 +12,15 @@ import {
 import {
   ThemePalette,
   ThemeMode,
+  LiveBackgroundScope,
   getThemePalette,
   setThemePalette,
   getThemeMode,
   setThemeMode,
   getLiveBackground,
   setLiveBackground,
+  getLiveBackgroundScope,
+  setLiveBackgroundScope,
   getLiveBackgroundOpacity,
   setLiveBackgroundOpacity,
   getLiveBackgroundBlur,
@@ -116,6 +119,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     useState<ThemePalette>("rose-pine");
   const [currentMode, setCurrentModeState] = useState<ThemeMode>("working");
   const [liveBg, setLiveBgState] = useState<string | null>(null);
+  const [bgScope, setBgScopeState] = useState<LiveBackgroundScope>("full");
   const [bgOpacity, setBgOpacityState] = useState<number>(0.3);
   const [bgBlur, setBgBlurState] = useState<number>(0);
 
@@ -126,6 +130,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       setCurrentPaletteState(getThemePalette());
       setCurrentModeState(getThemeMode());
       setLiveBgState(getLiveBackground());
+      setBgScopeState(getLiveBackgroundScope());
       setBgOpacityState(getLiveBackgroundOpacity());
       setBgBlurState(getLiveBackgroundBlur());
     }
@@ -187,6 +192,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleBlurChange = (val: number) => {
     setBgBlurState(val);
     setLiveBackgroundBlur(val);
+  };
+
+  const handleScopeChange = (scope: LiveBackgroundScope) => {
+    setBgScopeState(scope);
+    setLiveBackgroundScope(scope);
   };
 
   return (
@@ -807,6 +817,102 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           accentColor: "var(--rose-pink)",
                         }}
                       />
+                    </div>
+
+                    {/* Scope Toggle */}
+                    <div>
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          color: "var(--rose-subtle)",
+                          marginBottom: "6px",
+                        }}
+                      >
+                        Live Background Scope
+                      </div>
+                      <div style={{ display: "flex", gap: "10px" }}>
+                        <button
+                          type="button"
+                          data-testid="bg-scope-toggle-full"
+                          onClick={() => handleScopeChange("full")}
+                          className="tactile-btn"
+                          style={{
+                            flex: 1,
+                            padding: "8px 12px",
+                            borderRadius: "var(--radius-md)",
+                            border:
+                              bgScope === "full"
+                                ? "1px solid var(--rose-pink)"
+                                : "1px solid rgba(110, 106, 134, 0.25)",
+                            backgroundColor:
+                              bgScope === "full"
+                                ? "rgba(235, 111, 146, 0.15)"
+                                : "var(--rose-bg-overlay)",
+                            color:
+                              bgScope === "full"
+                                ? "var(--rose-pink)"
+                                : "var(--rose-text)",
+                            cursor: "pointer",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: "2px",
+                          }}
+                        >
+                          <span style={{ fontSize: "12px", fontWeight: 700 }}>
+                            Full App
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "10px",
+                              color: "var(--rose-subtle)",
+                            }}
+                          >
+                            Spans entire window
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          data-testid="bg-scope-toggle-sidebar"
+                          onClick={() => handleScopeChange("sidebar")}
+                          className="tactile-btn"
+                          style={{
+                            flex: 1,
+                            padding: "8px 12px",
+                            borderRadius: "var(--radius-md)",
+                            border:
+                              bgScope === "sidebar"
+                                ? "1px solid var(--rose-foam)"
+                                : "1px solid rgba(110, 106, 134, 0.25)",
+                            backgroundColor:
+                              bgScope === "sidebar"
+                                ? "rgba(156, 207, 216, 0.15)"
+                                : "var(--rose-bg-overlay)",
+                            color:
+                              bgScope === "sidebar"
+                                ? "var(--rose-foam)"
+                                : "var(--rose-text)",
+                            cursor: "pointer",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: "2px",
+                          }}
+                        >
+                          <span style={{ fontSize: "12px", fontWeight: 700 }}>
+                            Sidebar Only
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "10px",
+                              color: "var(--rose-subtle)",
+                            }}
+                          >
+                            Solid editor canvas
+                          </span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}

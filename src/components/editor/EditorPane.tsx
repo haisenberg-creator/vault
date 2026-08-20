@@ -63,6 +63,7 @@ import {
 import { ALL_TRANSFORMERS } from "./checklistTransformer";
 import { TaskItem, TaskState } from "../sidebar/TaskDashboardSidebar";
 import { NoteActionBar } from "./NoteActionBar";
+import { CodeBlockActionPlugin } from "./CodeBlockActionPlugin";
 
 export interface EditorPaneProps {
   filename?: string;
@@ -1443,6 +1444,7 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
                   onMarkdownChange={handleMarkdownChange}
                 />
                 <MarkdownShortcutPlugin transformers={ALL_TRANSFORMERS} />
+                <CodeBlockActionPlugin />
                 <HashtagPlugin />
                 <TagClickHandlerPlugin onSelectTag={onSelectTag} />
                 <PriorityHeaderPlugin />

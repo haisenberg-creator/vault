@@ -844,5 +844,41 @@ describe("EditorPane Component (Lexical)", () => {
         "const greeting = 'Hello Vault';"
       );
     });
+
+    const langBadge = await screen.findByTestId("lexical-code-lang");
+    expect(langBadge).toHaveTextContent("JS");
+
+    const copyBtn = await screen.findByTestId("lexical-code-copy-btn");
+    expect(copyBtn).toBeInTheDocument();
+
+    fireEvent.click(copyBtn);
+    await waitFor(() => {
+      expect(copyBtn).toHaveTextContent("Copied!");
+    });
+  });
+
+  it("renders task badges with inline-flex alignment and non-overlapping vertical separation", async () => {
+    fileService.setMockFileContent(
+      "tasks-rhythm.md",
+      "- [ ] First task item\n- [-] Second task in progress\n- [x] Third task done"
+    );
+
+    render(<EditorPane filename="tasks-rhythm.md" />);
+
+    const openBadge = await screen.findByTestId("checklist-node-open");
+    const progressBadge = await screen.findByTestId(
+      "checklist-node-in_progress"
+    );
+    const completedBadge = await screen.findByTestId(
+      "checklist-node-completed"
+    );
+
+    expect(openBadge).toBeInTheDocument();
+    expect(progressBadge).toBeInTheDocument();
+    expect(completedBadge).toBeInTheDocument();
+
+    expect(openBadge).toHaveStyle({ display: "inline-flex" });
+    expect(progressBadge).toHaveStyle({ display: "inline-flex" });
+    expect(completedBadge).toHaveStyle({ display: "inline-flex" });
   });
 });

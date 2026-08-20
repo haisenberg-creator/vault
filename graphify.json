@@ -1,0 +1,1217 @@
+{
+  "generatedAt": "2026-08-20T09:47:21.118Z",
+  "stats": {
+    "totalFiles": 60,
+    "totalEdges": 102,
+    "components": 37,
+    "services": 10,
+    "hooks": 2,
+    "types": 2,
+    "rustCommands": 2
+  },
+  "nodes": {
+    "src/App.css": {
+      "id": "src/App.css",
+      "name": "App",
+      "type": "style",
+      "path": "src/App.css",
+      "imports": [],
+      "exports": [],
+      "dependencies": [],
+      "dependents": [],
+      "loc": 117
+    },
+    "src/App.tsx": {
+      "id": "src/App.tsx",
+      "name": "App",
+      "type": "util",
+      "path": "src/App.tsx",
+      "imports": [
+        "react",
+        "./components/layout/DualColumnLayout",
+        "./services/fileService",
+        "./components/ui/UpdateNotification"
+      ],
+      "exports": ["default"],
+      "dependencies": [
+        "src/components/layout/DualColumnLayout.tsx",
+        "src/services/fileService.ts",
+        "src/components/ui/UpdateNotification.tsx"
+      ],
+      "dependents": ["src/main.tsx"],
+      "loc": 24
+    },
+    "src/components/dashboard/DashboardSectionWidget.tsx": {
+      "id": "src/components/dashboard/DashboardSectionWidget.tsx",
+      "name": "DashboardSectionWidget",
+      "type": "component",
+      "path": "src/components/dashboard/DashboardSectionWidget.tsx",
+      "imports": ["react", "../../types/dashboard", "./DashboardTaskItem"],
+      "exports": ["DashboardSectionWidgetProps", "DashboardSectionWidget"],
+      "dependencies": [
+        "src/types/dashboard.ts",
+        "src/components/dashboard/DashboardTaskItem.tsx"
+      ],
+      "dependents": [
+        "src/components/dashboard/DashboardView.tsx",
+        "src/components/dashboard/__tests__/DashboardSectionWidget.test.tsx"
+      ],
+      "loc": 232
+    },
+    "src/components/dashboard/DashboardTaskItem.tsx": {
+      "id": "src/components/dashboard/DashboardTaskItem.tsx",
+      "name": "DashboardTaskItem",
+      "type": "component",
+      "path": "src/components/dashboard/DashboardTaskItem.tsx",
+      "imports": ["react", "../../types/dashboard"],
+      "exports": ["DashboardTaskItemProps", "DashboardTaskItem"],
+      "dependencies": ["src/types/dashboard.ts"],
+      "dependents": [
+        "src/components/dashboard/DashboardSectionWidget.tsx",
+        "src/components/dashboard/__tests__/DashboardTaskItem.test.tsx"
+      ],
+      "loc": 212
+    },
+    "src/components/dashboard/DashboardView.tsx": {
+      "id": "src/components/dashboard/DashboardView.tsx",
+      "name": "DashboardView",
+      "type": "component",
+      "path": "src/components/dashboard/DashboardView.tsx",
+      "imports": [
+        "react",
+        "../../services/dashboardService",
+        "../../services/fileService",
+        "../../services/workspaceService",
+        "../../types/dashboard",
+        "../editor/ChecklistNode",
+        "../editor/EditorPane",
+        "./DashboardSectionWidget"
+      ],
+      "exports": ["DashboardViewProps", "DashboardView"],
+      "dependencies": [
+        "src/services/dashboardService.ts",
+        "src/services/fileService.ts",
+        "src/services/workspaceService.ts",
+        "src/types/dashboard.ts",
+        "src/components/editor/ChecklistNode.tsx",
+        "src/components/editor/EditorPane.tsx",
+        "src/components/dashboard/DashboardSectionWidget.tsx"
+      ],
+      "dependents": [
+        "src/components/dashboard/__tests__/DashboardView.test.tsx",
+        "src/components/layout/DualColumnLayout.tsx"
+      ],
+      "loc": 398
+    },
+    "src/components/dashboard/__tests__/DashboardSectionWidget.test.tsx": {
+      "id": "src/components/dashboard/__tests__/DashboardSectionWidget.test.tsx",
+      "name": "DashboardSectionWidget.test",
+      "type": "component",
+      "path": "src/components/dashboard/__tests__/DashboardSectionWidget.test.tsx",
+      "imports": [
+        "@testing-library/react",
+        "vitest",
+        "../DashboardSectionWidget",
+        "../../../types/dashboard"
+      ],
+      "exports": [],
+      "dependencies": [
+        "src/components/dashboard/DashboardSectionWidget.tsx",
+        "src/types/dashboard.ts"
+      ],
+      "dependents": [],
+      "loc": 116
+    },
+    "src/components/dashboard/__tests__/DashboardTaskItem.test.tsx": {
+      "id": "src/components/dashboard/__tests__/DashboardTaskItem.test.tsx",
+      "name": "DashboardTaskItem.test",
+      "type": "component",
+      "path": "src/components/dashboard/__tests__/DashboardTaskItem.test.tsx",
+      "imports": [
+        "@testing-library/react",
+        "vitest",
+        "../DashboardTaskItem",
+        "../../../types/dashboard"
+      ],
+      "exports": [],
+      "dependencies": [
+        "src/components/dashboard/DashboardTaskItem.tsx",
+        "src/types/dashboard.ts"
+      ],
+      "dependents": [],
+      "loc": 86
+    },
+    "src/components/dashboard/__tests__/DashboardView.test.tsx": {
+      "id": "src/components/dashboard/__tests__/DashboardView.test.tsx",
+      "name": "DashboardView.test",
+      "type": "component",
+      "path": "src/components/dashboard/__tests__/DashboardView.test.tsx",
+      "imports": [
+        "@testing-library/react",
+        "vitest",
+        "../DashboardView",
+        "../../../services/fileService",
+        "../../../services/fileService"
+      ],
+      "exports": [],
+      "dependencies": [
+        "src/components/dashboard/DashboardView.tsx",
+        "src/services/fileService.ts"
+      ],
+      "dependents": [],
+      "loc": 210
+    },
+    "src/components/editor/ChecklistNode.tsx": {
+      "id": "src/components/editor/ChecklistNode.tsx",
+      "name": "ChecklistNode",
+      "type": "component",
+      "path": "src/components/editor/ChecklistNode.tsx",
+      "imports": ["react", "lexical", "@lexical/react/LexicalComposerContext"],
+      "exports": [
+        "TaskState",
+        "SerializedChecklistNode",
+        "parseTaskState",
+        "formatTaskState",
+        "getNextTaskState",
+        "ActiveFileContext",
+        "ChecklistComponent",
+        "ChecklistNode"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/components/dashboard/DashboardView.tsx",
+        "src/components/editor/checklistTransformer.ts",
+        "src/components/editor/EditorPane.tsx",
+        "src/components/editor/__tests__/ChecklistNode.test.tsx",
+        "src/components/editor/__tests__/checklistTransformer.test.ts",
+        "src/components/editor/__tests__/CustomMarkerAndEnter.test.tsx",
+        "src/services/workspaceService.ts"
+      ],
+      "loc": 330
+    },
+    "src/components/editor/checklistTransformer.ts": {
+      "id": "src/components/editor/checklistTransformer.ts",
+      "name": "checklistTransformer",
+      "type": "component",
+      "path": "src/components/editor/checklistTransformer.ts",
+      "imports": [
+        "@lexical/markdown",
+        "@lexical/list",
+        "lexical",
+        "./CustomListItemNode",
+        "@lexical/hashtag",
+        "./ChecklistNode"
+      ],
+      "exports": [
+        "HASHTAG_TRANSFORMER",
+        "CHECKLIST_TRANSFORMER",
+        "ARROW_TRANSFORMER",
+        "CUSTOM_UNORDERED_LIST",
+        "MARKER_UNORDERED_LIST_TRANSFORMER",
+        "ALL_TRANSFORMERS"
+      ],
+      "dependencies": [
+        "src/components/editor/CustomListItemNode.ts",
+        "src/components/editor/ChecklistNode.tsx"
+      ],
+      "dependents": [
+        "src/components/editor/EditorPane.tsx",
+        "src/components/editor/__tests__/checklistTransformer.test.ts",
+        "src/components/editor/__tests__/CustomMarkerAndEnter.test.tsx"
+      ],
+      "loc": 155
+    },
+    "src/components/editor/CodeBlockActionPlugin.tsx": {
+      "id": "src/components/editor/CodeBlockActionPlugin.tsx",
+      "name": "CodeBlockActionPlugin",
+      "type": "component",
+      "path": "src/components/editor/CodeBlockActionPlugin.tsx",
+      "imports": [
+        "react",
+        "@lexical/react/LexicalComposerContext",
+        "lexical",
+        "@lexical/code-core",
+        "lucide-react",
+        "../../services/fileService"
+      ],
+      "exports": ["CodeBlockHeader", "CodeBlockActionPlugin"],
+      "dependencies": ["src/services/fileService.ts"],
+      "dependents": ["src/components/editor/EditorPane.tsx"],
+      "loc": 159
+    },
+    "src/components/editor/CustomListItemNode.ts": {
+      "id": "src/components/editor/CustomListItemNode.ts",
+      "name": "CustomListItemNode",
+      "type": "component",
+      "path": "src/components/editor/CustomListItemNode.ts",
+      "imports": ["@lexical/list", "lexical"],
+      "exports": ["SerializedCustomListItemNode", "CustomListItemNode"],
+      "dependencies": [],
+      "dependents": [
+        "src/components/editor/checklistTransformer.ts",
+        "src/components/editor/EditorPane.tsx",
+        "src/components/editor/__tests__/checklistTransformer.test.ts",
+        "src/components/editor/__tests__/CustomMarkerAndEnter.test.tsx"
+      ],
+      "loc": 108
+    },
+    "src/components/editor/EditorPane.tsx": {
+      "id": "src/components/editor/EditorPane.tsx",
+      "name": "EditorPane",
+      "type": "component",
+      "path": "src/components/editor/EditorPane.tsx",
+      "imports": [
+        "react",
+        "@lexical/react/LexicalComposer",
+        "@lexical/react/LexicalRichTextPlugin",
+        "@lexical/react/LexicalContentEditable",
+        "@lexical/react/LexicalHistoryPlugin",
+        "@lexical/react/LexicalOnChangePlugin",
+        "@lexical/react/LexicalMarkdownShortcutPlugin",
+        "@lexical/react/LexicalErrorBoundary",
+        "@lexical/react/LexicalComposerContext",
+        "@lexical/rich-text",
+        "@lexical/list",
+        "@lexical/code-core",
+        "@lexical/link",
+        "@lexical/hashtag",
+        "@lexical/react/LexicalHashtagPlugin",
+        "@lexical/markdown",
+        "lexical",
+        "@lexical/list",
+        "../../services/fileService",
+        "../../services/dashboardService",
+        "./LexicalEditorTheme",
+        "./ChecklistNode",
+        "./CustomListItemNode",
+        "./checklistTransformer",
+        "../sidebar/TaskDashboardSidebar",
+        "./NoteActionBar",
+        "./CodeBlockActionPlugin"
+      ],
+      "exports": ["EditorPaneProps", "EditorPane", "default"],
+      "dependencies": [
+        "src/services/fileService.ts",
+        "src/services/dashboardService.ts",
+        "src/components/editor/LexicalEditorTheme.ts",
+        "src/components/editor/ChecklistNode.tsx",
+        "src/components/editor/CustomListItemNode.ts",
+        "src/components/editor/checklistTransformer.ts",
+        "src/components/sidebar/TaskDashboardSidebar.tsx",
+        "src/components/editor/NoteActionBar.tsx",
+        "src/components/editor/CodeBlockActionPlugin.tsx"
+      ],
+      "dependents": [
+        "src/components/dashboard/DashboardView.tsx",
+        "src/components/editor/__tests__/ChecklistNode.test.tsx",
+        "src/components/editor/__tests__/CustomMarkerAndEnter.test.tsx",
+        "src/components/editor/__tests__/EditorPane.test.tsx",
+        "src/components/layout/DualColumnLayout.tsx"
+      ],
+      "loc": 1464
+    },
+    "src/components/editor/FormattingToolbar.tsx": {
+      "id": "src/components/editor/FormattingToolbar.tsx",
+      "name": "FormattingToolbar",
+      "type": "component",
+      "path": "src/components/editor/FormattingToolbar.tsx",
+      "imports": ["react", "@lexical/react/LexicalComposerContext", "lexical"],
+      "exports": ["FormattingToolbarProps", "FormattingToolbar"],
+      "dependencies": [],
+      "dependents": [
+        "src/components/editor/__tests__/FormattingToolbar.test.tsx"
+      ],
+      "loc": 225
+    },
+    "src/components/editor/LexicalEditorTheme.ts": {
+      "id": "src/components/editor/LexicalEditorTheme.ts",
+      "name": "LexicalEditorTheme",
+      "type": "component",
+      "path": "src/components/editor/LexicalEditorTheme.ts",
+      "imports": ["lexical"],
+      "exports": ["theme", "default"],
+      "dependencies": [],
+      "dependents": [
+        "src/components/editor/EditorPane.tsx",
+        "src/components/editor/__tests__/FormattingToolbar.test.tsx"
+      ],
+      "loc": 39
+    },
+    "src/components/editor/NoteActionBar.tsx": {
+      "id": "src/components/editor/NoteActionBar.tsx",
+      "name": "NoteActionBar",
+      "type": "component",
+      "path": "src/components/editor/NoteActionBar.tsx",
+      "imports": [
+        "react",
+        "@lexical/react/LexicalComposerContext",
+        "lexical",
+        "lucide-react",
+        "../sidebar/TaskDashboardSidebar"
+      ],
+      "exports": ["NoteActionBarProps", "NoteActionBar"],
+      "dependencies": ["src/components/sidebar/TaskDashboardSidebar.tsx"],
+      "dependents": [
+        "src/components/editor/EditorPane.tsx",
+        "src/components/editor/__tests__/NoteActionBar.test.tsx"
+      ],
+      "loc": 600
+    },
+    "src/components/editor/__tests__/ChecklistNode.test.tsx": {
+      "id": "src/components/editor/__tests__/ChecklistNode.test.tsx",
+      "name": "ChecklistNode.test",
+      "type": "component",
+      "path": "src/components/editor/__tests__/ChecklistNode.test.tsx",
+      "imports": [
+        "@testing-library/react",
+        "vitest",
+        "lexical",
+        "../EditorPane",
+        "../ChecklistNode",
+        "../../../services/fileService"
+      ],
+      "exports": [],
+      "dependencies": [
+        "src/components/editor/EditorPane.tsx",
+        "src/components/editor/ChecklistNode.tsx",
+        "src/services/fileService.ts"
+      ],
+      "dependents": [],
+      "loc": 165
+    },
+    "src/components/editor/__tests__/checklistTransformer.test.ts": {
+      "id": "src/components/editor/__tests__/checklistTransformer.test.ts",
+      "name": "checklistTransformer.test",
+      "type": "component",
+      "path": "src/components/editor/__tests__/checklistTransformer.test.ts",
+      "imports": [
+        "vitest",
+        "lexical",
+        "@lexical/markdown",
+        "@lexical/rich-text",
+        "@lexical/list",
+        "@lexical/code-core",
+        "@lexical/link",
+        "@lexical/hashtag",
+        "../ChecklistNode",
+        "../CustomListItemNode",
+        "../checklistTransformer"
+      ],
+      "exports": [],
+      "dependencies": [
+        "src/components/editor/ChecklistNode.tsx",
+        "src/components/editor/CustomListItemNode.ts",
+        "src/components/editor/checklistTransformer.ts"
+      ],
+      "dependents": [],
+      "loc": 164
+    },
+    "src/components/editor/__tests__/CustomMarkerAndEnter.test.tsx": {
+      "id": "src/components/editor/__tests__/CustomMarkerAndEnter.test.tsx",
+      "name": "CustomMarkerAndEnter.test",
+      "type": "component",
+      "path": "src/components/editor/__tests__/CustomMarkerAndEnter.test.tsx",
+      "imports": [
+        "@testing-library/react",
+        "vitest",
+        "lexical",
+        "../EditorPane",
+        "../CustomListItemNode",
+        "@lexical/markdown",
+        "../checklistTransformer",
+        "@lexical/list",
+        "../ChecklistNode",
+        "../../../services/fileService"
+      ],
+      "exports": [],
+      "dependencies": [
+        "src/components/editor/EditorPane.tsx",
+        "src/components/editor/CustomListItemNode.ts",
+        "src/components/editor/checklistTransformer.ts",
+        "src/components/editor/ChecklistNode.tsx",
+        "src/services/fileService.ts"
+      ],
+      "dependents": [],
+      "loc": 90
+    },
+    "src/components/editor/__tests__/EditorPane.test.tsx": {
+      "id": "src/components/editor/__tests__/EditorPane.test.tsx",
+      "name": "EditorPane.test",
+      "type": "component",
+      "path": "src/components/editor/__tests__/EditorPane.test.tsx",
+      "imports": [
+        "@testing-library/react",
+        "vitest",
+        "lexical",
+        "../EditorPane",
+        "../../../services/fileService"
+      ],
+      "exports": [],
+      "dependencies": [
+        "src/components/editor/EditorPane.tsx",
+        "src/services/fileService.ts"
+      ],
+      "dependents": [],
+      "loc": 882
+    },
+    "src/components/editor/__tests__/FormattingToolbar.test.tsx": {
+      "id": "src/components/editor/__tests__/FormattingToolbar.test.tsx",
+      "name": "FormattingToolbar.test",
+      "type": "component",
+      "path": "src/components/editor/__tests__/FormattingToolbar.test.tsx",
+      "imports": [
+        "@testing-library/react",
+        "vitest",
+        "@lexical/react/LexicalComposer",
+        "@lexical/react/LexicalRichTextPlugin",
+        "@lexical/react/LexicalContentEditable",
+        "@lexical/react/LexicalErrorBoundary",
+        "../FormattingToolbar",
+        "../LexicalEditorTheme"
+      ],
+      "exports": [],
+      "dependencies": [
+        "src/components/editor/FormattingToolbar.tsx",
+        "src/components/editor/LexicalEditorTheme.ts"
+      ],
+      "dependents": [],
+      "loc": 75
+    },
+    "src/components/editor/__tests__/NoteActionBar.test.tsx": {
+      "id": "src/components/editor/__tests__/NoteActionBar.test.tsx",
+      "name": "NoteActionBar.test",
+      "type": "component",
+      "path": "src/components/editor/__tests__/NoteActionBar.test.tsx",
+      "imports": ["@testing-library/react", "vitest", "../NoteActionBar"],
+      "exports": [],
+      "dependencies": ["src/components/editor/NoteActionBar.tsx"],
+      "dependents": [],
+      "loc": 130
+    },
+    "src/components/layout/DualColumnLayout.tsx": {
+      "id": "src/components/layout/DualColumnLayout.tsx",
+      "name": "DualColumnLayout",
+      "type": "component",
+      "path": "src/components/layout/DualColumnLayout.tsx",
+      "imports": [
+        "react",
+        "../sidebar/TaskDashboardSidebar",
+        "../editor/EditorPane",
+        "../dashboard/DashboardView",
+        "./TitleBar",
+        "../ui/QuickSwitcher",
+        "../../services/fileService",
+        "../../services/workspaceService",
+        "../../services/themeService",
+        "../settings/SettingsModal",
+        "../../hooks/useGlobalShortcuts"
+      ],
+      "exports": ["DualColumnLayoutProps", "DualColumnLayout", "default"],
+      "dependencies": [
+        "src/components/sidebar/TaskDashboardSidebar.tsx",
+        "src/components/editor/EditorPane.tsx",
+        "src/components/dashboard/DashboardView.tsx",
+        "src/components/layout/TitleBar.tsx",
+        "src/components/ui/QuickSwitcher.tsx",
+        "src/services/fileService.ts",
+        "src/services/workspaceService.ts",
+        "src/services/themeService.ts",
+        "src/components/settings/SettingsModal.tsx",
+        "src/hooks/useGlobalShortcuts.ts"
+      ],
+      "dependents": [
+        "src/App.tsx",
+        "src/components/layout/__tests__/DualColumnLayout.test.tsx"
+      ],
+      "loc": 877
+    },
+    "src/components/layout/TitleBar.tsx": {
+      "id": "src/components/layout/TitleBar.tsx",
+      "name": "TitleBar",
+      "type": "component",
+      "path": "src/components/layout/TitleBar.tsx",
+      "imports": [
+        "react",
+        "@tauri-apps/api/window",
+        "../../assets/book.png",
+        "../../assets/enchanted-book.png",
+        "../../services/fileService",
+        "../../services/themeService"
+      ],
+      "exports": ["TitleBarProps", "TitleBar"],
+      "dependencies": [
+        "src/services/fileService.ts",
+        "src/services/themeService.ts"
+      ],
+      "dependents": [
+        "src/components/layout/DualColumnLayout.tsx",
+        "src/components/layout/__tests__/TitleBar.test.tsx"
+      ],
+      "loc": 625
+    },
+    "src/components/layout/__tests__/DualColumnLayout.test.tsx": {
+      "id": "src/components/layout/__tests__/DualColumnLayout.test.tsx",
+      "name": "DualColumnLayout.test",
+      "type": "component",
+      "path": "src/components/layout/__tests__/DualColumnLayout.test.tsx",
+      "imports": [
+        "@testing-library/react",
+        "vitest",
+        "../DualColumnLayout",
+        "../../../services/fileService"
+      ],
+      "exports": [],
+      "dependencies": [
+        "src/components/layout/DualColumnLayout.tsx",
+        "src/services/fileService.ts"
+      ],
+      "dependents": [],
+      "loc": 598
+    },
+    "src/components/layout/__tests__/TitleBar.test.tsx": {
+      "id": "src/components/layout/__tests__/TitleBar.test.tsx",
+      "name": "TitleBar.test",
+      "type": "component",
+      "path": "src/components/layout/__tests__/TitleBar.test.tsx",
+      "imports": ["@testing-library/react", "vitest", "../TitleBar"],
+      "exports": [],
+      "dependencies": ["src/components/layout/TitleBar.tsx"],
+      "dependents": [],
+      "loc": 253
+    },
+    "src/components/settings/SettingsModal.tsx": {
+      "id": "src/components/settings/SettingsModal.tsx",
+      "name": "SettingsModal",
+      "type": "component",
+      "path": "src/components/settings/SettingsModal.tsx",
+      "imports": ["react", "lucide-react", "../../services/themeService"],
+      "exports": ["SettingsModal"],
+      "dependencies": ["src/services/themeService.ts"],
+      "dependents": [
+        "src/components/layout/DualColumnLayout.tsx",
+        "src/components/settings/__tests__/SettingsModal.test.tsx",
+        "src/components/sidebar/TaskDashboardSidebar.tsx"
+      ],
+      "loc": 927
+    },
+    "src/components/settings/__tests__/SettingsModal.test.tsx": {
+      "id": "src/components/settings/__tests__/SettingsModal.test.tsx",
+      "name": "SettingsModal.test",
+      "type": "component",
+      "path": "src/components/settings/__tests__/SettingsModal.test.tsx",
+      "imports": [
+        "@testing-library/react",
+        "vitest",
+        "../SettingsModal",
+        "../../../services/themeService"
+      ],
+      "exports": [],
+      "dependencies": [
+        "src/components/settings/SettingsModal.tsx",
+        "src/services/themeService.ts"
+      ],
+      "dependents": [],
+      "loc": 194
+    },
+    "src/components/sidebar/FileOperationModal.tsx": {
+      "id": "src/components/sidebar/FileOperationModal.tsx",
+      "name": "FileOperationModal",
+      "type": "component",
+      "path": "src/components/sidebar/FileOperationModal.tsx",
+      "imports": ["react", "lucide-react"],
+      "exports": [
+        "OperationMode",
+        "FileOperationModalProps",
+        "FileOperationModal"
+      ],
+      "dependencies": [],
+      "dependents": ["src/components/sidebar/TaskDashboardSidebar.tsx"],
+      "loc": 241
+    },
+    "src/components/sidebar/PinnedDashboards.tsx": {
+      "id": "src/components/sidebar/PinnedDashboards.tsx",
+      "name": "PinnedDashboards",
+      "type": "component",
+      "path": "src/components/sidebar/PinnedDashboards.tsx",
+      "imports": ["react", "lucide-react", "../../types/workspaceTree"],
+      "exports": ["PinnedDashboardsProps", "PinnedDashboards"],
+      "dependencies": ["src/types/workspaceTree.ts"],
+      "dependents": ["src/components/sidebar/TaskDashboardSidebar.tsx"],
+      "loc": 93
+    },
+    "src/components/sidebar/SidebarTree.tsx": {
+      "id": "src/components/sidebar/SidebarTree.tsx",
+      "name": "SidebarTree",
+      "type": "component",
+      "path": "src/components/sidebar/SidebarTree.tsx",
+      "imports": [
+        "react",
+        "lucide-react",
+        "../../types/workspaceTree",
+        "../../services/fileService"
+      ],
+      "exports": ["SidebarTreeProps", "SidebarTree"],
+      "dependencies": [
+        "src/types/workspaceTree.ts",
+        "src/services/fileService.ts"
+      ],
+      "dependents": [
+        "src/components/sidebar/TaskDashboardSidebar.tsx",
+        "src/components/sidebar/__tests__/SidebarTree.test.tsx"
+      ],
+      "loc": 593
+    },
+    "src/components/sidebar/TaskDashboardSidebar.tsx": {
+      "id": "src/components/sidebar/TaskDashboardSidebar.tsx",
+      "name": "TaskDashboardSidebar",
+      "type": "component",
+      "path": "src/components/sidebar/TaskDashboardSidebar.tsx",
+      "imports": [
+        "react",
+        "lucide-react",
+        "../../types/workspaceTree",
+        "./PinnedDashboards",
+        "./SidebarTree",
+        "./FileOperationModal",
+        "../settings/SettingsModal",
+        "../../services/fileService",
+        "../../services/themeService",
+        "../../services/dashboardService"
+      ],
+      "exports": [
+        "TaskState",
+        "TaskItem",
+        "TaskDashboardSidebarProps",
+        "TaskDashboardSidebar"
+      ],
+      "dependencies": [
+        "src/types/workspaceTree.ts",
+        "src/components/sidebar/PinnedDashboards.tsx",
+        "src/components/sidebar/SidebarTree.tsx",
+        "src/components/sidebar/FileOperationModal.tsx",
+        "src/components/settings/SettingsModal.tsx",
+        "src/services/fileService.ts",
+        "src/services/themeService.ts",
+        "src/services/dashboardService.ts"
+      ],
+      "dependents": [
+        "src/components/editor/EditorPane.tsx",
+        "src/components/editor/NoteActionBar.tsx",
+        "src/components/layout/DualColumnLayout.tsx",
+        "src/components/sidebar/__tests__/ImportFolder.test.tsx",
+        "src/components/sidebar/__tests__/TaskDashboardSidebar.test.tsx",
+        "src/services/workspaceService.ts"
+      ],
+      "loc": 1779
+    },
+    "src/components/sidebar/__tests__/ImportFolder.test.tsx": {
+      "id": "src/components/sidebar/__tests__/ImportFolder.test.tsx",
+      "name": "ImportFolder.test",
+      "type": "component",
+      "path": "src/components/sidebar/__tests__/ImportFolder.test.tsx",
+      "imports": [
+        "@testing-library/react",
+        "vitest",
+        "../TaskDashboardSidebar",
+        "../../../services/fileService"
+      ],
+      "exports": [],
+      "dependencies": [
+        "src/components/sidebar/TaskDashboardSidebar.tsx",
+        "src/services/fileService.ts"
+      ],
+      "dependents": [],
+      "loc": 183
+    },
+    "src/components/sidebar/__tests__/SidebarTree.test.tsx": {
+      "id": "src/components/sidebar/__tests__/SidebarTree.test.tsx",
+      "name": "SidebarTree.test",
+      "type": "component",
+      "path": "src/components/sidebar/__tests__/SidebarTree.test.tsx",
+      "imports": [
+        "@testing-library/react",
+        "vitest",
+        "../SidebarTree",
+        "../../../types/workspaceTree"
+      ],
+      "exports": [],
+      "dependencies": [
+        "src/components/sidebar/SidebarTree.tsx",
+        "src/types/workspaceTree.ts"
+      ],
+      "dependents": [],
+      "loc": 407
+    },
+    "src/components/sidebar/__tests__/TaskDashboardSidebar.test.tsx": {
+      "id": "src/components/sidebar/__tests__/TaskDashboardSidebar.test.tsx",
+      "name": "TaskDashboardSidebar.test",
+      "type": "component",
+      "path": "src/components/sidebar/__tests__/TaskDashboardSidebar.test.tsx",
+      "imports": [
+        "@testing-library/react",
+        "vitest",
+        "../TaskDashboardSidebar"
+      ],
+      "exports": [],
+      "dependencies": ["src/components/sidebar/TaskDashboardSidebar.tsx"],
+      "dependents": [],
+      "loc": 448
+    },
+    "src/components/ui/QuickSwitcher.tsx": {
+      "id": "src/components/ui/QuickSwitcher.tsx",
+      "name": "QuickSwitcher",
+      "type": "component",
+      "path": "src/components/ui/QuickSwitcher.tsx",
+      "imports": ["react", "../../services/fileService"],
+      "exports": [
+        "QuickSwitcherNote",
+        "QuickSwitcherProps",
+        "calculateFuzzyScore",
+        "QuickSwitcher",
+        "default"
+      ],
+      "dependencies": ["src/services/fileService.ts"],
+      "dependents": [
+        "src/components/layout/DualColumnLayout.tsx",
+        "src/components/ui/__tests__/QuickSwitcher.test.tsx"
+      ],
+      "loc": 521
+    },
+    "src/components/ui/UpdateNotification.tsx": {
+      "id": "src/components/ui/UpdateNotification.tsx",
+      "name": "UpdateNotification",
+      "type": "component",
+      "path": "src/components/ui/UpdateNotification.tsx",
+      "imports": ["react", "@tauri-apps/plugin-updater"],
+      "exports": ["default"],
+      "dependencies": [],
+      "dependents": [
+        "src/App.tsx",
+        "src/components/ui/__tests__/UpdateNotification.test.tsx"
+      ],
+      "loc": 110
+    },
+    "src/components/ui/__tests__/QuickSwitcher.test.tsx": {
+      "id": "src/components/ui/__tests__/QuickSwitcher.test.tsx",
+      "name": "QuickSwitcher.test",
+      "type": "component",
+      "path": "src/components/ui/__tests__/QuickSwitcher.test.tsx",
+      "imports": ["vitest", "@testing-library/react", "../QuickSwitcher"],
+      "exports": [],
+      "dependencies": ["src/components/ui/QuickSwitcher.tsx"],
+      "dependents": [],
+      "loc": 240
+    },
+    "src/components/ui/__tests__/UpdateNotification.test.tsx": {
+      "id": "src/components/ui/__tests__/UpdateNotification.test.tsx",
+      "name": "UpdateNotification.test",
+      "type": "component",
+      "path": "src/components/ui/__tests__/UpdateNotification.test.tsx",
+      "imports": [
+        "@testing-library/react",
+        "vitest",
+        "../UpdateNotification",
+        "@tauri-apps/plugin-updater"
+      ],
+      "exports": [],
+      "dependencies": ["src/components/ui/UpdateNotification.tsx"],
+      "dependents": [],
+      "loc": 140
+    },
+    "src/hooks/useGlobalShortcuts.ts": {
+      "id": "src/hooks/useGlobalShortcuts.ts",
+      "name": "useGlobalShortcuts",
+      "type": "hook",
+      "path": "src/hooks/useGlobalShortcuts.ts",
+      "imports": ["react", "../services/globalShortcutService"],
+      "exports": ["UseGlobalShortcutsOptions", "useGlobalShortcuts"],
+      "dependencies": ["src/services/globalShortcutService.ts"],
+      "dependents": [
+        "src/components/layout/DualColumnLayout.tsx",
+        "src/hooks/__tests__/useGlobalShortcuts.test.ts"
+      ],
+      "loc": 70
+    },
+    "src/hooks/__tests__/useGlobalShortcuts.test.ts": {
+      "id": "src/hooks/__tests__/useGlobalShortcuts.test.ts",
+      "name": "useGlobalShortcuts.test",
+      "type": "hook",
+      "path": "src/hooks/__tests__/useGlobalShortcuts.test.ts",
+      "imports": [
+        "@testing-library/react",
+        "vitest",
+        "../useGlobalShortcuts",
+        "../../services/globalShortcutService"
+      ],
+      "exports": [],
+      "dependencies": [
+        "src/hooks/useGlobalShortcuts.ts",
+        "src/services/globalShortcutService.ts"
+      ],
+      "dependents": [],
+      "loc": 101
+    },
+    "src/index.css": {
+      "id": "src/index.css",
+      "name": "index",
+      "type": "style",
+      "path": "src/index.css",
+      "imports": [],
+      "exports": [],
+      "dependencies": [],
+      "dependents": [],
+      "loc": 744
+    },
+    "src/main.tsx": {
+      "id": "src/main.tsx",
+      "name": "main",
+      "type": "util",
+      "path": "src/main.tsx",
+      "imports": ["react", "react-dom/client", "./App"],
+      "exports": [],
+      "dependencies": ["src/App.tsx"],
+      "dependents": [],
+      "loc": 88
+    },
+    "src/Prototype.tsx": {
+      "id": "src/Prototype.tsx",
+      "name": "Prototype",
+      "type": "util",
+      "path": "src/Prototype.tsx",
+      "imports": ["react"],
+      "exports": ["default"],
+      "dependencies": [],
+      "dependents": [],
+      "loc": 1956
+    },
+    "src/services/dashboardService.ts": {
+      "id": "src/services/dashboardService.ts",
+      "name": "dashboardService",
+      "type": "service",
+      "path": "src/services/dashboardService.ts",
+      "imports": ["js-yaml", "../types/dashboard", "./fileService"],
+      "exports": [
+        "extractTags",
+        "parseDashboardSchema",
+        "parseTasksFromVaultFiles",
+        "queryTasks",
+        "groupAndSortTasks",
+        "executeDashboardQuery"
+      ],
+      "dependencies": ["src/types/dashboard.ts", "src/services/fileService.ts"],
+      "dependents": [
+        "src/components/dashboard/DashboardView.tsx",
+        "src/components/editor/EditorPane.tsx",
+        "src/components/sidebar/TaskDashboardSidebar.tsx",
+        "src/services/workspaceService.ts",
+        "src/services/__tests__/dashboardService.test.ts"
+      ],
+      "loc": 482
+    },
+    "src/services/fileService.ts": {
+      "id": "src/services/fileService.ts",
+      "name": "fileService",
+      "type": "service",
+      "path": "src/services/fileService.ts",
+      "imports": [
+        "@tauri-apps/api/core",
+        "mammoth",
+        "jszip",
+        "../types/workspaceTree"
+      ],
+      "exports": [
+        "WorkspaceFile",
+        "normalizePath",
+        "stripWorkspacePrefix",
+        "formatShortPath",
+        "resolveAbsolutePath",
+        "isSameFilePath",
+        "isTauriEnvironment",
+        "buildTreeFromMockStorage",
+        "ImportFolderOptions",
+        "subscribeToWorkspaceChanges",
+        "setMockFileContent",
+        "getMockFileContent",
+        "clearMockStorage",
+        "ImportFileInput"
+      ],
+      "dependencies": ["src/types/workspaceTree.ts"],
+      "dependents": [
+        "src/App.tsx",
+        "src/components/dashboard/DashboardView.tsx",
+        "src/components/dashboard/__tests__/DashboardView.test.tsx",
+        "src/components/editor/CodeBlockActionPlugin.tsx",
+        "src/components/editor/EditorPane.tsx",
+        "src/components/editor/__tests__/ChecklistNode.test.tsx",
+        "src/components/editor/__tests__/CustomMarkerAndEnter.test.tsx",
+        "src/components/editor/__tests__/EditorPane.test.tsx",
+        "src/components/layout/DualColumnLayout.tsx",
+        "src/components/layout/TitleBar.tsx",
+        "src/components/layout/__tests__/DualColumnLayout.test.tsx",
+        "src/components/sidebar/SidebarTree.tsx",
+        "src/components/sidebar/TaskDashboardSidebar.tsx",
+        "src/components/sidebar/__tests__/ImportFolder.test.tsx",
+        "src/components/ui/QuickSwitcher.tsx",
+        "src/services/dashboardService.ts",
+        "src/services/globalShortcutService.ts",
+        "src/services/__tests__/dashboardService.test.ts",
+        "src/services/__tests__/fileService.test.ts"
+      ],
+      "loc": 1021
+    },
+    "src/services/globalShortcutService.ts": {
+      "id": "src/services/globalShortcutService.ts",
+      "name": "globalShortcutService",
+      "type": "service",
+      "path": "src/services/globalShortcutService.ts",
+      "imports": ["./fileService", "@tauri-apps/plugin-global-shortcut"],
+      "exports": [
+        "GlobalShortcutHandlers",
+        "GLOBAL_SHORTCUT_NEW_NOTE",
+        "GLOBAL_SHORTCUT_QUICK_SWITCHER",
+        "normalizeShortcut",
+        "isShortcutMatch"
+      ],
+      "dependencies": ["src/services/fileService.ts"],
+      "dependents": [
+        "src/hooks/useGlobalShortcuts.ts",
+        "src/hooks/__tests__/useGlobalShortcuts.test.ts",
+        "src/services/__tests__/globalShortcutService.test.ts"
+      ],
+      "loc": 180
+    },
+    "src/services/themeService.ts": {
+      "id": "src/services/themeService.ts",
+      "name": "themeService",
+      "type": "service",
+      "path": "src/services/themeService.ts",
+      "imports": [],
+      "exports": [
+        "ThemeMode",
+        "LiveBackgroundScope",
+        "ThemePalette",
+        "ALL_THEME_PALETTES",
+        "subscribeTheme",
+        "getThemeMode",
+        "setThemeMode",
+        "applyThemeMode",
+        "toggleThemeMode",
+        "getThemePalette",
+        "setThemePalette",
+        "applyThemePalette",
+        "getLiveBackground",
+        "getLiveBackgroundScope",
+        "setLiveBackgroundScope",
+        "setLiveBackground",
+        "applyLiveBackground",
+        "getLiveBackgroundOpacity",
+        "setLiveBackgroundOpacity",
+        "getLiveBackgroundBlur",
+        "setLiveBackgroundBlur",
+        "initTheme"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/components/layout/DualColumnLayout.tsx",
+        "src/components/layout/TitleBar.tsx",
+        "src/components/settings/SettingsModal.tsx",
+        "src/components/settings/__tests__/SettingsModal.test.tsx",
+        "src/components/sidebar/TaskDashboardSidebar.tsx",
+        "src/services/__tests__/themeService.test.ts"
+      ],
+      "loc": 204
+    },
+    "src/services/workspaceService.ts": {
+      "id": "src/services/workspaceService.ts",
+      "name": "workspaceService",
+      "type": "service",
+      "path": "src/services/workspaceService.ts",
+      "imports": [
+        "../components/sidebar/TaskDashboardSidebar",
+        "../components/editor/ChecklistNode",
+        "./dashboardService"
+      ],
+      "exports": [
+        "WorkspaceFile",
+        "parseTasksFromMarkdown",
+        "toggleTaskInMarkdown",
+        "removeTaskFromMarkdown",
+        "appendTaskToMarkdown"
+      ],
+      "dependencies": [
+        "src/components/sidebar/TaskDashboardSidebar.tsx",
+        "src/components/editor/ChecklistNode.tsx",
+        "src/services/dashboardService.ts"
+      ],
+      "dependents": [
+        "src/components/dashboard/DashboardView.tsx",
+        "src/components/layout/DualColumnLayout.tsx",
+        "src/services/__tests__/workspaceService.test.ts"
+      ],
+      "loc": 223
+    },
+    "src/services/__tests__/dashboardService.test.ts": {
+      "id": "src/services/__tests__/dashboardService.test.ts",
+      "name": "dashboardService.test",
+      "type": "service",
+      "path": "src/services/__tests__/dashboardService.test.ts",
+      "imports": ["vitest", "../dashboardService", "../fileService"],
+      "exports": [],
+      "dependencies": [
+        "src/services/dashboardService.ts",
+        "src/services/fileService.ts"
+      ],
+      "dependents": [],
+      "loc": 386
+    },
+    "src/services/__tests__/fileService.test.ts": {
+      "id": "src/services/__tests__/fileService.test.ts",
+      "name": "fileService.test",
+      "type": "service",
+      "path": "src/services/__tests__/fileService.test.ts",
+      "imports": ["vitest", "../fileService", "jszip"],
+      "exports": [],
+      "dependencies": ["src/services/fileService.ts"],
+      "dependents": [],
+      "loc": 451
+    },
+    "src/services/__tests__/globalShortcutService.test.ts": {
+      "id": "src/services/__tests__/globalShortcutService.test.ts",
+      "name": "globalShortcutService.test",
+      "type": "service",
+      "path": "src/services/__tests__/globalShortcutService.test.ts",
+      "imports": [
+        "vitest",
+        "../globalShortcutService",
+        "@tauri-apps/plugin-global-shortcut"
+      ],
+      "exports": [],
+      "dependencies": ["src/services/globalShortcutService.ts"],
+      "dependents": [],
+      "loc": 331
+    },
+    "src/services/__tests__/themeService.test.ts": {
+      "id": "src/services/__tests__/themeService.test.ts",
+      "name": "themeService.test",
+      "type": "service",
+      "path": "src/services/__tests__/themeService.test.ts",
+      "imports": ["vitest", "../themeService"],
+      "exports": [],
+      "dependencies": ["src/services/themeService.ts"],
+      "dependents": [],
+      "loc": 178
+    },
+    "src/services/__tests__/workspaceService.test.ts": {
+      "id": "src/services/__tests__/workspaceService.test.ts",
+      "name": "workspaceService.test",
+      "type": "service",
+      "path": "src/services/__tests__/workspaceService.test.ts",
+      "imports": ["vitest", "../workspaceService"],
+      "exports": [],
+      "dependencies": ["src/services/workspaceService.ts"],
+      "dependents": [],
+      "loc": 213
+    },
+    "src/test/setup.ts": {
+      "id": "src/test/setup.ts",
+      "name": "setup",
+      "type": "util",
+      "path": "src/test/setup.ts",
+      "imports": [],
+      "exports": [],
+      "dependencies": [],
+      "dependents": [],
+      "loc": 2
+    },
+    "src/types/dashboard.ts": {
+      "id": "src/types/dashboard.ts",
+      "name": "dashboard",
+      "type": "type",
+      "path": "src/types/dashboard.ts",
+      "imports": [],
+      "exports": [
+        "TaskState",
+        "TaskGroupingOption",
+        "TaskSortingOption",
+        "DashboardFilter",
+        "DashboardSectionConfig",
+        "DashboardSchema",
+        "TaskItemWithMetadata",
+        "TaskGroup",
+        "DashboardSectionResult",
+        "DashboardQueryResult"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/components/dashboard/DashboardSectionWidget.tsx",
+        "src/components/dashboard/DashboardTaskItem.tsx",
+        "src/components/dashboard/DashboardView.tsx",
+        "src/components/dashboard/__tests__/DashboardSectionWidget.test.tsx",
+        "src/components/dashboard/__tests__/DashboardTaskItem.test.tsx",
+        "src/services/dashboardService.ts"
+      ],
+      "loc": 59
+    },
+    "src/types/workspaceTree.ts": {
+      "id": "src/types/workspaceTree.ts",
+      "name": "workspaceTree",
+      "type": "type",
+      "path": "src/types/workspaceTree.ts",
+      "imports": [],
+      "exports": ["FileKind", "FileTreeNode", "WorkspaceFileInfo"],
+      "dependencies": [],
+      "dependents": [
+        "src/components/sidebar/PinnedDashboards.tsx",
+        "src/components/sidebar/SidebarTree.tsx",
+        "src/components/sidebar/TaskDashboardSidebar.tsx",
+        "src/components/sidebar/__tests__/SidebarTree.test.tsx",
+        "src/services/fileService.ts"
+      ],
+      "loc": 25
+    },
+    "src/vite-env.d.ts": {
+      "id": "src/vite-env.d.ts",
+      "name": "vite-env.d",
+      "type": "util",
+      "path": "src/vite-env.d.ts",
+      "imports": [],
+      "exports": [],
+      "dependencies": [],
+      "dependents": [],
+      "loc": 2
+    },
+    "src-tauri/src/lib.rs": {
+      "id": "src-tauri/src/lib.rs",
+      "name": "lib.rs",
+      "type": "rust-command",
+      "path": "src-tauri/src/lib.rs",
+      "imports": [],
+      "exports": [
+        "greet",
+        "read_file",
+        "write_file",
+        "read_workspace_files",
+        "read_workspace_tree",
+        "get_workspace_dir",
+        "create_folder",
+        "delete_path",
+        "rename_path",
+        "import_folder"
+      ],
+      "dependencies": [],
+      "dependents": [],
+      "loc": 496
+    },
+    "src-tauri/src/main.rs": {
+      "id": "src-tauri/src/main.rs",
+      "name": "main.rs",
+      "type": "rust-command",
+      "path": "src-tauri/src/main.rs",
+      "imports": [],
+      "exports": [],
+      "dependencies": [],
+      "dependents": [],
+      "loc": 7
+    }
+  }
+}

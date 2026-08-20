@@ -39,7 +39,15 @@ import {
   importVaultArchive,
   isWorkspaceEmpty,
 } from "../../services/fileService";
-import { ThemeMode } from "../../services/themeService";
+import {
+  ThemeMode,
+  getLiveBackground,
+  getLiveBackgroundScope,
+  getLiveBackgroundOpacity,
+  getLiveBackgroundBlur,
+  subscribeTheme,
+  LiveBackgroundScope,
+} from "../../services/themeService";
 import { extractTags } from "../../services/dashboardService";
 
 export type TaskState = "open" | "in_progress" | "blocked" | "completed";
@@ -107,6 +115,27 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
   const [collapsedTaskNodes, setCollapsedTaskNodes] = useState<Set<string>>(
     new Set()
   );
+
+  const [liveBg, setLiveBg] = useState<string | null>(() =>
+    getLiveBackground()
+  );
+  const [bgScope, setBgScope] = useState<LiveBackgroundScope>(() =>
+    getLiveBackgroundScope()
+  );
+  const [bgOpacity, setBgOpacity] = useState<number>(() =>
+    getLiveBackgroundOpacity()
+  );
+  const [bgBlur, setBgBlur] = useState<number>(() => getLiveBackgroundBlur());
+
+  useEffect(() => {
+    const unsub = subscribeTheme(() => {
+      setLiveBg(getLiveBackground());
+      setBgScope(getLiveBackgroundScope());
+      setBgOpacity(getLiveBackgroundOpacity());
+      setBgBlur(getLiveBackgroundBlur());
+    });
+    return unsub;
+  }, []);
 
   // Modal State for file operations
   const [modalOpen, setModalOpen] = useState(false);
@@ -850,283 +879,277 @@ sections:
   return (
     <aside
       data-testid="sidebar-container"
+      className={liveBg && bgScope === "sidebar" ? "has-sidebar-live-bg" : ""}
       style={{
         width: "300px",
         minWidth: "260px",
         maxWidth: "360px",
         height: "100%",
-        backgroundColor: "var(--rose-bg-surface)",
+        backgroundColor:
+          liveBg && bgScope === "sidebar"
+            ? "rgba(31, 29, 46, 0.75)"
+            : "var(--rose-bg-surface)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
         borderRight: "1px solid rgba(110, 106, 134, 0.25)",
         display: "flex",
         flexDirection: "column",
         userSelect: "none",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      {/* Pinned Dashboards Bar */}
-      <PinnedDashboards
-        dashboards={pinnedDashboards}
-        activeDashboardPath={activeFilePath}
-        onSelectDashboard={(path) => onSelectFile?.(path)}
-      />
-
-      {/* Active Tag Filter Banner */}
-      {activeTagFilter && (
+      {/* Sidebar Live Background Backdrop */}
+      {liveBg && bgScope === "sidebar" && (
         <div
-          data-testid="sidebar-tag-filter-banner"
+          data-testid="sidebar-live-bg-backdrop"
+          className="sidebar-live-bg-container"
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "8px 12px",
-            backgroundColor: "rgba(196, 167, 231, 0.15)",
-            borderBottom: "1px solid rgba(196, 167, 231, 0.3)",
-            color: "var(--rose-iris)",
-            fontSize: "12px",
-            fontWeight: 500,
+            position: "absolute",
+            inset: 0,
+            backgroundImage: `url("${liveBg}")`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            opacity: bgOpacity,
+            filter: bgBlur > 0 ? `blur(${bgBlur}px)` : "none",
+            pointerEvents: "none",
+            zIndex: 0,
           }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <span>Filtered by</span>
-            <span
-              style={{
-                backgroundColor: "rgba(196, 167, 231, 0.25)",
-                color: "var(--rose-iris)",
-                padding: "2px 6px",
-                borderRadius: "4px",
-                fontWeight: 600,
-                fontFamily: "var(--font-mono)",
-              }}
-            >
-              {activeTagFilter.startsWith("#")
-                ? activeTagFilter
-                : `#${activeTagFilter}`}
-            </span>
-          </div>
-          <button
-            type="button"
-            data-testid="clear-tag-filter-btn"
-            onClick={onClearTagFilter}
-            title="Clear tag filter"
-            className="tactile-btn"
-            style={{
-              background: "none",
-              border: "none",
-              color: "var(--rose-iris)",
-              cursor: "pointer",
-              fontSize: "14px",
-              padding: "2px 4px",
-              borderRadius: "4px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <X size={14} />
-          </button>
-        </div>
+        />
       )}
-
-      {/* Navigation View Mode Tabs */}
       <div
         style={{
           display: "flex",
-          borderBottom: "1px solid rgba(110, 106, 134, 0.25)",
-          backgroundColor: "rgba(25, 23, 36, 0.4)",
+          flexDirection: "column",
+          height: "100%",
+          position: "relative",
+          zIndex: 1,
+          overflow: "hidden",
         }}
       >
-        <button
-          data-testid="tab-files"
-          onClick={() => setActiveTab("files")}
-          onDragOver={(e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = "move";
-            setActiveTab("files");
-          }}
-          onDragEnter={(e) => {
-            e.preventDefault();
-            setActiveTab("files");
-          }}
-          className="tactile-btn"
-          style={{
-            flex: 1,
-            padding: "8px 12px",
-            border: "none",
-            borderBottom:
-              activeTab === "files" ? "2px solid var(--rose-pink)" : "none",
-            backgroundColor:
-              activeTab === "files" ? "var(--rose-bg-overlay)" : "transparent",
-            color:
-              activeTab === "files" ? "var(--rose-pink)" : "var(--rose-subtle)",
-            fontSize: "12px",
-            fontWeight: 600,
-            cursor: "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "6px",
-          }}
-        >
-          <Files size={13} />
-          <span>Files & Folders</span>
-        </button>
-        <button
-          data-testid="tab-tasks"
-          onClick={() => setActiveTab("tasks")}
-          className="tactile-btn"
-          style={{
-            flex: 1,
-            padding: "8px 12px",
-            border: "none",
-            borderBottom:
-              activeTab === "tasks" ? "2px solid var(--rose-pink)" : "none",
-            backgroundColor:
-              activeTab === "tasks" ? "var(--rose-bg-overlay)" : "transparent",
-            color:
-              activeTab === "tasks" ? "var(--rose-pink)" : "var(--rose-subtle)",
-            fontSize: "12px",
-            fontWeight: 600,
-            cursor: "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "6px",
-          }}
-        >
-          <CheckSquare size={13} />
-          <span>
-            Tasks ({(activeFileTasks ?? tasks).filter(matchesTag).length})
-          </span>
-        </button>
-      </div>
+        {/* Pinned Dashboards Bar */}
+        <PinnedDashboards
+          dashboards={pinnedDashboards}
+          activeDashboardPath={activeFilePath}
+          onSelectDashboard={(path) => onSelectFile?.(path)}
+        />
 
-      {/* Tab Content: Files & Folders */}
-      {activeTab === "files" && (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            flex: 1,
-            overflow: "hidden",
-            position: "relative",
-          }}
-          onDragOver={(e) => {
-            if (e.dataTransfer.types.includes("Files")) {
-              e.preventDefault();
-              setIsDraggingExternalFiles(true);
-            }
-          }}
-          onDragLeave={(e) => {
-            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-              setIsDraggingExternalFiles(false);
-            }
-          }}
-          onDrop={async (e) => {
-            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-              e.preventDefault();
-              e.stopPropagation();
-              setIsDraggingExternalFiles(false);
-              await handleImportFilesList(e.dataTransfer.files);
-            }
-          }}
-        >
-          {isDraggingExternalFiles && (
-            <div
-              data-testid="sidebar-external-drop-overlay"
+        {/* Active Tag Filter Banner */}
+        {activeTagFilter && (
+          <div
+            data-testid="sidebar-tag-filter-banner"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "8px 12px",
+              backgroundColor: "rgba(196, 167, 231, 0.15)",
+              borderBottom: "1px solid rgba(196, 167, 231, 0.3)",
+              color: "var(--rose-iris)",
+              fontSize: "12px",
+              fontWeight: 500,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span>Filtered by</span>
+              <span
+                style={{
+                  backgroundColor: "rgba(196, 167, 231, 0.25)",
+                  color: "var(--rose-iris)",
+                  padding: "2px 6px",
+                  borderRadius: "4px",
+                  fontWeight: 600,
+                  fontFamily: "var(--font-mono)",
+                }}
+              >
+                {activeTagFilter.startsWith("#")
+                  ? activeTagFilter
+                  : `#${activeTagFilter}`}
+              </span>
+            </div>
+            <button
+              type="button"
+              data-testid="clear-tag-filter-btn"
+              onClick={onClearTagFilter}
+              title="Clear tag filter"
+              className="tactile-btn"
               style={{
-                position: "absolute",
-                inset: 0,
-                backgroundColor: "rgba(156, 207, 216, 0.2)",
-                border: "2px dashed var(--rose-foam)",
-                borderRadius: "var(--radius-md)",
+                background: "none",
+                border: "none",
+                color: "var(--rose-iris)",
+                cursor: "pointer",
+                fontSize: "14px",
+                padding: "2px 4px",
+                borderRadius: "4px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                zIndex: 40,
-                pointerEvents: "none",
-                color: "var(--rose-foam)",
-                fontSize: "12px",
-                fontWeight: 600,
               }}
             >
-              Drop files to import into Vault
-            </div>
-          )}
+              <X size={14} />
+            </button>
+          </div>
+        )}
 
-          {/* File Action Toolbar */}
-          <div
+        {/* Navigation View Mode Tabs */}
+        <div
+          style={{
+            display: "flex",
+            borderBottom: "1px solid rgba(110, 106, 134, 0.25)",
+            backgroundColor: "rgba(25, 23, 36, 0.4)",
+          }}
+        >
+          <button
+            data-testid="tab-files"
+            onClick={() => setActiveTab("files")}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              setActiveTab("files");
+            }}
+            onDragEnter={(e) => {
+              e.preventDefault();
+              setActiveTab("files");
+            }}
+            className="tactile-btn"
             style={{
-              padding: "8px 10px",
-              display: "flex",
-              gap: "4px",
-              borderBottom: "1px solid rgba(110, 106, 134, 0.15)",
-              backgroundColor: "rgba(38, 35, 58, 0.3)",
-              flexWrap: "wrap",
+              flex: 1,
+              padding: "8px 12px",
+              border: "none",
+              borderBottom:
+                activeTab === "files" ? "2px solid var(--rose-pink)" : "none",
+              backgroundColor:
+                activeTab === "files"
+                  ? "var(--rose-bg-overlay)"
+                  : "transparent",
+              color:
+                activeTab === "files"
+                  ? "var(--rose-pink)"
+                  : "var(--rose-subtle)",
+              fontSize: "12px",
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
             }}
           >
-            <button
-              data-testid="sidebar-action-new-note"
-              onClick={() => handleOpenCreateModal("create-note")}
-              className="tactile-btn"
-              style={{
-                flex: "1 1 auto",
-                fontSize: "11px",
-                fontWeight: 600,
-                padding: "4px 6px",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid rgba(110, 106, 134, 0.25)",
-                backgroundColor: "var(--rose-bg-overlay)",
-                color: "var(--rose-text)",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "4px",
-              }}
-            >
-              <FilePlus size={12} />
-              <span>+ Note</span>
-            </button>
-            <button
-              data-testid="sidebar-action-new-folder"
-              onClick={() => handleOpenCreateModal("create-folder")}
-              className="tactile-btn"
-              style={{
-                flex: "1 1 auto",
-                fontSize: "11px",
-                fontWeight: 600,
-                padding: "4px 6px",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid rgba(110, 106, 134, 0.25)",
-                backgroundColor: "var(--rose-bg-overlay)",
-                color: "var(--rose-gold)",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "4px",
-              }}
-            >
-              <FolderPlus size={12} />
-              <span>+ Folder</span>
-            </button>
+            <Files size={13} />
+            <span>Files & Folders</span>
+          </button>
+          <button
+            data-testid="tab-tasks"
+            onClick={() => setActiveTab("tasks")}
+            className="tactile-btn"
+            style={{
+              flex: 1,
+              padding: "8px 12px",
+              border: "none",
+              borderBottom:
+                activeTab === "tasks" ? "2px solid var(--rose-pink)" : "none",
+              backgroundColor:
+                activeTab === "tasks"
+                  ? "var(--rose-bg-overlay)"
+                  : "transparent",
+              color:
+                activeTab === "tasks"
+                  ? "var(--rose-pink)"
+                  : "var(--rose-subtle)",
+              fontSize: "12px",
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+            }}
+          >
+            <CheckSquare size={13} />
+            <span>
+              Tasks ({(activeFileTasks ?? tasks).filter(matchesTag).length})
+            </span>
+          </button>
+        </div>
+
+        {/* Tab Content: Files & Folders */}
+        {activeTab === "files" && (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              flex: 1,
+              overflow: "hidden",
+              position: "relative",
+            }}
+            onDragOver={(e) => {
+              if (e.dataTransfer.types.includes("Files")) {
+                e.preventDefault();
+                setIsDraggingExternalFiles(true);
+              }
+            }}
+            onDragLeave={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                setIsDraggingExternalFiles(false);
+              }
+            }}
+            onDrop={async (e) => {
+              if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDraggingExternalFiles(false);
+                await handleImportFilesList(e.dataTransfer.files);
+              }
+            }}
+          >
+            {isDraggingExternalFiles && (
+              <div
+                data-testid="sidebar-external-drop-overlay"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  backgroundColor: "rgba(156, 207, 216, 0.2)",
+                  border: "2px dashed var(--rose-foam)",
+                  borderRadius: "var(--radius-md)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 40,
+                  pointerEvents: "none",
+                  color: "var(--rose-foam)",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                }}
+              >
+                Drop files to import into Vault
+              </div>
+            )}
+
+            {/* File Action Toolbar */}
             <div
-              style={{ position: "relative", flex: "1 1 auto" }}
-              ref={importMenuRef}
+              style={{
+                padding: "8px 10px",
+                display: "flex",
+                gap: "4px",
+                borderBottom: "1px solid rgba(110, 106, 134, 0.15)",
+                backgroundColor: "rgba(38, 35, 58, 0.3)",
+                flexWrap: "wrap",
+              }}
             >
               <button
-                data-testid="sidebar-action-import-folder"
-                onClick={() => setIsImportMenuOpen((prev) => !prev)}
+                data-testid="sidebar-action-new-note"
+                onClick={() => handleOpenCreateModal("create-note")}
                 className="tactile-btn"
-                title="Import Note/Folder"
                 style={{
-                  width: "100%",
+                  flex: "1 1 auto",
                   fontSize: "11px",
                   fontWeight: 600,
                   padding: "4px 6px",
                   borderRadius: "var(--radius-sm)",
-                  border: "1px solid rgba(156, 207, 216, 0.3)",
-                  backgroundColor: "rgba(156, 207, 216, 0.15)",
-                  color: "var(--rose-foam)",
+                  border: "1px solid rgba(110, 106, 134, 0.25)",
+                  backgroundColor: "var(--rose-bg-overlay)",
+                  color: "var(--rose-text)",
                   cursor: "pointer",
                   display: "inline-flex",
                   alignItems: "center",
@@ -1134,578 +1157,636 @@ sections:
                   gap: "4px",
                 }}
               >
-                <Upload size={12} />
-                <span>Import Note/Folder</span>
+                <FilePlus size={12} />
+                <span>+ Note</span>
               </button>
-
-              {isImportMenuOpen && (
-                <div
-                  data-testid="import-menu-popover"
+              <button
+                data-testid="sidebar-action-new-folder"
+                onClick={() => handleOpenCreateModal("create-folder")}
+                className="tactile-btn"
+                style={{
+                  flex: "1 1 auto",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  padding: "4px 6px",
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px solid rgba(110, 106, 134, 0.25)",
+                  backgroundColor: "var(--rose-bg-overlay)",
+                  color: "var(--rose-gold)",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "4px",
+                }}
+              >
+                <FolderPlus size={12} />
+                <span>+ Folder</span>
+              </button>
+              <div
+                style={{ position: "relative", flex: "1 1 auto" }}
+                ref={importMenuRef}
+              >
+                <button
+                  data-testid="sidebar-action-import-folder"
+                  onClick={() => setIsImportMenuOpen((prev) => !prev)}
+                  className="tactile-btn"
+                  title="Import Note/Folder"
                   style={{
-                    position: "absolute",
-                    top: "100%",
-                    left: 0,
-                    marginTop: "4px",
-                    zIndex: 50,
-                    backgroundColor: "var(--rose-bg-surface)",
-                    border: "1px solid var(--rose-border-color)",
-                    borderRadius: "var(--radius-md)",
-                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
-                    padding: "4px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "2px",
-                    minWidth: "160px",
+                    width: "100%",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    padding: "4px 6px",
+                    borderRadius: "var(--radius-sm)",
+                    border: "1px solid rgba(156, 207, 216, 0.3)",
+                    backgroundColor: "rgba(156, 207, 216, 0.15)",
+                    color: "var(--rose-foam)",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "4px",
                   }}
                 >
-                  <button
-                    data-testid="import-option-files"
-                    className="tactile-btn"
-                    onClick={() => {
-                      setIsImportMenuOpen(false);
-                      importFilesInputRef.current?.click();
-                    }}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      padding: "6px 8px",
-                      borderRadius: "var(--radius-sm)",
-                      border: "none",
-                      backgroundColor: "transparent",
-                      color: "var(--rose-text)",
-                      fontSize: "11px",
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      textAlign: "left",
-                      width: "100%",
-                    }}
-                  >
-                    <FileText size={12} style={{ color: "var(--rose-foam)" }} />
-                    <span>Import Files / Zip</span>
-                  </button>
-                  <button
-                    data-testid="import-option-folder"
-                    className="tactile-btn"
-                    onClick={() => {
-                      setIsImportMenuOpen(false);
-                      importFolderInputRef.current?.click();
-                    }}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      padding: "6px 8px",
-                      borderRadius: "var(--radius-sm)",
-                      border: "none",
-                      backgroundColor: "transparent",
-                      color: "var(--rose-text)",
-                      fontSize: "11px",
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      textAlign: "left",
-                      width: "100%",
-                    }}
-                  >
-                    <Folder size={12} style={{ color: "var(--rose-gold)" }} />
-                    <span>Import Folder</span>
-                  </button>
+                  <Upload size={12} />
+                  <span>Import Note/Folder</span>
+                </button>
+
+                {isImportMenuOpen && (
                   <div
+                    data-testid="import-menu-popover"
                     style={{
-                      height: "1px",
-                      backgroundColor: "rgba(110, 106, 134, 0.2)",
-                      margin: "2px 0",
-                    }}
-                  />
-                  <button
-                    data-testid="sidebar-action-export-archive"
-                    className="tactile-btn"
-                    onClick={() => {
-                      setIsImportMenuOpen(false);
-                      handleExportArchive();
-                    }}
-                    style={{
+                      position: "absolute",
+                      top: "100%",
+                      left: 0,
+                      marginTop: "4px",
+                      zIndex: 50,
+                      backgroundColor: "var(--rose-bg-surface)",
+                      border: "1px solid var(--rose-border-color)",
+                      borderRadius: "var(--radius-md)",
+                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+                      padding: "4px",
                       display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      padding: "6px 8px",
-                      borderRadius: "var(--radius-sm)",
-                      border: "none",
-                      backgroundColor: "transparent",
-                      color: "var(--rose-text)",
-                      fontSize: "11px",
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      textAlign: "left",
-                      width: "100%",
+                      flexDirection: "column",
+                      gap: "2px",
+                      minWidth: "160px",
                     }}
                   >
-                    <Archive size={12} style={{ color: "var(--rose-pink)" }} />
-                    <span>Sync / Export Vault Archive</span>
-                  </button>
-                </div>
-              )}
+                    <button
+                      data-testid="import-option-files"
+                      className="tactile-btn"
+                      onClick={() => {
+                        setIsImportMenuOpen(false);
+                        importFilesInputRef.current?.click();
+                      }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "6px 8px",
+                        borderRadius: "var(--radius-sm)",
+                        border: "none",
+                        backgroundColor: "transparent",
+                        color: "var(--rose-text)",
+                        fontSize: "11px",
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        textAlign: "left",
+                        width: "100%",
+                      }}
+                    >
+                      <FileText
+                        size={12}
+                        style={{ color: "var(--rose-foam)" }}
+                      />
+                      <span>Import Files / Zip</span>
+                    </button>
+                    <button
+                      data-testid="import-option-folder"
+                      className="tactile-btn"
+                      onClick={() => {
+                        setIsImportMenuOpen(false);
+                        importFolderInputRef.current?.click();
+                      }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "6px 8px",
+                        borderRadius: "var(--radius-sm)",
+                        border: "none",
+                        backgroundColor: "transparent",
+                        color: "var(--rose-text)",
+                        fontSize: "11px",
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        textAlign: "left",
+                        width: "100%",
+                      }}
+                    >
+                      <Folder size={12} style={{ color: "var(--rose-gold)" }} />
+                      <span>Import Folder</span>
+                    </button>
+                    <div
+                      style={{
+                        height: "1px",
+                        backgroundColor: "rgba(110, 106, 134, 0.2)",
+                        margin: "2px 0",
+                      }}
+                    />
+                    <button
+                      data-testid="sidebar-action-export-archive"
+                      className="tactile-btn"
+                      onClick={() => {
+                        setIsImportMenuOpen(false);
+                        handleExportArchive();
+                      }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "6px 8px",
+                        borderRadius: "var(--radius-sm)",
+                        border: "none",
+                        backgroundColor: "transparent",
+                        color: "var(--rose-text)",
+                        fontSize: "11px",
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        textAlign: "left",
+                        width: "100%",
+                      }}
+                    >
+                      <Archive
+                        size={12}
+                        style={{ color: "var(--rose-pink)" }}
+                      />
+                      <span>Sync / Export Vault Archive</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+              <button
+                data-testid="sidebar-action-new-dashboard"
+                onClick={() => handleOpenCreateModal("create-dashboard")}
+                className="tactile-btn"
+                style={{
+                  flex: "1 1 auto",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  padding: "4px 6px",
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px solid rgba(235, 111, 146, 0.3)",
+                  backgroundColor: "rgba(235, 111, 146, 0.15)",
+                  color: "var(--rose-pink)",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "4px",
+                }}
+              >
+                <LayoutDashboard size={12} />
+                <span>+ Dashboard</span>
+              </button>
+              <input
+                type="file"
+                data-testid="import-files-input"
+                ref={importFilesInputRef}
+                style={{ display: "none" }}
+                multiple
+                accept=".md,.txt,.text,.zip,.docx,application/zip,application/x-zip-compressed,text/plain"
+                onChange={handleImportFolder}
+              />
+              <input
+                type="file"
+                data-testid="import-folder-input"
+                ref={importFolderInputRef}
+                style={{ display: "none" }}
+                {...({ webkitdirectory: "", directory: "" } as any)}
+                multiple
+                accept=".md,.txt,.text,.zip,.docx"
+                onChange={handleImportFolder}
+              />
             </div>
-            <button
-              data-testid="sidebar-action-new-dashboard"
-              onClick={() => handleOpenCreateModal("create-dashboard")}
-              className="tactile-btn"
-              style={{
-                flex: "1 1 auto",
-                fontSize: "11px",
-                fontWeight: 600,
-                padding: "4px 6px",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid rgba(235, 111, 146, 0.3)",
-                backgroundColor: "rgba(235, 111, 146, 0.15)",
-                color: "var(--rose-pink)",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "4px",
-              }}
-            >
-              <LayoutDashboard size={12} />
-              <span>+ Dashboard</span>
-            </button>
-            <input
-              type="file"
-              data-testid="import-files-input"
-              ref={importFilesInputRef}
-              style={{ display: "none" }}
-              multiple
-              accept=".md,.txt,.text,.zip,.docx,application/zip,application/x-zip-compressed,text/plain"
-              onChange={handleImportFolder}
-            />
-            <input
-              type="file"
-              data-testid="import-folder-input"
-              ref={importFolderInputRef}
-              style={{ display: "none" }}
-              {...({ webkitdirectory: "", directory: "" } as any)}
-              multiple
-              accept=".md,.txt,.text,.zip,.docx"
-              onChange={handleImportFolder}
+
+            {/* Tree Component */}
+            <SidebarTree
+              nodes={treeNodes}
+              activeFilePath={activeFilePath}
+              onSelectFile={(node) => onSelectFile?.(node.path)}
+              onCreateNote={(folder) =>
+                handleOpenCreateModal("create-note", folder)
+              }
+              onCreateFolder={(folder) =>
+                handleOpenCreateModal("create-folder", folder)
+              }
+              onCreateDashboard={(folder) =>
+                handleOpenCreateModal("create-dashboard", folder)
+              }
+              onRename={handleOpenRenameModal}
+              onDelete={handleDeleteItem}
+              onMovePath={handleMoveItem}
+              onMoveTaskToNote={onMoveTaskToNote}
+              onOpenInSplitView={onOpenInSplitView}
+              workspaceDir={workspaceDir}
             />
           </div>
+        )}
 
-          {/* Tree Component */}
-          <SidebarTree
-            nodes={treeNodes}
-            activeFilePath={activeFilePath}
-            onSelectFile={(node) => onSelectFile?.(node.path)}
-            onCreateNote={(folder) =>
-              handleOpenCreateModal("create-note", folder)
-            }
-            onCreateFolder={(folder) =>
-              handleOpenCreateModal("create-folder", folder)
-            }
-            onCreateDashboard={(folder) =>
-              handleOpenCreateModal("create-dashboard", folder)
-            }
-            onRename={handleOpenRenameModal}
-            onDelete={handleDeleteItem}
-            onMovePath={handleMoveItem}
-            onMoveTaskToNote={onMoveTaskToNote}
-            onOpenInSplitView={onOpenInSplitView}
-            workspaceDir={workspaceDir}
-          />
-        </div>
-      )}
-
-      {/* Tab Content: Tasks View */}
-      {activeTab === "tasks" && (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            flex: 1,
-            overflow: "hidden",
-          }}
-        >
-          {/* Filter Tabs */}
+        {/* Tab Content: Tasks View */}
+        {activeTab === "tasks" && (
           <div
             style={{
               display: "flex",
-              gap: "4px",
-              padding: "10px 12px",
-              borderBottom: "1px solid rgba(110, 106, 134, 0.15)",
-              flexWrap: "wrap",
+              flexDirection: "column",
+              flex: 1,
+              overflow: "hidden",
             }}
           >
-            {(
-              ["all", "open", "in_progress", "blocked", "completed"] as const
-            ).map((filter) => {
-              const isActive = activeFilter === filter;
-              return (
-                <button
-                  key={filter}
-                  data-testid={`filter-btn-${filter}`}
-                  onClick={() => handleFilterClick(filter)}
-                  className="tactile-btn"
+            {/* Filter Tabs */}
+            <div
+              style={{
+                display: "flex",
+                gap: "4px",
+                padding: "10px 12px",
+                borderBottom: "1px solid rgba(110, 106, 134, 0.15)",
+                flexWrap: "wrap",
+              }}
+            >
+              {(
+                ["all", "open", "in_progress", "blocked", "completed"] as const
+              ).map((filter) => {
+                const isActive = activeFilter === filter;
+                return (
+                  <button
+                    key={filter}
+                    data-testid={`filter-btn-${filter}`}
+                    onClick={() => handleFilterClick(filter)}
+                    className="tactile-btn"
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      padding: "4px 8px",
+                      borderRadius: "var(--radius-sm)",
+                      border: "none",
+                      cursor: "pointer",
+                      backgroundColor: isActive
+                        ? "var(--rose-pink)"
+                        : "rgba(38, 35, 58, 0.6)",
+                      color: isActive ? "#191724" : "var(--rose-subtle)",
+                      textTransform: "capitalize",
+                    }}
+                  >
+                    {filter.replace("_", " ")} ({counts[filter]})
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Task Tree */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "12px" }}>
+              {filteredTasks.length === 0 ? (
+                <div
+                  data-testid="empty-tasks-message"
                   style={{
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    padding: "4px 8px",
-                    borderRadius: "var(--radius-sm)",
-                    border: "none",
-                    cursor: "pointer",
-                    backgroundColor: isActive
-                      ? "var(--rose-pink)"
-                      : "rgba(38, 35, 58, 0.6)",
-                    color: isActive ? "#191724" : "var(--rose-subtle)",
-                    textTransform: "capitalize",
+                    padding: "32px 16px",
+                    textAlign: "center",
+                    color: "var(--rose-subtle)",
+                    fontSize: "12px",
+                    fontFamily: "var(--font-mono)",
                   }}
                 >
-                  {filter.replace("_", " ")} ({counts[filter]})
-                </button>
-              );
-            })}
+                  No tasks found
+                </div>
+              ) : (
+                buildTaskTree(filteredTasks).map((node) =>
+                  renderTaskTreeNode(node, 0)
+                )
+              )}
+            </div>
           </div>
+        )}
 
-          {/* Task Tree */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "12px" }}>
-            {filteredTasks.length === 0 ? (
-              <div
-                data-testid="empty-tasks-message"
-                style={{
-                  padding: "32px 16px",
-                  textAlign: "center",
-                  color: "var(--rose-subtle)",
-                  fontSize: "12px",
-                  fontFamily: "var(--font-mono)",
-                }}
-              >
-                No tasks found
-              </div>
-            ) : (
-              buildTaskTree(filteredTasks).map((node) =>
-                renderTaskTreeNode(node, 0)
-              )
-            )}
-          </div>
-        </div>
-      )}
+        {/* File Operation Input Modal */}
+        <FileOperationModal
+          isOpen={modalOpen}
+          mode={modalMode}
+          targetPath={modalTargetPath}
+          initialValue={modalInitialValue}
+          onSubmit={handleModalSubmit}
+          onClose={() => setModalOpen(false)}
+        />
 
-      {/* File Operation Input Modal */}
-      <FileOperationModal
-        isOpen={modalOpen}
-        mode={modalMode}
-        targetPath={modalTargetPath}
-        initialValue={modalInitialValue}
-        onSubmit={handleModalSubmit}
-        onClose={() => setModalOpen(false)}
-      />
-
-      {/* Move Task Modal */}
-      {movingTask && (
-        <div
-          data-testid="move-task-modal"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.6)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 2000,
-          }}
-          onClick={() => setMovingTask(null)}
-        >
+        {/* Move Task Modal */}
+        {movingTask && (
           <div
+            data-testid="move-task-modal"
             style={{
-              backgroundColor: "var(--rose-bg-surface)",
-              border: "1px solid var(--rose-border-color)",
-              borderRadius: "var(--radius-md)",
-              padding: "16px",
-              width: "320px",
-              boxShadow: "var(--rose-shadow)",
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.6)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 2000,
             }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={() => setMovingTask(null)}
           >
             <div
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                marginBottom: "8px",
+                backgroundColor: "var(--rose-bg-surface)",
+                border: "1px solid var(--rose-border-color)",
+                borderRadius: "var(--radius-md)",
+                padding: "16px",
+                width: "320px",
+                boxShadow: "var(--rose-shadow)",
               }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <CornerDownRight size={16} color="var(--rose-pink)" />
-              <h3
+              <div
                 style={{
-                  margin: 0,
-                  fontSize: "14px",
-                  color: "var(--rose-pink)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  marginBottom: "8px",
                 }}
               >
-                Move Task to Note
-              </h3>
-            </div>
-            <p
-              style={{
-                margin: "0 0 12px 0",
-                fontSize: "12px",
-                color: "var(--rose-subtle)",
-              }}
-            >
-              Select target note for &quot;{movingTask.title}&quot;:
-            </p>
-            {availableNotes.length === 0 ? (
+                <CornerDownRight size={16} color="var(--rose-pink)" />
+                <h3
+                  style={{
+                    margin: 0,
+                    fontSize: "14px",
+                    color: "var(--rose-pink)",
+                  }}
+                >
+                  Move Task to Note
+                </h3>
+              </div>
               <p
                 style={{
+                  margin: "0 0 12px 0",
                   fontSize: "12px",
-                  color: "var(--rose-muted)",
-                  margin: "0 0 16px 0",
-                }}
-              >
-                No other notes found in workspace.
-              </p>
-            ) : (
-              <select
-                data-testid="move-task-target-select"
-                value={selectedTargetNote}
-                onChange={(e) => setSelectedTargetNote(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "6px 8px",
-                  marginBottom: "16px",
-                  borderRadius: "4px",
-                  backgroundColor: "var(--rose-bg-overlay)",
-                  color: "var(--rose-text)",
-                  border: "1px solid rgba(110, 106, 134, 0.3)",
-                  fontSize: "12px",
-                }}
-              >
-                {availableNotes.map((note) => (
-                  <option key={note.path} value={note.path}>
-                    {note.name || note.path}
-                  </option>
-                ))}
-              </select>
-            )}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "8px",
-              }}
-            >
-              <button
-                onClick={() => setMovingTask(null)}
-                className="tactile-btn"
-                style={{
-                  padding: "4px 12px",
-                  borderRadius: "4px",
-                  border: "1px solid rgba(110, 106, 134, 0.3)",
-                  backgroundColor: "transparent",
                   color: "var(--rose-subtle)",
-                  fontSize: "12px",
-                  cursor: "pointer",
                 }}
               >
-                Cancel
-              </button>
-              <button
-                data-testid="move-task-confirm-btn"
-                disabled={availableNotes.length === 0}
-                onClick={() => {
-                  if (selectedTargetNote && onMoveTaskToNote) {
-                    onMoveTaskToNote(
-                      movingTask.title,
-                      movingTask.sourceFile,
-                      selectedTargetNote,
-                      movingTask.priority
-                    );
-                  }
-                  setMovingTask(null);
-                }}
-                className="tactile-btn"
+                Select target note for &quot;{movingTask.title}&quot;:
+              </p>
+              {availableNotes.length === 0 ? (
+                <p
+                  style={{
+                    fontSize: "12px",
+                    color: "var(--rose-muted)",
+                    margin: "0 0 16px 0",
+                  }}
+                >
+                  No other notes found in workspace.
+                </p>
+              ) : (
+                <select
+                  data-testid="move-task-target-select"
+                  value={selectedTargetNote}
+                  onChange={(e) => setSelectedTargetNote(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "6px 8px",
+                    marginBottom: "16px",
+                    borderRadius: "4px",
+                    backgroundColor: "var(--rose-bg-overlay)",
+                    color: "var(--rose-text)",
+                    border: "1px solid rgba(110, 106, 134, 0.3)",
+                    fontSize: "12px",
+                  }}
+                >
+                  {availableNotes.map((note) => (
+                    <option key={note.path} value={note.path}>
+                      {note.name || note.path}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <div
                 style={{
-                  padding: "4px 12px",
-                  borderRadius: "4px",
-                  border: "none",
-                  backgroundColor: "var(--rose-pink)",
-                  color: "#191724",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  cursor:
-                    availableNotes.length === 0 ? "not-allowed" : "pointer",
-                  opacity: availableNotes.length === 0 ? 0.5 : 1,
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "8px",
                 }}
               >
-                Move
-              </button>
+                <button
+                  onClick={() => setMovingTask(null)}
+                  className="tactile-btn"
+                  style={{
+                    padding: "4px 12px",
+                    borderRadius: "4px",
+                    border: "1px solid rgba(110, 106, 134, 0.3)",
+                    backgroundColor: "transparent",
+                    color: "var(--rose-subtle)",
+                    fontSize: "12px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  data-testid="move-task-confirm-btn"
+                  disabled={availableNotes.length === 0}
+                  onClick={() => {
+                    if (selectedTargetNote && onMoveTaskToNote) {
+                      onMoveTaskToNote(
+                        movingTask.title,
+                        movingTask.sourceFile,
+                        selectedTargetNote,
+                        movingTask.priority
+                      );
+                    }
+                    setMovingTask(null);
+                  }}
+                  className="tactile-btn"
+                  style={{
+                    padding: "4px 12px",
+                    borderRadius: "4px",
+                    border: "none",
+                    backgroundColor: "var(--rose-pink)",
+                    color: "#191724",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    cursor:
+                      availableNotes.length === 0 ? "not-allowed" : "pointer",
+                    opacity: availableNotes.length === 0 ? 0.5 : 1,
+                  }}
+                >
+                  Move
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Sidebar Footer with Settings Gear */}
-      <div
-        style={{
-          padding: "8px 12px",
-          borderTop: "1px solid rgba(110, 106, 134, 0.2)",
-          backgroundColor: "rgba(25, 23, 36, 0.4)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <button
-          data-testid="sidebar-settings-btn"
-          onClick={() => {
-            if (onOpenSettings) onOpenSettings();
-            else setInternalSettingsOpen(true);
-          }}
-          className="tactile-btn"
-          title="Vault Settings (Themes & Live Backgrounds)"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            padding: "5px 10px",
-            borderRadius: "var(--radius-sm)",
-            border: "1px solid rgba(110, 106, 134, 0.25)",
-            backgroundColor: "var(--rose-bg-overlay)",
-            color: "var(--rose-text)",
-            fontSize: "11px",
-            fontWeight: 600,
-            cursor: "pointer",
-            width: "100%",
-            justifyContent: "center",
-          }}
-        >
-          <Settings size={14} color="var(--rose-pink)" />
-          <span>Settings</span>
-        </button>
-      </div>
-
-      {/* Settings Modal when managed internally */}
-      {!onOpenSettings && (
-        <SettingsModal
-          isOpen={internalSettingsOpen}
-          onClose={() => setInternalSettingsOpen(false)}
-        />
-      )}
-
-      {/* Conflict Resolution Modal for Vault Archive Import */}
-      {isConflictModalOpen && (
+        {/* Sidebar Footer with Settings Gear */}
         <div
-          data-testid="import-conflict-modal"
           style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.6)",
+            padding: "8px 12px",
+            borderTop: "1px solid rgba(110, 106, 134, 0.2)",
+            backgroundColor: "rgba(25, 23, 36, 0.4)",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
-            zIndex: 100,
+            justifyContent: "space-between",
           }}
         >
-          <div
+          <button
+            data-testid="sidebar-settings-btn"
+            onClick={() => {
+              if (onOpenSettings) onOpenSettings();
+              else setInternalSettingsOpen(true);
+            }}
+            className="tactile-btn"
+            title="Vault Settings (Themes & Live Backgrounds)"
             style={{
-              backgroundColor: "var(--rose-bg-surface)",
-              border: "1px solid var(--rose-border-color)",
-              borderRadius: "var(--radius-md)",
-              padding: "20px",
-              maxWidth: "400px",
-              width: "90%",
-              boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "5px 10px",
+              borderRadius: "var(--radius-sm)",
+              border: "1px solid rgba(110, 106, 134, 0.25)",
+              backgroundColor: "var(--rose-bg-overlay)",
+              color: "var(--rose-text)",
+              fontSize: "11px",
+              fontWeight: 600,
+              cursor: "pointer",
+              width: "100%",
+              justifyContent: "center",
             }}
           >
-            <h3
-              style={{
-                margin: "0 0 8px 0",
-                fontSize: "14px",
-                fontWeight: 600,
-                color: "var(--rose-text)",
-              }}
-            >
-              Import Vault Archive
-            </h3>
-            <p
-              style={{
-                margin: "0 0 16px 0",
-                fontSize: "12px",
-                color: "var(--rose-subtle)",
-                lineHeight: 1.5,
-              }}
-            >
-              Your workspace already contains files. Choose how you would like
-              to handle existing notes:
-            </p>
+            <Settings size={14} color="var(--rose-pink)" />
+            <span>Settings</span>
+          </button>
+        </div>
+
+        {/* Settings Modal when managed internally */}
+        {!onOpenSettings && (
+          <SettingsModal
+            isOpen={internalSettingsOpen}
+            onClose={() => setInternalSettingsOpen(false)}
+          />
+        )}
+
+        {/* Conflict Resolution Modal for Vault Archive Import */}
+        {isConflictModalOpen && (
+          <div
+            data-testid="import-conflict-modal"
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.6)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 100,
+            }}
+          >
             <div
-              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+              style={{
+                backgroundColor: "var(--rose-bg-surface)",
+                border: "1px solid var(--rose-border-color)",
+                borderRadius: "var(--radius-md)",
+                padding: "20px",
+                maxWidth: "400px",
+                width: "90%",
+                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
+              }}
             >
-              <button
-                data-testid="conflict-strategy-merge"
-                className="tactile-btn"
-                onClick={() => handleResolveConflict("merge")}
+              <h3
                 style={{
-                  padding: "8px 12px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--rose-foam)",
-                  backgroundColor: "rgba(156, 207, 216, 0.15)",
-                  color: "var(--rose-foam)",
+                  margin: "0 0 8px 0",
+                  fontSize: "14px",
                   fontWeight: 600,
-                  fontSize: "12px",
-                  cursor: "pointer",
-                  textAlign: "left",
+                  color: "var(--rose-text)",
                 }}
               >
-                <strong>Merge:</strong> Keep existing notes and add/update
-                archive files
-              </button>
-              <button
-                data-testid="conflict-strategy-replace"
-                className="tactile-btn"
-                onClick={() => handleResolveConflict("replace")}
+                Import Vault Archive
+              </h3>
+              <p
                 style={{
-                  padding: "8px 12px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--rose-pink)",
-                  backgroundColor: "rgba(235, 111, 146, 0.15)",
-                  color: "var(--rose-love)",
-                  fontWeight: 600,
+                  margin: "0 0 16px 0",
                   fontSize: "12px",
-                  cursor: "pointer",
-                  textAlign: "left",
-                }}
-              >
-                <strong>Replace:</strong> Clear workspace and import archive
-                cleanly
-              </button>
-              <button
-                data-testid="conflict-strategy-cancel"
-                className="tactile-btn"
-                onClick={() => {
-                  setIsConflictModalOpen(false);
-                  setPendingArchiveFile(null);
-                }}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid rgba(110, 106, 134, 0.3)",
-                  backgroundColor: "transparent",
                   color: "var(--rose-subtle)",
-                  fontWeight: 500,
-                  fontSize: "12px",
-                  cursor: "pointer",
-                  textAlign: "center",
-                  marginTop: "4px",
+                  lineHeight: 1.5,
                 }}
               >
-                Cancel
-              </button>
+                Your workspace already contains files. Choose how you would like
+                to handle existing notes:
+              </p>
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+              >
+                <button
+                  data-testid="conflict-strategy-merge"
+                  className="tactile-btn"
+                  onClick={() => handleResolveConflict("merge")}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: "var(--radius-sm)",
+                    border: "1px solid var(--rose-foam)",
+                    backgroundColor: "rgba(156, 207, 216, 0.15)",
+                    color: "var(--rose-foam)",
+                    fontWeight: 600,
+                    fontSize: "12px",
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  <strong>Merge:</strong> Keep existing notes and add/update
+                  archive files
+                </button>
+                <button
+                  data-testid="conflict-strategy-replace"
+                  className="tactile-btn"
+                  onClick={() => handleResolveConflict("replace")}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: "var(--radius-sm)",
+                    border: "1px solid var(--rose-pink)",
+                    backgroundColor: "rgba(235, 111, 146, 0.15)",
+                    color: "var(--rose-love)",
+                    fontWeight: 600,
+                    fontSize: "12px",
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  <strong>Replace:</strong> Clear workspace and import archive
+                  cleanly
+                </button>
+                <button
+                  data-testid="conflict-strategy-cancel"
+                  className="tactile-btn"
+                  onClick={() => {
+                    setIsConflictModalOpen(false);
+                    setPendingArchiveFile(null);
+                  }}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "var(--radius-sm)",
+                    border: "1px solid rgba(110, 106, 134, 0.3)",
+                    backgroundColor: "transparent",
+                    color: "var(--rose-subtle)",
+                    fontWeight: 500,
+                    fontSize: "12px",
+                    cursor: "pointer",
+                    textAlign: "center",
+                    marginTop: "4px",
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </aside>
   );
 };

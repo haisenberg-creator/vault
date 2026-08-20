@@ -7,6 +7,8 @@ import {
   setThemePalette,
   getLiveBackground,
   setLiveBackground,
+  getLiveBackgroundScope,
+  setLiveBackgroundScope,
   getLiveBackgroundOpacity,
   setLiveBackgroundOpacity,
   getLiveBackgroundBlur,
@@ -116,10 +118,44 @@ describe("themeService", () => {
     expect(listener).toHaveBeenCalledTimes(2);
   });
 
+  it("manages live background scope between full app and sidebar only", () => {
+    expect(getLiveBackgroundScope()).toBe("full");
+
+    const sampleBg = "https://example.com/bg.gif";
+    setLiveBackground(sampleBg);
+    expect(document.documentElement.classList.contains("has-live-bg")).toBe(
+      true
+    );
+    expect(
+      document.documentElement.classList.contains("has-sidebar-live-bg")
+    ).toBe(false);
+
+    // Switch to sidebar scope
+    setLiveBackgroundScope("sidebar");
+    expect(getLiveBackgroundScope()).toBe("sidebar");
+    expect(document.documentElement.classList.contains("has-live-bg")).toBe(
+      false
+    );
+    expect(
+      document.documentElement.classList.contains("has-sidebar-live-bg")
+    ).toBe(true);
+
+    // Switch back to full scope
+    setLiveBackgroundScope("full");
+    expect(getLiveBackgroundScope()).toBe("full");
+    expect(document.documentElement.classList.contains("has-live-bg")).toBe(
+      true
+    );
+    expect(
+      document.documentElement.classList.contains("has-sidebar-live-bg")
+    ).toBe(false);
+  });
+
   it("initializes theme from storage correctly", () => {
     localStorage.setItem("vault_theme_mode", "arcade");
     localStorage.setItem("vault_theme_palette", "tokyo-night");
     localStorage.setItem("vault_live_background", "https://example.com/bg.gif");
+    localStorage.setItem("vault_live_bg_scope", "sidebar");
     localStorage.setItem("vault_live_bg_opacity", "0.5");
     localStorage.setItem("vault_live_bg_blur", "8");
 
@@ -131,8 +167,11 @@ describe("themeService", () => {
     expect(
       document.documentElement.classList.contains("theme-tokyo-night")
     ).toBe(true);
+    expect(
+      document.documentElement.classList.contains("has-sidebar-live-bg")
+    ).toBe(true);
     expect(document.documentElement.classList.contains("has-live-bg")).toBe(
-      true
+      false
     );
   });
 });

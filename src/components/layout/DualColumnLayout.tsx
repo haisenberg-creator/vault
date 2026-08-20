@@ -31,9 +31,11 @@ import {
   initTheme,
   subscribeTheme,
   getLiveBackground,
+  getLiveBackgroundScope,
   getLiveBackgroundOpacity,
   getLiveBackgroundBlur,
   ThemeMode,
+  LiveBackgroundScope,
 } from "../../services/themeService";
 import { SettingsModal } from "../settings/SettingsModal";
 import { useGlobalShortcuts } from "../../hooks/useGlobalShortcuts";
@@ -59,6 +61,9 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
   const [liveBg, setLiveBg] = useState<string | null>(() =>
     getLiveBackground()
   );
+  const [bgScope, setBgScope] = useState<LiveBackgroundScope>(() =>
+    getLiveBackgroundScope()
+  );
   const [bgOpacity, setBgOpacity] = useState<number>(() =>
     getLiveBackgroundOpacity()
   );
@@ -81,6 +86,7 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
     const unsub = subscribeTheme(() => {
       setThemeModeState(getThemeMode());
       setLiveBg(getLiveBackground());
+      setBgScope(getLiveBackgroundScope());
       setBgOpacity(getLiveBackgroundOpacity());
       setBgBlur(getLiveBackgroundBlur());
     });
@@ -649,16 +655,21 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
             data-testid="split-view-left-pane"
             onClick={() => setActivePane("left")}
             style={{
-              flex: isSplitView ? `0 0 calc(${splitRatio * 100}% - 3px)` : 1,
+              flex: isSplitView ? `0 0 calc(${splitRatio * 100}% - 4px)` : 1,
               display: "flex",
               flexDirection: "column",
               height: "100%",
               overflow: "hidden",
               position: "relative",
-              outline:
+              borderTop:
                 isSplitView && activePane === "left"
-                  ? "1px solid var(--rose-pink)"
+                  ? "2px solid var(--rose-pink)"
+                  : "2px solid transparent",
+              boxShadow:
+                isSplitView && activePane === "left"
+                  ? "inset 0 2px 8px rgba(235, 111, 146, 0.12)"
                   : "none",
+              transition: "border-color 150ms ease, box-shadow 150ms ease",
               zIndex: isSplitView && activePane === "left" ? 2 : 1,
             }}
           >
@@ -711,32 +722,78 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
             <>
               <div
                 data-testid="split-view-divider"
+                className="split-view-divider"
                 onMouseDown={handleDividerMouseDown}
                 style={{
-                  width: "6px",
+                  width: "8px",
                   cursor: "col-resize",
                   backgroundColor: isDraggingDivider
-                    ? "var(--rose-pink)"
-                    : "var(--rose-border-color)",
-                  transition: "background-color 150ms ease",
+                    ? "var(--rose-bg-overlay)"
+                    : "var(--rose-bg-surface)",
+                  borderLeft: "1px solid var(--rose-border-color)",
+                  borderRight: "1px solid var(--rose-border-color)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  position: "relative",
                   zIndex: 10,
                   userSelect: "none",
+                  boxShadow: isDraggingDivider
+                    ? "0 0 10px rgba(235, 111, 146, 0.35)"
+                    : "none",
+                  transition:
+                    "background-color 150ms ease, box-shadow 150ms ease, border-color 150ms ease",
                 }}
-              />
+              >
+                <div
+                  data-testid="split-view-divider-grip"
+                  className="split-view-divider-grip"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "6px 1px",
+                    borderRadius: "4px",
+                    backgroundColor: isDraggingDivider
+                      ? "rgba(235, 111, 146, 0.2)"
+                      : "transparent",
+                    transition: "all 150ms ease",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      lineHeight: "1",
+                      color: isDraggingDivider
+                        ? "var(--rose-pink)"
+                        : "var(--rose-muted)",
+                      userSelect: "none",
+                      letterSpacing: "-1px",
+                    }}
+                  >
+                    ⋮⋮
+                  </span>
+                </div>
+              </div>
               <div
                 data-testid="split-view-right-pane"
                 onClick={() => setActivePane("right")}
                 style={{
-                  flex: `0 0 calc(${(1 - splitRatio) * 100}% - 3px)`,
+                  flex: `0 0 calc(${(1 - splitRatio) * 100}% - 4px)`,
                   display: "flex",
                   flexDirection: "column",
                   height: "100%",
                   overflow: "hidden",
                   position: "relative",
-                  outline:
+                  borderTop:
                     activePane === "right"
-                      ? "1px solid var(--rose-pink)"
+                      ? "2px solid var(--rose-pink)"
+                      : "2px solid transparent",
+                  boxShadow:
+                    activePane === "right"
+                      ? "inset 0 2px 8px rgba(235, 111, 146, 0.12)"
                       : "none",
+                  transition: "border-color 150ms ease, box-shadow 150ms ease",
                   zIndex: activePane === "right" ? 2 : 1,
                 }}
               >
@@ -786,8 +843,8 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
         </div>
       </div>
 
-      {/* Live Background Backdrop */}
-      {liveBg && (
+      {/* Live Background Backdrop (Full App Scope) */}
+      {liveBg && bgScope === "full" && (
         <div
           data-testid="live-bg-backdrop"
           className="live-bg-container"

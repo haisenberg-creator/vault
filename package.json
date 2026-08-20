@@ -1,7 +1,7 @@
 {
   "name": "vault-app",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
+    "graphify": "node scripts/graphify.js",
     "tauri": "tauri",
     "prepare": "husky"
   },

@@ -96,3 +96,15 @@ _Avoid_: Export file, sync dump, backup zip
 **Import Note/Folder**:
 A unified import action allowing users to import individual files (`.md`, `.txt`), entire folders, or `.zip` Vault Archives into the active V-Folder, with automatic conversion of `.txt` to `.md`.
 _Avoid_: File upload, folder upload
+
+**Live Background Scope**:
+The application boundary where the Live Background is rendered — either globally across the entire application window (`Full App`) or constrained exclusively within the Sidebar drawer (`Sidebar Only`).
+_Avoid_: Wallpaper area, background mode
+
+**System Tray**:
+A background resident tray icon in the operating system's notification area, allowing Vault to stay active for Global Shortcuts even when the main window is hidden or minimized.
+_Avoid_: Notification icon, background dock
+
+**Split View Divider**:
+The draggable visual separator between two open panes in Split View, providing visual feedback, drag handle affordance, and dynamic resize control.
+_Avoid_: Split bar, pane line, separator

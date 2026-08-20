@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.3.0] - 2026-08-20
+
+### Highlights & Features ✨
+
+- **Live Background Scope & Frosted Sidebar Polish (Ticket 03 & ADR 0012)**:
+  - Added Live Background Scope toggle in Settings Modal: **"Full App"** (global backdrop with translucent frosted glass across all panes) vs **"Sidebar Only"** (live background confined to sidebar navigation drawer, keeping the editor solid).
+  - Modern frosted glassmorphism (`backdrop-filter: blur(16px)`) in the sidebar drawer, ambient active note glow (`box-shadow: 0 0 12px var(--rose-pink-glow)`), and smooth micro-transitions.
+- **System Tray Integration & Resilient Global OS Shortcuts (Ticket 04 & ADR 0012)**:
+  - Tauri System Tray with left-click toggle and context menu shortcuts for _Open Vault_, _Quick Switcher_, _New Note_, and _Quit_.
+  - Close-to-Tray background residence (`WindowEvent::CloseRequested` hides window instead of exiting).
+  - Enhanced global shortcuts (`Ctrl+Alt+N`, `Ctrl+Alt+P`) with `KeyN`/`KeyP` cross-platform token normalization and atomic window restoration (`unminimize()` + `show()` + `setFocus()`).
+- **Code Block Overlay Actions & Task Badge Alignment (Ticket 01)**:
+  - Floating code block overlay header rendered outside Lexical's contentEditable container to prevent DOM reconciliation conflicts.
+  - Tactile "Copy" button with clipboard fallback and uppercase language badge (`JS`, `TS`, `HTML`, etc.).
+  - Isolated block formatting and task paragraph vertical line-height spacing (`1.8`) with `inline-flex` alignment.
+- **Split View Divider Redesign & Ambient Focus (Ticket 02)**:
+  - Centered tactile drag grip (`⋮⋮`), subtle border highlights, rose hover glow, and boundary ratio clamping (20%–80%).
+  - Sleek top accent bar (`border-top: 2px solid var(--rose-pink)`) and ambient glow for active pane focus.
+- **Graphify AI Agent Skill & AST Knowledge Graph (Ticket 05)**:
+  - Repository AST knowledge graph generator (`scripts/graphify.js` and `npm run graphify`) mapping modules, imports, exports, and Tauri IPC commands ahead of the v2.0.0 Graph View.
+
+---
+
 ## [v1.2.0] - 2026-08-20
 
 ### Highlights & Features ✨

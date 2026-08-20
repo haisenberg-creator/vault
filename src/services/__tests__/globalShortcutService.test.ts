@@ -13,10 +13,29 @@ import type {
   ShortcutEvent,
 } from "@tauri-apps/plugin-global-shortcut";
 
-const mockUnminimize = vi.fn().mockResolvedValue(undefined);
-const mockShow = vi.fn().mockResolvedValue(undefined);
-const mockSetFocus = vi.fn().mockResolvedValue(undefined);
-const mockIsMinimized = vi.fn().mockResolvedValue(false);
+const {
+  mockRegister,
+  mockUnregister,
+  mockUnregisterAll,
+  mockIsRegistered,
+  mockListen,
+  mockUnminimize,
+  mockShow,
+  mockSetFocus,
+  mockIsMinimized,
+} = vi.hoisted(() => ({
+  mockRegister: vi.fn(),
+  mockUnregister: vi.fn(),
+  mockUnregisterAll: vi.fn(),
+  mockIsRegistered: vi.fn(),
+  mockListen: vi.fn().mockImplementation((_event: string, _cb: unknown) => {
+    return Promise.resolve(vi.fn());
+  }),
+  mockUnminimize: vi.fn().mockResolvedValue(undefined),
+  mockShow: vi.fn().mockResolvedValue(undefined),
+  mockSetFocus: vi.fn().mockResolvedValue(undefined),
+  mockIsMinimized: vi.fn().mockResolvedValue(false),
+}));
 
 vi.mock("@tauri-apps/api/window", () => ({
   getCurrentWindow: vi.fn(() => ({
@@ -27,16 +46,15 @@ vi.mock("@tauri-apps/api/window", () => ({
   })),
 }));
 
-const mockRegister = vi.fn();
-const mockUnregister = vi.fn();
-const mockUnregisterAll = vi.fn();
-const mockIsRegistered = vi.fn();
-
 vi.mock("@tauri-apps/plugin-global-shortcut", () => ({
   register: (...args: unknown[]) => mockRegister(...args),
   unregister: (...args: unknown[]) => mockUnregister(...args),
   unregisterAll: (...args: unknown[]) => mockUnregisterAll(...args),
   isRegistered: (...args: unknown[]) => mockIsRegistered(...args),
+}));
+
+vi.mock("@tauri-apps/api/event", () => ({
+  listen: (...args: unknown[]) => mockListen(...args),
 }));
 
 describe("globalShortcutService", () => {
@@ -216,6 +234,50 @@ describe("globalShortcutService", () => {
       });
       expect(onOpenQuickSwitcher).toHaveBeenCalledTimes(1);
     });
+
+    it("listens to system tray events and invokes corresponding handlers", async () => {
+      // @ts-expect-error mock tauri internals
+      window.__TAURI_INTERNALS__ = {};
+
+      const eventListeners = new Map<string, Function>();
+      mockListen.mockImplementation(async (eventName: string, cb: Function) => {
+        eventListeners.set(eventName, cb);
+        return () => eventListeners.delete(eventName);
+      });
+
+      const onNewNote = vi.fn();
+      const onOpenQuickSwitcher = vi.fn();
+
+      const cleanup = await registerGlobalShortcuts({
+        onNewNote,
+        onOpenQuickSwitcher,
+      });
+
+      expect(mockListen).toHaveBeenCalledWith(
+        "tray-new-note",
+        expect.any(Function)
+      );
+      expect(mockListen).toHaveBeenCalledWith(
+        "tray-quick-switcher",
+        expect.any(Function)
+      );
+
+      // Trigger tray new note
+      const trayNoteCb = eventListeners.get("tray-new-note");
+      expect(trayNoteCb).toBeDefined();
+      await trayNoteCb!();
+      expect(mockShow).toHaveBeenCalled();
+      expect(mockSetFocus).toHaveBeenCalled();
+      expect(onNewNote).toHaveBeenCalledTimes(1);
+
+      // Trigger tray quick switcher
+      const traySwitcherCb = eventListeners.get("tray-quick-switcher");
+      expect(traySwitcherCb).toBeDefined();
+      await traySwitcherCb!();
+      expect(onOpenQuickSwitcher).toHaveBeenCalledTimes(1);
+
+      await cleanup();
+    });
   });
 
   describe("normalizeShortcut & isShortcutMatch", () => {
@@ -225,6 +287,8 @@ describe("globalShortcutService", () => {
       expect(normalizeShortcut("Alt+Control+N")).toBe("alt+mod+n");
       expect(normalizeShortcut("cmd+opt+p")).toBe("alt+mod+p");
       expect(normalizeShortcut("CommandOrControl+Alt+P")).toBe("alt+mod+p");
+      expect(normalizeShortcut("Alt+Control+KeyN")).toBe("alt+mod+n");
+      expect(normalizeShortcut("CommandOrControl+Alt+KeyP")).toBe("alt+mod+p");
     });
 
     it("matches equivalent shortcuts across platforms", () => {
@@ -233,6 +297,9 @@ describe("globalShortcutService", () => {
       );
       expect(isShortcutMatch("Cmd+Opt+P", "CommandOrControl+Alt+P")).toBe(true);
       expect(isShortcutMatch("Alt+Ctrl+N", "CommandOrControl+Alt+N")).toBe(
+        true
+      );
+      expect(isShortcutMatch("Ctrl+Alt+KeyN", "CommandOrControl+Alt+N")).toBe(
         true
       );
       expect(isShortcutMatch("Ctrl+Alt+P", "CommandOrControl+Alt+N")).toBe(

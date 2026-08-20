@@ -103,6 +103,28 @@ describe("SettingsModal Component", () => {
     fireEvent.change(blurSlider, { target: { value: "10" } });
     expect(themeService.getLiveBackgroundBlur()).toBe(10);
 
+    // Toggle Scope to Sidebar Only
+    const sidebarScopeBtn = screen.getByTestId("bg-scope-toggle-sidebar");
+    fireEvent.click(sidebarScopeBtn);
+    expect(themeService.getLiveBackgroundScope()).toBe("sidebar");
+    expect(
+      document.documentElement.classList.contains("has-sidebar-live-bg")
+    ).toBe(true);
+    expect(document.documentElement.classList.contains("has-live-bg")).toBe(
+      false
+    );
+
+    // Toggle Scope back to Full App
+    const fullScopeBtn = screen.getByTestId("bg-scope-toggle-full");
+    fireEvent.click(fullScopeBtn);
+    expect(themeService.getLiveBackgroundScope()).toBe("full");
+    expect(document.documentElement.classList.contains("has-live-bg")).toBe(
+      true
+    );
+    expect(
+      document.documentElement.classList.contains("has-sidebar-live-bg")
+    ).toBe(false);
+
     // Remove background
     const clearBtn = screen.getByTestId("bg-clear-btn");
     fireEvent.click(clearBtn);
@@ -110,6 +132,9 @@ describe("SettingsModal Component", () => {
     expect(document.documentElement.classList.contains("has-live-bg")).toBe(
       false
     );
+    expect(
+      document.documentElement.classList.contains("has-sidebar-live-bg")
+    ).toBe(false);
   });
 
   it("handles local file upload for live background", async () => {

@@ -46,6 +46,9 @@ export function normalizeShortcut(shortcut: string): string {
     if (["super", "meta", "win", "windows"].includes(part)) {
       return "super";
     }
+    if (part.startsWith("key") && part.length > 3) {
+      return part.slice(3);
+    }
     return part;
   });
 
@@ -82,6 +85,7 @@ export async function focusVaultWindow(): Promise<void> {
 /**
  * Registers OS-level global shortcuts (Ctrl+Alt+N for New Note, Ctrl+Alt+P for Quick Switcher).
  * Automatically unminimizes and focuses Vault before invoking the corresponding handler.
+ * Also listens to System Tray events when available.
  *
  * Returns a cleanup unregister function.
  */
@@ -114,8 +118,27 @@ export async function registerGlobalShortcuts(
     await register(GLOBAL_SHORTCUT_NEW_NOTE, shortcutHandler);
     await register(GLOBAL_SHORTCUT_QUICK_SWITCHER, shortcutHandler);
 
+    let unlistenNewNote: (() => void) | undefined;
+    let unlistenQuickSwitcher: (() => void) | undefined;
+
+    try {
+      const { listen } = await import("@tauri-apps/api/event");
+      unlistenNewNote = await listen("tray-new-note", async () => {
+        await focusVaultWindow();
+        await handlers.onNewNote?.();
+      });
+      unlistenQuickSwitcher = await listen("tray-quick-switcher", async () => {
+        await focusVaultWindow();
+        await handlers.onOpenQuickSwitcher?.();
+      });
+    } catch {
+      // Ignore if event listening is not available
+    }
+
     return async () => {
       try {
+        if (unlistenNewNote) unlistenNewNote();
+        if (unlistenQuickSwitcher) unlistenQuickSwitcher();
         await unregister([
           GLOBAL_SHORTCUT_NEW_NOTE,
           GLOBAL_SHORTCUT_QUICK_SWITCHER,

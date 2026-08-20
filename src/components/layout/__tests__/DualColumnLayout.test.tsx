@@ -551,4 +551,46 @@ describe("DualColumnLayout Integration", () => {
       expect(screen.getByText("Second Note")).toBeInTheDocument();
     });
   });
+
+  it("renders Split View Divider with grip handle, ambient pane focus bar, and supports dragging", async () => {
+    fileService.setMockFileContent("left-note.md", "# Left Pane Note");
+    fileService.setMockFileContent("right-note.md", "# Right Pane Note");
+
+    render(<DualColumnLayout />);
+
+    const splitBtn = await screen.findByTestId("note-action-split-right");
+    fireEvent.click(splitBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("split-view-divider")).toBeInTheDocument();
+      expect(screen.getByTestId("split-view-right-pane")).toBeInTheDocument();
+    });
+
+    const divider = screen.getByTestId("split-view-divider");
+    const grip = screen.getByTestId("split-view-divider-grip");
+    const leftPane = screen.getByTestId("split-view-left-pane");
+    const rightPane = screen.getByTestId("split-view-right-pane");
+
+    expect(divider).toBeInTheDocument();
+    expect(grip).toBeInTheDocument();
+    expect(grip).toHaveTextContent("⋮⋮");
+
+    // Right pane is initially focused on split open
+    expect(rightPane.style.borderTop).toBe("2px solid var(--rose-pink)");
+
+    // Click left pane to shift focus
+    fireEvent.click(leftPane);
+    expect(leftPane.style.borderTop).toBe("2px solid var(--rose-pink)");
+    expect(rightPane.style.borderTop).toBe("2px solid transparent");
+
+    // Click right pane to shift focus back
+    fireEvent.click(rightPane);
+    expect(rightPane.style.borderTop).toBe("2px solid var(--rose-pink)");
+    expect(leftPane.style.borderTop).toBe("2px solid transparent");
+
+    // Mouse down on divider and drag
+    fireEvent.mouseDown(divider);
+    fireEvent.mouseMove(window, { clientX: 300 });
+    fireEvent.mouseUp(window);
+  });
 });
