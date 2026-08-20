@@ -55,6 +55,12 @@
       "skillPath": "skills/engineering/domain-modeling/SKILL.md",
       "computedHash": "b747e8b4dcd0f367ef940c290b14f858bf9576ad9961fd6684bacff5688f4a2b"
     },
+    "execute-tickets": {
+      "source": "haisenberg-creator/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/execute-tickets/SKILL.md",
+      "computedHash": "70f25e4a254eaa4572df69ef19128264d6a5ec7e3760e1afca294fc5bb33823c"
+    },
     "git-guardrails-claude-code": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",

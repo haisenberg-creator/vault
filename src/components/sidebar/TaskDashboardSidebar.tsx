@@ -1,4 +1,21 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import {
+  FilePlus,
+  FolderPlus,
+  Upload,
+  LayoutDashboard,
+  Files,
+  CheckSquare,
+  CornerDownRight,
+  Trash2,
+  Tag,
+  X,
+  Folder,
+  FolderOpen,
+  FileText,
+  ChevronRight,
+  ChevronDown,
+} from "lucide-react";
 import { FileTreeNode } from "../../types/workspaceTree";
 import { PinnedDashboards } from "./PinnedDashboards";
 import { SidebarTree } from "./SidebarTree";
@@ -434,10 +451,25 @@ sections:
               borderRadius: "var(--radius-sm)",
             }}
           >
-            <span style={{ fontSize: "10px", width: "12px" }}>
-              {isExpanded ? "▼" : "▶"}
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "3px",
+              }}
+            >
+              {isExpanded ? (
+                <ChevronDown size={12} color="var(--rose-subtle)" />
+              ) : (
+                <ChevronRight size={12} color="var(--rose-subtle)" />
+              )}
+              {isExpanded ? (
+                <FolderOpen size={14} color="var(--rose-gold)" />
+              ) : (
+                <Folder size={14} color="var(--rose-gold)" />
+              )}
             </span>
-            <span>📁 {node.name}</span>
+            <span>{node.name}</span>
           </div>
           {isExpanded && (
             <div>
@@ -484,10 +516,19 @@ sections:
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             <span
               onClick={(e) => toggleTaskNodeExpand(node.path, e)}
-              style={{ fontSize: "10px", width: "12px", cursor: "pointer" }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                cursor: "pointer",
+              }}
             >
-              {isExpanded ? "▼" : "▶"}
+              {isExpanded ? (
+                <ChevronDown size={12} color="var(--rose-subtle)" />
+              ) : (
+                <ChevronRight size={12} color="var(--rose-subtle)" />
+              )}
             </span>
+            <FileText size={14} color="var(--rose-text)" />
             <span
               style={{
                 fontSize: "12px",
@@ -495,7 +536,7 @@ sections:
                 color: "var(--rose-text)",
               }}
             >
-              📄 {node.name}
+              {node.name}
             </span>
           </div>
           <span
@@ -624,10 +665,14 @@ sections:
                         color: "var(--rose-subtle)",
                         border: "1px solid rgba(110, 106, 134, 0.25)",
                         cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "3px",
                       }}
                       title="Move task to another note"
                     >
-                      ↪ Move
+                      <CornerDownRight size={11} />
+                      <span>Move</span>
                     </button>
                     <button
                       data-testid={`delete-task-btn-${task.id}`}
@@ -651,10 +696,13 @@ sections:
                         color: "var(--rose-love, #eb6f92)",
                         border: "1px solid rgba(235, 111, 146, 0.25)",
                         cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                       title="Delete task"
                     >
-                      🗑️
+                      <Trash2 size={11} />
                     </button>
                     {(task.tags && task.tags.length > 0
                       ? task.tags
@@ -678,9 +726,13 @@ sections:
                           border: "1px solid rgba(196, 167, 231, 0.25)",
                           cursor: onSelectTag ? "pointer" : "default",
                           whiteSpace: "nowrap",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "2px",
                         }}
                       >
-                        {tag}
+                        <Tag size={9} />
+                        <span>{tag}</span>
                       </span>
                     ))}
                     <span
@@ -774,15 +826,14 @@ sections:
               color: "var(--rose-iris)",
               cursor: "pointer",
               fontSize: "14px",
-              fontWeight: "bold",
-              padding: "2px 6px",
+              padding: "2px 4px",
               borderRadius: "4px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            ✕
+            <X size={14} />
           </button>
         </div>
       )}
@@ -821,9 +872,14 @@ sections:
             fontSize: "12px",
             fontWeight: 600,
             cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "6px",
           }}
         >
-          Files & Folders
+          <Files size={13} />
+          <span>Files & Folders</span>
         </button>
         <button
           data-testid="tab-tasks"
@@ -842,9 +898,16 @@ sections:
             fontSize: "12px",
             fontWeight: 600,
             cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "6px",
           }}
         >
-          Tasks ({(activeFileTasks ?? tasks).filter(matchesTag).length})
+          <CheckSquare size={13} />
+          <span>
+            Tasks ({(activeFileTasks ?? tasks).filter(matchesTag).length})
+          </span>
         </button>
       </div>
 
@@ -883,9 +946,14 @@ sections:
                 backgroundColor: "var(--rose-bg-overlay)",
                 color: "var(--rose-text)",
                 cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "4px",
               }}
             >
-              + Note
+              <FilePlus size={12} />
+              <span>+ Note</span>
             </button>
             <button
               data-testid="sidebar-action-new-folder"
@@ -901,9 +969,14 @@ sections:
                 backgroundColor: "var(--rose-bg-overlay)",
                 color: "var(--rose-gold)",
                 cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "4px",
               }}
             >
-              + Folder
+              <FolderPlus size={12} />
+              <span>+ Folder</span>
             </button>
             <button
               data-testid="sidebar-action-import-folder"
@@ -920,9 +993,14 @@ sections:
                 backgroundColor: "rgba(156, 207, 216, 0.15)",
                 color: "var(--rose-foam)",
                 cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "4px",
               }}
             >
-              Import Folder
+              <Upload size={12} />
+              <span>Import Folder</span>
             </button>
             <button
               data-testid="sidebar-action-new-dashboard"
@@ -938,9 +1016,14 @@ sections:
                 backgroundColor: "rgba(235, 111, 146, 0.15)",
                 color: "var(--rose-pink)",
                 cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "4px",
               }}
             >
-              + Dashboard
+              <LayoutDashboard size={12} />
+              <span>+ Dashboard</span>
             </button>
             <input
               type="file"
@@ -1089,15 +1172,25 @@ sections:
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3
+            <div
               style={{
-                margin: "0 0 8px 0",
-                fontSize: "14px",
-                color: "var(--rose-pink)",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                marginBottom: "8px",
               }}
             >
-              Move Task to Note
-            </h3>
+              <CornerDownRight size={16} color="var(--rose-pink)" />
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: "14px",
+                  color: "var(--rose-pink)",
+                }}
+              >
+                Move Task to Note
+              </h3>
+            </div>
             <p
               style={{
                 margin: "0 0 12px 0",

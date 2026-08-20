@@ -1,0 +1,5 @@
+interface:
+  display_name: "Execute Tickets"
+  short_description: "Orchestrate ticket execution with sub-agents"
+policy:
+  allow_implicit_invocation: false

@@ -288,4 +288,25 @@ describe("SidebarTree Component", () => {
     // Projects -> Projects/client-a.md parent is Projects, sourcePath === targetDir, so no move call
     expect(handleMove).not.toHaveBeenCalled();
   });
+
+  it("applies active highlight styling when activeFilePath matches node path", () => {
+    render(
+      <SidebarTree
+        nodes={sampleNodes}
+        activeFilePath="root-note.md"
+        onSelectFile={vi.fn()}
+        onCreateNote={vi.fn()}
+        onCreateFolder={vi.fn()}
+        onCreateDashboard={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onMovePath={vi.fn()}
+      />
+    );
+
+    const activeNode = screen.getByTestId("tree-node-root-note.md");
+    expect(activeNode).toHaveStyle({
+      backgroundColor: "rgba(235, 111, 146, 0.18)",
+    });
+  });
 });

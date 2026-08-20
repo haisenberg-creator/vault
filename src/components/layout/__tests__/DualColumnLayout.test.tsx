@@ -185,7 +185,9 @@ describe("DualColumnLayout Integration", () => {
     });
 
     // Click on the subfolder note in the task tree to select it
-    const noteHeader = screen.getByText("📄 Lucky Draw.md");
+    const noteHeader = screen.getByTestId(
+      "task-tree-note-Projects/Lucky Draw.md"
+    );
     fireEvent.click(noteHeader);
 
     // Verify the editor loads the actual content and does NOT display "New Note"

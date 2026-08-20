@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { FilePlus, FolderPlus, LayoutDashboard, Pencil } from "lucide-react";
 
 export type OperationMode =
   "create-note" | "create-folder" | "create-dashboard" | "rename";
@@ -31,6 +32,21 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
   if (!isOpen || !mode) {
     return null;
   }
+
+  const getModalIcon = () => {
+    switch (mode) {
+      case "create-note":
+        return <FilePlus size={16} color="var(--rose-pink)" />;
+      case "create-folder":
+        return <FolderPlus size={16} color="var(--rose-gold)" />;
+      case "create-dashboard":
+        return <LayoutDashboard size={16} color="var(--rose-pink)" />;
+      case "rename":
+        return <Pencil size={16} color="var(--rose-foam)" />;
+      default:
+        return null;
+    }
+  };
 
   const getTitle = () => {
     switch (mode) {
@@ -100,17 +116,27 @@ export const FileOperationModal: React.FC<FileOperationModalProps> = ({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3
+        <div
           style={{
-            fontSize: "14px",
-            fontFamily: "var(--font-pixel)",
-            color: "var(--rose-pink)",
-            letterSpacing: "0.5px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
             marginBottom: "12px",
           }}
         >
-          {getTitle()}
-        </h3>
+          {getModalIcon()}
+          <h3
+            style={{
+              fontSize: "14px",
+              fontFamily: "var(--font-pixel)",
+              color: "var(--rose-pink)",
+              letterSpacing: "0.5px",
+              margin: 0,
+            }}
+          >
+            {getTitle()}
+          </h3>
+        </div>
 
         {targetPath && (
           <p

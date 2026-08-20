@@ -4,11 +4,11 @@
 
 **Blocked by:** 01 — TitleBar & Action Bar Polish, 02 — Rich Text Formatting Toolbar & Highlight Extension, 03 — Interactive Tag System & Dashboard Filtering, 04 — Local Keyboard Shortcuts & Quick Switcher, 05 — Global OS Keyboard Shortcuts
 
-**Status:** ready-for-agent
+**Status:** closed
 
-- [ ] `lucide-react` is installed and used consistently across all sidebar components
-- [ ] Folder icons dynamically switch between closed and open folder representations
-- [ ] Active note item has a clear, refined highlight indicating current selection
-- [ ] Sidebar panels have improved visual depth, subtle border separation, and frosted-glass styling
-- [ ] All sidebar interactive buttons (new note, new folder, import, search) have polished hover states
-- [ ] All existing sidebar test suites are updated and passing cleanly
+- [x] `lucide-react` is installed and used consistently across all sidebar components
+- [x] Folder icons dynamically switch between closed and open folder representations
+- [x] Active note item has a clear, refined highlight indicating current selection
+- [x] Sidebar panels have improved visual depth, subtle border separation, and frosted-glass styling
+- [x] All sidebar interactive buttons (new note, new folder, import, search) have polished hover states
+- [x] All existing sidebar test suites are updated and passing cleanly

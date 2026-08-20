@@ -1,4 +1,5 @@
 import React from "react";
+import { Pin, LayoutDashboard } from "lucide-react";
 import { FileTreeNode } from "../../types/workspaceTree";
 
 export interface PinnedDashboardsProps {
@@ -38,18 +39,7 @@ export const PinnedDashboards: React.FC<PinnedDashboardsProps> = ({
           gap: "4px",
         }}
       >
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="var(--rose-pink)"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-        </svg>
+        <Pin size={12} color="var(--rose-pink)" />
         <span>Pinned Dashboards</span>
       </div>
       <div
@@ -88,21 +78,10 @@ export const PinnedDashboards: React.FC<PinnedDashboardsProps> = ({
                 whiteSpace: "nowrap",
               }}
             >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="3" width="7" height="7" />
-                <rect x="14" y="3" width="7" height="7" />
-                <rect x="14" y="14" width="7" height="7" />
-                <rect x="3" y="14" width="7" height="7" />
-              </svg>
+              <LayoutDashboard
+                size={12}
+                color={isActive ? "var(--rose-pink)" : "var(--rose-subtle)"}
+              />
               <span>{displayName}</span>
             </button>
           );

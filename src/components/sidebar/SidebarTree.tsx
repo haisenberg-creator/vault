@@ -1,4 +1,18 @@
 import React, { useState } from "react";
+import {
+  Folder,
+  FolderOpen,
+  FileText,
+  LayoutDashboard,
+  ChevronRight,
+  ChevronDown,
+  FilePlus,
+  FolderPlus,
+  LayoutGrid,
+  CornerLeftUp,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { FileTreeNode } from "../../types/workspaceTree";
 import { isSameFilePath } from "../../services/fileService";
 
@@ -246,21 +260,26 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            paddingLeft: `${12 + depth * 14}px`,
+            paddingLeft: `${10 + depth * 14}px`,
             paddingRight: "8px",
             paddingTop: "6px",
             paddingBottom: "6px",
             borderRadius: "var(--radius-sm)",
             backgroundColor: isActive
-              ? "rgba(235, 111, 146, 0.15)"
+              ? "rgba(235, 111, 146, 0.18)"
               : isDragTarget
                 ? "rgba(156, 207, 216, 0.2)"
                 : "transparent",
             border: isDragTarget
               ? "1px dashed var(--rose-foam)"
               : isActive
-                ? "1px solid rgba(235, 111, 146, 0.3)"
+                ? "1px solid rgba(235, 111, 146, 0.4)"
                 : "1px solid transparent",
+            borderLeft: isActive
+              ? "3px solid var(--rose-pink)"
+              : isDragTarget
+                ? "3px solid var(--rose-foam)"
+                : "3px solid transparent",
             cursor: "pointer",
             marginBottom: "2px",
           }}
@@ -283,88 +302,66 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
                   display: "inline-flex",
                   alignItems: "center",
                   color: "var(--rose-gold)",
+                  cursor: "pointer",
+                  gap: "2px",
                 }}
               >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  style={{
-                    transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
-                    transition: "transform 150ms ease",
-                    marginRight: "2px",
-                  }}
-                >
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-                <svg
-                  data-testid="icon-folder"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  {isExpanded ? (
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                  ) : (
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                  )}
-                </svg>
+                {isExpanded ? (
+                  <ChevronDown
+                    size={14}
+                    style={{
+                      transition: "transform 150ms ease",
+                      color: "var(--rose-subtle)",
+                    }}
+                  />
+                ) : (
+                  <ChevronRight
+                    size={14}
+                    style={{
+                      transition: "transform 150ms ease",
+                      color: "var(--rose-subtle)",
+                    }}
+                  />
+                )}
+                {isExpanded ? (
+                  <FolderOpen
+                    data-testid="icon-folder"
+                    size={16}
+                    color="var(--rose-gold)"
+                  />
+                ) : (
+                  <Folder
+                    data-testid="icon-folder"
+                    size={16}
+                    color="var(--rose-gold)"
+                  />
+                )}
               </span>
             ) : isDashboard ? (
-              <svg
+              <LayoutDashboard
                 data-testid="icon-dashboard"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="var(--rose-pink)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="3" width="7" height="7" />
-                <rect x="14" y="3" width="7" height="7" />
-                <rect x="14" y="14" width="7" height="7" />
-                <rect x="3" y="14" width="7" height="7" />
-              </svg>
+                size={16}
+                color="var(--rose-pink)"
+              />
             ) : (
-              <svg
+              <FileText
                 data-testid="icon-note"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="var(--rose-text)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-              </svg>
+                size={16}
+                color={isActive ? "var(--rose-pink)" : "var(--rose-text)"}
+              />
             )}
 
             <span
               style={{
                 fontSize: "12px",
-                fontWeight: isFolder ? 600 : 400,
+                fontWeight: isFolder ? 600 : isActive ? 600 : 400,
                 color: isFolder
                   ? "var(--rose-gold)"
                   : isDashboard
                     ? "var(--rose-pink)"
-                    : "var(--rose-text)",
+                    : isActive
+                      ? "var(--rose-rose)"
+                      : "var(--rose-text)",
                 fontFamily: isFolder ? "var(--font-ui)" : "var(--font-mono)",
               }}
             >
@@ -378,7 +375,7 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "4px",
+              gap: "2px",
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -389,24 +386,30 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
                   title="Add Note"
                   onClick={() => onCreateNote(node.path)}
                   style={actionBtnStyle}
+                  className="tactile-btn"
                 >
-                  +N
+                  <FilePlus size={12} style={{ marginRight: "1px" }} />
+                  <span>+N</span>
                 </button>
                 <button
                   data-testid={`node-add-folder-${node.path}`}
                   title="Add Folder"
                   onClick={() => onCreateFolder(node.path)}
                   style={actionBtnStyle}
+                  className="tactile-btn"
                 >
-                  +F
+                  <FolderPlus size={12} style={{ marginRight: "1px" }} />
+                  <span>+F</span>
                 </button>
                 <button
                   data-testid={`node-add-dashboard-${node.path}`}
                   title="Add Dashboard"
                   onClick={() => onCreateDashboard(node.path)}
                   style={actionBtnStyle}
+                  className="tactile-btn"
                 >
-                  +D
+                  <LayoutGrid size={12} style={{ marginRight: "1px" }} />
+                  <span>+D</span>
                 </button>
               </>
             )}
@@ -431,8 +434,9 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
                       onMovePath(node.path, targetDir);
                     }}
                     style={actionBtnStyle}
+                    className="tactile-btn"
                   >
-                    ↖
+                    <CornerLeftUp size={12} />
                   </button>
                 );
               }
@@ -443,16 +447,18 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
               title="Rename"
               onClick={() => onRename(node)}
               style={actionBtnStyle}
+              className="tactile-btn"
             >
-              ✎
+              <Pencil size={12} />
             </button>
             <button
               data-testid={`node-delete-${node.path}`}
               title="Delete"
               onClick={() => onDelete(node)}
               style={{ ...actionBtnStyle, color: "var(--rose-pink)" }}
+              className="tactile-btn"
             >
-              ×
+              <Trash2 size={12} />
             </button>
           </div>
         </div>
