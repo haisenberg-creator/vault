@@ -37,12 +37,50 @@ describe("Import Folder Functionality", () => {
     expect(readSub).toBe("Subfolder info");
   });
 
-  it("renders Import Folder button in TaskDashboardSidebar on Files tab", async () => {
+  it("importFolderFiles converts .docx files to .md notes", async () => {
+    // Mock convertDocxToMarkdown or test with sample mock buffer
+    const mockFiles = [
+      {
+        path: "Documents/Specification.docx",
+        content: "# Document Specification\n\n- [ ] Converted Task",
+      },
+    ];
+
+    const result = await fileService.importFolderFiles(mockFiles);
+    expect(result).toEqual(["Documents/Specification.md"]);
+
+    const content = await fileService.readMarkdownFile(
+      "Documents/Specification.md"
+    );
+    expect(content).toBe("# Document Specification\n\n- [ ] Converted Task");
+  });
+
+  it("importFolderFiles supports placing imported files into a target folder", async () => {
+    const mockFiles = [
+      {
+        path: "notes.txt",
+        content: "Target note content",
+      },
+    ];
+
+    const result = await fileService.importFolderFiles(
+      mockFiles,
+      "Projects/Client"
+    );
+    expect(result).toEqual(["Projects/Client/notes.md"]);
+
+    const content = await fileService.readMarkdownFile(
+      "Projects/Client/notes.md"
+    );
+    expect(content).toBe("Target note content");
+  });
+
+  it("renders Import Note/Folder button in TaskDashboardSidebar on Files tab", async () => {
     render(<TaskDashboardSidebar initialTab="files" />);
 
     const importBtn = screen.getByTestId("sidebar-action-import-folder");
     expect(importBtn).toBeInTheDocument();
-    expect(importBtn).toHaveTextContent("Import Folder");
+    expect(importBtn).toHaveTextContent("Import Note/Folder");
 
     const hiddenInput = screen.getByTestId("import-folder-input");
     expect(hiddenInput).toBeInTheDocument();

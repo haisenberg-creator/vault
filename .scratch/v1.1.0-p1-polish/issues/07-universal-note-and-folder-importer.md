@@ -4,11 +4,11 @@
 
 **Blocked by:** 06 — Sidebar Visual Refresh with Lucide Icons
 
-**Status:** ready-for-agent
+**Status:** closed
 
-- [ ] Sidebar button label and tooltip read "Import Note/Folder"
-- [ ] File dialog allows selecting folders or individual files (`.md`, `.txt`, `.docx`, and other text formats)
-- [ ] Importing `.md` or `.txt` creates a corresponding `.md` Note in the selected target folder
-- [ ] Importing `.docx` uses `mammoth` to convert document contents into clean Markdown and writes the resulting `.md` file
-- [ ] File tree automatically refreshes to display newly imported files immediately
-- [ ] Automated tests verify file conversion pipeline and directory insertion
+- [x] Sidebar button label and tooltip read "Import Note/Folder"
+- [x] File dialog allows selecting folders or individual files (`.md`, `.txt`, `.docx`, and other text formats)
+- [x] Importing `.md` or `.txt` creates a corresponding `.md` Note in the selected target folder
+- [x] Importing `.docx` uses `mammoth` to convert document contents into clean Markdown and writes the resulting `.md` file
+- [x] File tree automatically refreshes to display newly imported files immediately
+- [x] Automated tests verify file conversion pipeline and directory insertion

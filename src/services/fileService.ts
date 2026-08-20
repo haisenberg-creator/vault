@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import mammoth from "mammoth";
 import { FileTreeNode, FileKind } from "../types/workspaceTree";
 
 export interface WorkspaceFile {
@@ -741,38 +742,121 @@ export function clearMockStorage(): void {
 }
 
 /**
- * Imports an external folder and its files into the workspace.
- * Converts any .txt files into .md files automatically.
+ * Converts a DOCX buffer (ArrayBuffer or Uint8Array) to clean Markdown using mammoth.
+ */
+export async function convertDocxToMarkdown(
+  buffer: ArrayBuffer | Uint8Array
+): Promise<string> {
+  const arrayBuffer =
+    buffer instanceof ArrayBuffer
+      ? buffer
+      : buffer instanceof Uint8Array
+        ? buffer.buffer.slice(
+            buffer.byteOffset,
+            buffer.byteOffset + buffer.byteLength
+          )
+        : (buffer as any);
+
+  const options: any = { arrayBuffer };
+  const gBuffer =
+    typeof globalThis !== "undefined" ? (globalThis as any).Buffer : undefined;
+  if (gBuffer) {
+    options.buffer = gBuffer.isBuffer(buffer)
+      ? buffer
+      : gBuffer.from(arrayBuffer);
+  }
+
+  const result = await (mammoth as any).convertToMarkdown(options);
+  return result.value || "";
+}
+
+export interface ImportFileInput {
+  path: string;
+  content?: string;
+  buffer?: ArrayBuffer | Uint8Array;
+}
+
+/**
+ * Imports external files or folders (.md, .txt, .docx, and other text formats) into the workspace.
+ * Converts .txt and other plain text formats to .md, and parses .docx files into Markdown via mammoth.
  */
 export async function importFolderFiles(
-  files: { path: string; content: string }[] | FileList
+  files: ImportFileInput[] | FileList | File[],
+  targetFolderPath?: string
 ): Promise<string[]> {
   const importedPaths: string[] = [];
+  const targetPrefix = targetFolderPath ? normalizePath(targetFolderPath) : "";
 
-  if (typeof FileList !== "undefined" && files instanceof FileList) {
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      let relPath = file.webkitRelativePath || file.name;
-      if (!relPath) continue;
+  const processFile = async (
+    nameOrRelPath: string,
+    getText: () => Promise<string>,
+    getBuffer: () => Promise<ArrayBuffer | Uint8Array | undefined>
+  ) => {
+    let relPath = normalizePath(nameOrRelPath);
+    if (targetPrefix && !relPath.startsWith(targetPrefix + "/")) {
+      relPath = `${targetPrefix}/${relPath}`;
+    }
 
-      relPath = normalizePath(relPath);
-
-      if (relPath.toLowerCase().endsWith(".txt")) {
-        relPath = relPath.slice(0, -4) + ".md";
+    const lower = relPath.toLowerCase();
+    if (lower.endsWith(".docx")) {
+      relPath = relPath.slice(0, -5) + ".md";
+      const buffer = await getBuffer();
+      let markdown = "";
+      if (buffer && (buffer.byteLength > 0 || buffer instanceof ArrayBuffer)) {
+        markdown = await convertDocxToMarkdown(buffer);
+      } else {
+        markdown = await getText();
       }
-
-      const content = await file.text();
+      await writeMarkdownFile(relPath, markdown);
+      importedPaths.push(relPath);
+    } else if (lower.endsWith(".txt")) {
+      relPath = relPath.slice(0, -4) + ".md";
+      const content = await getText();
+      await writeMarkdownFile(relPath, content);
+      importedPaths.push(relPath);
+    } else if (lower.endsWith(".md")) {
+      const content = await getText();
+      await writeMarkdownFile(relPath, content);
+      importedPaths.push(relPath);
+    } else {
+      // Other text formats (e.g. .text, .markdown, .rtf, .log, .csv)
+      if (!lower.endsWith(".md")) {
+        const lastDot = relPath.lastIndexOf(".");
+        if (lastDot > relPath.lastIndexOf("/")) {
+          relPath = relPath.substring(0, lastDot) + ".md";
+        } else {
+          relPath = relPath + ".md";
+        }
+      }
+      const content = await getText();
       await writeMarkdownFile(relPath, content);
       importedPaths.push(relPath);
     }
+  };
+
+  if (
+    typeof FileList !== "undefined" &&
+    (files instanceof FileList ||
+      (Array.isArray(files) && files.length > 0 && files[0] instanceof File))
+  ) {
+    const fileList = Array.from(files as FileList | File[]);
+    for (const file of fileList) {
+      const relPath = file.webkitRelativePath || file.name;
+      if (!relPath) continue;
+      await processFile(
+        relPath,
+        () => file.text(),
+        () => file.arrayBuffer()
+      );
+    }
   } else if (Array.isArray(files)) {
-    for (const item of files) {
-      let relPath = normalizePath(item.path);
-      if (relPath.toLowerCase().endsWith(".txt")) {
-        relPath = relPath.slice(0, -4) + ".md";
-      }
-      await writeMarkdownFile(relPath, item.content);
-      importedPaths.push(relPath);
+    for (const item of files as ImportFileInput[]) {
+      if (!item.path) continue;
+      await processFile(
+        item.path,
+        async () => item.content ?? "",
+        async () => item.buffer
+      );
     }
   }
 

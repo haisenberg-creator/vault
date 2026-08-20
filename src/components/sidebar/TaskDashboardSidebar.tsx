@@ -982,7 +982,7 @@ sections:
               data-testid="sidebar-action-import-folder"
               onClick={() => importFolderInputRef.current?.click()}
               className="tactile-btn"
-              title="Import folder (.txt files will be converted to .md)"
+              title="Import Note/Folder"
               style={{
                 flex: "1 1 auto",
                 fontSize: "11px",
@@ -1000,7 +1000,7 @@ sections:
               }}
             >
               <Upload size={12} />
-              <span>Import Folder</span>
+              <span>Import Note/Folder</span>
             </button>
             <button
               data-testid="sidebar-action-new-dashboard"
@@ -1032,6 +1032,7 @@ sections:
               style={{ display: "none" }}
               {...({ webkitdirectory: "", directory: "" } as any)}
               multiple
+              accept=".md,.txt,.docx,.text,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               onChange={handleImportFolder}
             />
           </div>

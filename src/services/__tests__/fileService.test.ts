@@ -10,6 +10,7 @@ import {
   renamePath,
   movePath,
   importFolder,
+  importFolderFiles,
   setMockFileContent,
   getMockFileContent,
   clearMockStorage,
@@ -224,6 +225,28 @@ describe("fileService", () => {
 
     expect(getMockFileContent("Imported/sub/details.md")).toBe("Sub details");
     expect(getMockFileContent("Imported/sub/details.TXT")).toBeUndefined();
+  });
+
+  it("importFolderFiles handles .md, .txt, and .docx files across custom target directories", async () => {
+    const files = [
+      { path: "project-spec.docx", content: "# Converted Docx Spec" },
+      { path: "summary.txt", content: "Summary of meeting" },
+      { path: "README.md", content: "# Main Readme" },
+    ];
+
+    const result = await importFolderFiles(files, "Vault/Projects");
+    expect(result).toEqual([
+      "Vault/Projects/project-spec.md",
+      "Vault/Projects/summary.md",
+      "Vault/Projects/README.md",
+    ]);
+
+    expect(getMockFileContent("Vault/Projects/project-spec.md")).toBe(
+      "# Converted Docx Spec"
+    );
+    expect(getMockFileContent("Vault/Projects/summary.md")).toBe(
+      "Summary of meeting"
+    );
   });
 
   describe("resolveAbsolutePath", () => {
