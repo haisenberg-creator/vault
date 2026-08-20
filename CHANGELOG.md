@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.1.1] - 2026-08-20
+
+### Bug Fixes & Improvements 🐛
+
+- **Auto-Updater Plugin Initialization & Permissions**:
+  - Registered `tauri_plugin_updater` plugin in Tauri builder in `src-tauri/src/lib.rs`.
+  - Added `"updater:default"` capability permission in `src-tauri/capabilities/default.json` to enable in-app updater IPC check and install operations.
+  - Added comprehensive automated unit test suite for `UpdateNotification` component.
+
+---
+
 ## [v1.1.0] - 2026-08-20
 
 ### Highlights & Features ✨
