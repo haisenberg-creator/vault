@@ -43,22 +43,24 @@ describe("SettingsModal Component", () => {
     expect(screen.getByText("Color Palette")).toBeInTheDocument();
   });
 
-  it("selects theme palette and updates themeService and document", () => {
+  it("selects theme palette and updates themeService and document for all 7 palettes", () => {
     render(<SettingsModal isOpen={true} onClose={vi.fn()} />);
 
-    // Click Nord palette
-    fireEvent.click(screen.getByTestId("theme-option-nord"));
-    expect(themeService.getThemePalette()).toBe("nord");
-    expect(document.documentElement.dataset.theme).toBe("nord");
+    const palettes = [
+      "nord",
+      "tokyo-night",
+      "catppuccin-mocha",
+      "dracula-pro",
+      "gruvbox-dark",
+      "catppuccin-latte",
+      "rose-pine",
+    ] as const;
 
-    // Click Tokyo Night palette
-    fireEvent.click(screen.getByTestId("theme-option-tokyo-night"));
-    expect(themeService.getThemePalette()).toBe("tokyo-night");
-    expect(document.documentElement.dataset.theme).toBe("tokyo-night");
-
-    // Click Rosé Pine palette
-    fireEvent.click(screen.getByTestId("theme-option-rose-pine"));
-    expect(themeService.getThemePalette()).toBe("rose-pine");
+    for (const palette of palettes) {
+      fireEvent.click(screen.getByTestId(`theme-option-${palette}`));
+      expect(themeService.getThemePalette()).toBe(palette);
+      expect(document.documentElement.dataset.theme).toBe(palette);
+    }
   });
 
   it("toggles interface mode between Working and Arcade", () => {

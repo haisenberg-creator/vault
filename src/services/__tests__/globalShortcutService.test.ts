@@ -3,6 +3,8 @@ import {
   focusVaultWindow,
   registerGlobalShortcuts,
   unregisterGlobalShortcuts,
+  normalizeShortcut,
+  isShortcutMatch,
   GLOBAL_SHORTCUT_NEW_NOTE,
   GLOBAL_SHORTCUT_QUICK_SWITCHER,
 } from "../globalShortcutService";
@@ -172,6 +174,71 @@ describe("globalShortcutService", () => {
         GLOBAL_SHORTCUT_NEW_NOTE,
         GLOBAL_SHORTCUT_QUICK_SWITCHER,
       ]);
+    });
+
+    it("triggers callbacks when OS events send platform-specific variations like Ctrl+Alt+N or Cmd+Opt+P", async () => {
+      // @ts-expect-error mock tauri internals
+      window.__TAURI_INTERNALS__ = {};
+
+      const registeredHandlers = new Map<string, ShortcutHandler>();
+      mockRegister.mockImplementation(
+        async (shortcut: string, handler: ShortcutHandler) => {
+          registeredHandlers.set(shortcut, handler);
+        }
+      );
+
+      const onNewNote = vi.fn();
+      const onOpenQuickSwitcher = vi.fn();
+
+      await registerGlobalShortcuts({
+        onNewNote,
+        onOpenQuickSwitcher,
+      });
+
+      const noteHandler = registeredHandlers.get(GLOBAL_SHORTCUT_NEW_NOTE);
+      const switcherHandler = registeredHandlers.get(
+        GLOBAL_SHORTCUT_QUICK_SWITCHER
+      );
+
+      // Trigger with "Ctrl+Alt+N"
+      await noteHandler!({
+        shortcut: "Ctrl+Alt+N",
+        id: 1,
+        state: "Pressed",
+      });
+      expect(onNewNote).toHaveBeenCalledTimes(1);
+
+      // Trigger with "cmd+opt+p"
+      await switcherHandler!({
+        shortcut: "cmd+opt+p",
+        id: 2,
+        state: "Pressed",
+      });
+      expect(onOpenQuickSwitcher).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("normalizeShortcut & isShortcutMatch", () => {
+    it("normalizes modifiers and order correctly", () => {
+      expect(normalizeShortcut("CommandOrControl+Alt+N")).toBe("alt+mod+n");
+      expect(normalizeShortcut("Ctrl+Alt+N")).toBe("alt+mod+n");
+      expect(normalizeShortcut("Alt+Control+N")).toBe("alt+mod+n");
+      expect(normalizeShortcut("cmd+opt+p")).toBe("alt+mod+p");
+      expect(normalizeShortcut("CommandOrControl+Alt+P")).toBe("alt+mod+p");
+    });
+
+    it("matches equivalent shortcuts across platforms", () => {
+      expect(isShortcutMatch("Ctrl+Alt+N", "CommandOrControl+Alt+N")).toBe(
+        true
+      );
+      expect(isShortcutMatch("Cmd+Opt+P", "CommandOrControl+Alt+P")).toBe(true);
+      expect(isShortcutMatch("Alt+Ctrl+N", "CommandOrControl+Alt+N")).toBe(
+        true
+      );
+      expect(isShortcutMatch("Ctrl+Alt+P", "CommandOrControl+Alt+N")).toBe(
+        false
+      );
+      expect(isShortcutMatch("", "Ctrl+Alt+N")).toBe(false);
     });
   });
 

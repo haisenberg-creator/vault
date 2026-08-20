@@ -56,6 +56,7 @@ describe("DashboardTaskItem Component", () => {
         taskTitle: "Urgent bugfix",
         sourceFile: "Projects/Client-A/App.md",
         priority: "urgent",
+        state: "open",
       })
     );
     expect(dataTransfer.setData).toHaveBeenCalledWith(

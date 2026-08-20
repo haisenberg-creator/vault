@@ -16,6 +16,7 @@ import {
   ChevronRight,
   ChevronDown,
   Settings,
+  Archive,
 } from "lucide-react";
 import { FileTreeNode } from "../../types/workspaceTree";
 import { PinnedDashboards } from "./PinnedDashboards";
@@ -34,6 +35,9 @@ import {
   isSameFilePath,
   stripWorkspacePrefix,
   importFolderFiles,
+  exportVaultArchive,
+  importVaultArchive,
+  isWorkspaceEmpty,
 } from "../../services/fileService";
 import { ThemeMode } from "../../services/themeService";
 import { extractTags } from "../../services/dashboardService";
@@ -73,6 +77,7 @@ export interface TaskDashboardSidebarProps {
   themeMode?: ThemeMode;
   onToggleThemeMode?: () => void;
   onOpenSettings?: () => void;
+  onOpenInSplitView?: (path: string) => void;
 }
 
 export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
@@ -91,6 +96,7 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
   onMoveTaskToNote,
   onDeleteTask,
   onOpenSettings,
+  onOpenInSplitView,
 }) => {
   const [activeTab, setActiveTab] = useState<"files" | "tasks">(initialTab);
   const [internalSettingsOpen, setInternalSettingsOpen] = useState(false);
@@ -116,11 +122,49 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
   const [movingTask, setMovingTask] = useState<TaskItem | null>(null);
   const [selectedTargetNote, setSelectedTargetNote] = useState<string>("");
 
-  const importFolderInputRef = useRef<HTMLInputElement | null>(null);
+  const [isImportMenuOpen, setIsImportMenuOpen] = useState(false);
+  const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
+  const [pendingArchiveFile, setPendingArchiveFile] = useState<File | null>(
+    null
+  );
+  const [isDraggingExternalFiles, setIsDraggingExternalFiles] = useState(false);
 
-  const handleImportFolder = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  const importFilesInputRef = useRef<HTMLInputElement | null>(null);
+  const importFolderInputRef = useRef<HTMLInputElement | null>(null);
+  const importMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        importMenuRef.current &&
+        !importMenuRef.current.contains(e.target as Node)
+      ) {
+        setIsImportMenuOpen(false);
+      }
+    };
+    if (isImportMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isImportMenuOpen]);
+
+  const handleImportFilesList = async (files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    const zipFile = fileArray.find((f) =>
+      f.name.toLowerCase().endsWith(".zip")
+    );
+
+    if (zipFile) {
+      const empty = await isWorkspaceEmpty(workspaceDir);
+      if (!empty) {
+        setPendingArchiveFile(zipFile);
+        setIsConflictModalOpen(true);
+        return;
+      }
+    }
+
     try {
       const importedPaths = await importFolderFiles(files);
       if (importedPaths.length > 0 && onSelectFile) {
@@ -128,10 +172,48 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
       }
       await loadTree();
     } catch (err) {
-      console.warn("Failed to import folder:", err);
+      console.warn("Failed to import files:", err);
     }
+  };
+
+  const handleImportFolder = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    await handleImportFilesList(files);
     if (e.target) {
       e.target.value = "";
+    }
+  };
+
+  const handleExportArchive = async () => {
+    try {
+      const blob = await exportVaultArchive(workspaceDir);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "vault-archive.zip";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.warn("Failed to export vault archive:", err);
+    }
+  };
+
+  const handleResolveConflict = async (strategy: "merge" | "replace") => {
+    if (!pendingArchiveFile) return;
+    setIsConflictModalOpen(false);
+    try {
+      const result = await importVaultArchive(pendingArchiveFile, strategy);
+      if (result.importedPaths.length > 0 && onSelectFile) {
+        onSelectFile(result.importedPaths[0]);
+      }
+      await loadTree();
+    } catch (err) {
+      console.warn("Failed to import archive with conflict resolution:", err);
+    } finally {
+      setPendingArchiveFile(null);
     }
   };
 
@@ -589,6 +671,7 @@ sections:
                         taskTitle: task.title,
                         sourceFile: task.sourceFile,
                         priority: task.priority,
+                        state: task.state,
                       })
                     );
                     e.dataTransfer.setData(
@@ -924,8 +1007,51 @@ sections:
             flexDirection: "column",
             flex: 1,
             overflow: "hidden",
+            position: "relative",
+          }}
+          onDragOver={(e) => {
+            if (e.dataTransfer.types.includes("Files")) {
+              e.preventDefault();
+              setIsDraggingExternalFiles(true);
+            }
+          }}
+          onDragLeave={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+              setIsDraggingExternalFiles(false);
+            }
+          }}
+          onDrop={async (e) => {
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDraggingExternalFiles(false);
+              await handleImportFilesList(e.dataTransfer.files);
+            }
           }}
         >
+          {isDraggingExternalFiles && (
+            <div
+              data-testid="sidebar-external-drop-overlay"
+              style={{
+                position: "absolute",
+                inset: 0,
+                backgroundColor: "rgba(156, 207, 216, 0.2)",
+                border: "2px dashed var(--rose-foam)",
+                borderRadius: "var(--radius-md)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 40,
+                pointerEvents: "none",
+                color: "var(--rose-foam)",
+                fontSize: "12px",
+                fontWeight: 600,
+              }}
+            >
+              Drop files to import into Vault
+            </div>
+          )}
+
           {/* File Action Toolbar */}
           <div
             style={{
@@ -983,30 +1109,143 @@ sections:
               <FolderPlus size={12} />
               <span>+ Folder</span>
             </button>
-            <button
-              data-testid="sidebar-action-import-folder"
-              onClick={() => importFolderInputRef.current?.click()}
-              className="tactile-btn"
-              title="Import Note/Folder"
-              style={{
-                flex: "1 1 auto",
-                fontSize: "11px",
-                fontWeight: 600,
-                padding: "4px 6px",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid rgba(156, 207, 216, 0.3)",
-                backgroundColor: "rgba(156, 207, 216, 0.15)",
-                color: "var(--rose-foam)",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "4px",
-              }}
+            <div
+              style={{ position: "relative", flex: "1 1 auto" }}
+              ref={importMenuRef}
             >
-              <Upload size={12} />
-              <span>Import Note/Folder</span>
-            </button>
+              <button
+                data-testid="sidebar-action-import-folder"
+                onClick={() => setIsImportMenuOpen((prev) => !prev)}
+                className="tactile-btn"
+                title="Import Note/Folder"
+                style={{
+                  width: "100%",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  padding: "4px 6px",
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px solid rgba(156, 207, 216, 0.3)",
+                  backgroundColor: "rgba(156, 207, 216, 0.15)",
+                  color: "var(--rose-foam)",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "4px",
+                }}
+              >
+                <Upload size={12} />
+                <span>Import Note/Folder</span>
+              </button>
+
+              {isImportMenuOpen && (
+                <div
+                  data-testid="import-menu-popover"
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: 0,
+                    marginTop: "4px",
+                    zIndex: 50,
+                    backgroundColor: "var(--rose-bg-surface)",
+                    border: "1px solid var(--rose-border-color)",
+                    borderRadius: "var(--radius-md)",
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+                    padding: "4px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "2px",
+                    minWidth: "160px",
+                  }}
+                >
+                  <button
+                    data-testid="import-option-files"
+                    className="tactile-btn"
+                    onClick={() => {
+                      setIsImportMenuOpen(false);
+                      importFilesInputRef.current?.click();
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "6px 8px",
+                      borderRadius: "var(--radius-sm)",
+                      border: "none",
+                      backgroundColor: "transparent",
+                      color: "var(--rose-text)",
+                      fontSize: "11px",
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      textAlign: "left",
+                      width: "100%",
+                    }}
+                  >
+                    <FileText size={12} style={{ color: "var(--rose-foam)" }} />
+                    <span>Import Files / Zip</span>
+                  </button>
+                  <button
+                    data-testid="import-option-folder"
+                    className="tactile-btn"
+                    onClick={() => {
+                      setIsImportMenuOpen(false);
+                      importFolderInputRef.current?.click();
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "6px 8px",
+                      borderRadius: "var(--radius-sm)",
+                      border: "none",
+                      backgroundColor: "transparent",
+                      color: "var(--rose-text)",
+                      fontSize: "11px",
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      textAlign: "left",
+                      width: "100%",
+                    }}
+                  >
+                    <Folder size={12} style={{ color: "var(--rose-gold)" }} />
+                    <span>Import Folder</span>
+                  </button>
+                  <div
+                    style={{
+                      height: "1px",
+                      backgroundColor: "rgba(110, 106, 134, 0.2)",
+                      margin: "2px 0",
+                    }}
+                  />
+                  <button
+                    data-testid="sidebar-action-export-archive"
+                    className="tactile-btn"
+                    onClick={() => {
+                      setIsImportMenuOpen(false);
+                      handleExportArchive();
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "6px 8px",
+                      borderRadius: "var(--radius-sm)",
+                      border: "none",
+                      backgroundColor: "transparent",
+                      color: "var(--rose-text)",
+                      fontSize: "11px",
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      textAlign: "left",
+                      width: "100%",
+                    }}
+                  >
+                    <Archive size={12} style={{ color: "var(--rose-pink)" }} />
+                    <span>Sync / Export Vault Archive</span>
+                  </button>
+                </div>
+              )}
+            </div>
             <button
               data-testid="sidebar-action-new-dashboard"
               onClick={() => handleOpenCreateModal("create-dashboard")}
@@ -1032,12 +1271,21 @@ sections:
             </button>
             <input
               type="file"
+              data-testid="import-files-input"
+              ref={importFilesInputRef}
+              style={{ display: "none" }}
+              multiple
+              accept=".md,.txt,.text,.zip,.docx,application/zip,application/x-zip-compressed,text/plain"
+              onChange={handleImportFolder}
+            />
+            <input
+              type="file"
               data-testid="import-folder-input"
               ref={importFolderInputRef}
               style={{ display: "none" }}
               {...({ webkitdirectory: "", directory: "" } as any)}
               multiple
-              accept=".md,.txt,.docx,.text,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              accept=".md,.txt,.text,.zip,.docx"
               onChange={handleImportFolder}
             />
           </div>
@@ -1060,6 +1308,7 @@ sections:
             onDelete={handleDeleteItem}
             onMovePath={handleMoveItem}
             onMoveTaskToNote={onMoveTaskToNote}
+            onOpenInSplitView={onOpenInSplitView}
             workspaceDir={workspaceDir}
           />
         </div>
@@ -1342,6 +1591,120 @@ sections:
           isOpen={internalSettingsOpen}
           onClose={() => setInternalSettingsOpen(false)}
         />
+      )}
+
+      {/* Conflict Resolution Modal for Vault Archive Import */}
+      {isConflictModalOpen && (
+        <div
+          data-testid="import-conflict-modal"
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 100,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "var(--rose-bg-surface)",
+              border: "1px solid var(--rose-border-color)",
+              borderRadius: "var(--radius-md)",
+              padding: "20px",
+              maxWidth: "400px",
+              width: "90%",
+              boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
+            }}
+          >
+            <h3
+              style={{
+                margin: "0 0 8px 0",
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "var(--rose-text)",
+              }}
+            >
+              Import Vault Archive
+            </h3>
+            <p
+              style={{
+                margin: "0 0 16px 0",
+                fontSize: "12px",
+                color: "var(--rose-subtle)",
+                lineHeight: 1.5,
+              }}
+            >
+              Your workspace already contains files. Choose how you would like
+              to handle existing notes:
+            </p>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+            >
+              <button
+                data-testid="conflict-strategy-merge"
+                className="tactile-btn"
+                onClick={() => handleResolveConflict("merge")}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px solid var(--rose-foam)",
+                  backgroundColor: "rgba(156, 207, 216, 0.15)",
+                  color: "var(--rose-foam)",
+                  fontWeight: 600,
+                  fontSize: "12px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                <strong>Merge:</strong> Keep existing notes and add/update
+                archive files
+              </button>
+              <button
+                data-testid="conflict-strategy-replace"
+                className="tactile-btn"
+                onClick={() => handleResolveConflict("replace")}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px solid var(--rose-pink)",
+                  backgroundColor: "rgba(235, 111, 146, 0.15)",
+                  color: "var(--rose-love)",
+                  fontWeight: 600,
+                  fontSize: "12px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                <strong>Replace:</strong> Clear workspace and import archive
+                cleanly
+              </button>
+              <button
+                data-testid="conflict-strategy-cancel"
+                className="tactile-btn"
+                onClick={() => {
+                  setIsConflictModalOpen(false);
+                  setPendingArchiveFile(null);
+                }}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px solid rgba(110, 106, 134, 0.3)",
+                  backgroundColor: "transparent",
+                  color: "var(--rose-subtle)",
+                  fontWeight: 500,
+                  fontSize: "12px",
+                  cursor: "pointer",
+                  textAlign: "center",
+                  marginTop: "4px",
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </aside>
   );

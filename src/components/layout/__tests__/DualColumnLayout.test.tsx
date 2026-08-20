@@ -469,4 +469,86 @@ describe("DualColumnLayout Integration", () => {
     fireEvent.click(screen.getByTestId("settings-close-btn"));
     expect(screen.queryByTestId("settings-modal")).not.toBeInTheDocument();
   });
+
+  it("toggles Split View dual-pane layout via Ctrl+\\ shortcut", async () => {
+    fileService.setMockFileContent("note-left.md", "# Left Note");
+    fileService.setMockFileContent("note-right.md", "# Right Note");
+
+    render(<DualColumnLayout />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("split-view-left-pane")).toBeInTheDocument();
+    });
+
+    // Initially single pane
+    expect(
+      screen.queryByTestId("split-view-right-pane")
+    ).not.toBeInTheDocument();
+
+    // Trigger Ctrl+\
+    fireEvent.keyDown(window, { key: "\\", ctrlKey: true });
+
+    // Both left and right panes appear with divider
+    await waitFor(() => {
+      expect(screen.getByTestId("split-view-left-pane")).toBeInTheDocument();
+      expect(screen.getByTestId("split-view-right-pane")).toBeInTheDocument();
+      expect(screen.getByTestId("split-view-divider")).toBeInTheDocument();
+    });
+
+    // Toggle off with Ctrl+\
+    fireEvent.keyDown(window, { key: "\\", ctrlKey: true });
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("split-view-right-pane")
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it("toggles Split View via Note Action Bar button and closes via close button", async () => {
+    fileService.setMockFileContent("main-note.md", "# Main Note Content");
+    fileService.setMockFileContent("secondary-note.md", "# Secondary Note");
+
+    render(<DualColumnLayout />);
+
+    const splitBtn = await screen.findByTestId("note-action-split-right");
+    expect(splitBtn).toBeInTheDocument();
+
+    // Click split button
+    fireEvent.click(splitBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("split-view-right-pane")).toBeInTheDocument();
+    });
+
+    // Close button appears in right pane
+    const closeBtn = screen.getByTestId("close-split-pane-btn");
+    expect(closeBtn).toBeInTheDocument();
+
+    fireEvent.click(closeBtn);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("split-view-right-pane")
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it("opens file in split right pane when clicking split action in sidebar", async () => {
+    fileService.setMockFileContent("first.md", "# First Note");
+    fileService.setMockFileContent("second.md", "# Second Note");
+
+    render(<DualColumnLayout />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("tree-node-second.md")).toBeInTheDocument();
+    });
+
+    const splitNodeBtn = screen.getByTestId("node-split-second.md");
+    fireEvent.click(splitNodeBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("split-view-right-pane")).toBeInTheDocument();
+      expect(screen.getByText("Second Note")).toBeInTheDocument();
+    });
+  });
 });

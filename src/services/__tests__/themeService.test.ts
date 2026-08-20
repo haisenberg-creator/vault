@@ -42,22 +42,27 @@ describe("themeService", () => {
     expect(getThemeMode()).toBe("working");
   });
 
-  it("defaults to rose-pine palette and switches to nord and tokyo-night", () => {
+  it("defaults to rose-pine palette and switches across all 7 palettes", () => {
     expect(getThemePalette()).toBe("rose-pine");
 
-    setThemePalette("nord");
-    expect(getThemePalette()).toBe("nord");
-    expect(document.documentElement.classList.contains("theme-nord")).toBe(
-      true
-    );
-    expect(document.documentElement.dataset.theme).toBe("nord");
+    const palettes = [
+      "nord",
+      "tokyo-night",
+      "catppuccin-mocha",
+      "dracula-pro",
+      "gruvbox-dark",
+      "catppuccin-latte",
+      "rose-pine",
+    ] as const;
 
-    setThemePalette("tokyo-night");
-    expect(getThemePalette()).toBe("tokyo-night");
-    expect(
-      document.documentElement.classList.contains("theme-tokyo-night")
-    ).toBe(true);
-    expect(document.documentElement.dataset.theme).toBe("tokyo-night");
+    for (const palette of palettes) {
+      setThemePalette(palette);
+      expect(getThemePalette()).toBe(palette);
+      expect(
+        document.documentElement.classList.contains(`theme-${palette}`)
+      ).toBe(true);
+      expect(document.documentElement.dataset.theme).toBe(palette);
+    }
   });
 
   it("manages live background image and CSS variables", () => {

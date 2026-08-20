@@ -1,11 +1,28 @@
 export type ThemeMode = "working" | "arcade";
-export type ThemePalette = "rose-pine" | "nord" | "tokyo-night";
+export type ThemePalette =
+  | "rose-pine"
+  | "nord"
+  | "tokyo-night"
+  | "catppuccin-mocha"
+  | "dracula-pro"
+  | "gruvbox-dark"
+  | "catppuccin-latte";
 
 const THEME_MODE_KEY = "vault_theme_mode";
 const THEME_PALETTE_KEY = "vault_theme_palette";
 const LIVE_BG_KEY = "vault_live_background";
 const LIVE_BG_OPACITY_KEY = "vault_live_bg_opacity";
 const LIVE_BG_BLUR_KEY = "vault_live_bg_blur";
+
+export const ALL_THEME_PALETTES: ThemePalette[] = [
+  "rose-pine",
+  "nord",
+  "tokyo-night",
+  "catppuccin-mocha",
+  "dracula-pro",
+  "gruvbox-dark",
+  "catppuccin-latte",
+];
 
 type ThemeChangeListener = () => void;
 const listeners: Set<ThemeChangeListener> = new Set();
@@ -59,7 +76,7 @@ export function toggleThemeMode(): ThemeMode {
 export function getThemePalette(): ThemePalette {
   if (typeof window === "undefined") return "rose-pine";
   const saved = localStorage.getItem(THEME_PALETTE_KEY) as ThemePalette;
-  if (saved === "nord" || saved === "tokyo-night" || saved === "rose-pine") {
+  if (ALL_THEME_PALETTES.includes(saved)) {
     return saved;
   }
   return "rose-pine";
@@ -74,11 +91,9 @@ export function setThemePalette(palette: ThemePalette): void {
 
 export function applyThemePalette(palette: ThemePalette): void {
   if (typeof window === "undefined" || !document.documentElement) return;
-  document.documentElement.classList.remove(
-    "theme-rose-pine",
-    "theme-nord",
-    "theme-tokyo-night"
-  );
+  ALL_THEME_PALETTES.forEach((p) => {
+    document.documentElement.classList.remove(`theme-${p}`);
+  });
   document.documentElement.classList.add(`theme-${palette}`);
   document.documentElement.dataset.theme = palette;
 }

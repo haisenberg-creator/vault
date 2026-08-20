@@ -85,6 +85,7 @@ _Completion Criterion_: Test and build commands complete with exit code 0, and e
    gh release create <tag> --generate-notes --draft
    ```
 3. Format structured release notes into:
+   - **Downloads Table** (Direct links to user-friendly installers: Windows `setup.exe` & `.msi`, macOS `.dmg`, Linux `.AppImage`)
    - **Highlights & Features**
    - **Bug Fixes**
    - **Breaking Changes** (if any)

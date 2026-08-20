@@ -64,6 +64,15 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
   );
   const [bgBlur, setBgBlur] = useState<number>(() => getLiveBackgroundBlur());
 
+  // Split View Dual-Pane State
+  const [isSplitView, setIsSplitView] = useState<boolean>(false);
+  const [activePane, setActivePane] = useState<"left" | "right">("left");
+  const [rightFilename, setRightFilename] = useState<string>("");
+  const [splitRatio, setSplitRatio] = useState<number>(0.5);
+  const [isDraggingDivider, setIsDraggingDivider] = useState<boolean>(false);
+  const [rightEditorTasks, setRightEditorTasks] = useState<TaskItem[]>([]);
+  const splitContainerRef = useRef<HTMLDivElement | null>(null);
+
   const toggleTaskFnRef = useRef<((nodeKey: string) => void) | null>(null);
   const removeTaskFnRef = useRef<((taskTitle: string) => boolean) | null>(null);
 
@@ -141,10 +150,78 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
     []
   );
 
-  const handleSelectFile = useCallback((path: string) => {
-    setActiveEditorTasks([]);
-    setActiveFilename(path);
+  const handleSelectFile = useCallback(
+    (path: string) => {
+      if (isSplitView && activePane === "right") {
+        setRightEditorTasks([]);
+        setRightFilename(path);
+      } else {
+        setActiveEditorTasks([]);
+        setActiveFilename(path);
+      }
+    },
+    [isSplitView, activePane]
+  );
+
+  const handleToggleSplitView = useCallback(() => {
+    setIsSplitView((prev) => {
+      if (!prev) {
+        setRightFilename((currRight) => {
+          if (currRight && currRight !== activeFilename) return currRight;
+          const other = workspaceFiles.find(
+            (f) =>
+              !isSameFilePath(f.path, activeFilename, workspaceDir) &&
+              f.name !== activeFilename
+          );
+          return other ? other.path : activeFilename;
+        });
+        setActivePane("right");
+        return true;
+      } else {
+        setActivePane("left");
+        return false;
+      }
+    });
+  }, [activeFilename, workspaceFiles, workspaceDir]);
+
+  const handleOpenInSplitView = useCallback((path: string) => {
+    setRightFilename(path);
+    setIsSplitView(true);
+    setActivePane("right");
   }, []);
+
+  const handleCloseSplitPane = useCallback(() => {
+    setIsSplitView(false);
+    setActivePane("left");
+  }, []);
+
+  const handleDividerMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDraggingDivider(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isDraggingDivider) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!splitContainerRef.current) return;
+      const rect = splitContainerRef.current.getBoundingClientRect();
+      const newRatio = (e.clientX - rect.left) / rect.width;
+      const clamped = Math.max(0.2, Math.min(0.8, newRatio));
+      setSplitRatio(clamped);
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingDivider(false);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDraggingDivider]);
 
   const handleCreateNewNote = useCallback(async () => {
     try {
@@ -217,13 +294,26 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
         handleCreateNewNote();
         return;
       }
+
+      // 3. Ctrl+\ / Cmd+\ -> Toggle Split View
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        !e.altKey &&
+        !e.shiftKey &&
+        (e.key === "\\" || e.key === "|")
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleToggleSplitView();
+        return;
+      }
     };
 
     window.addEventListener("keydown", handleGlobalKeyDown, true);
     return () => {
       window.removeEventListener("keydown", handleGlobalKeyDown, true);
     };
-  }, [handleCreateNewNote]);
+  }, [handleCreateNewNote, handleToggleSplitView]);
 
   // System-wide Global OS Shortcuts (Ctrl+Alt+N / Cmd+Option+N and Ctrl+Alt+P / Cmd+Option+P)
   useGlobalShortcuts({
@@ -286,6 +376,10 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
       aggregatedTasks.push(
         ...parseTasksFromMarkdown(activeFileObj.content, activeFileObj.path)
       );
+    }
+
+    if (isSplitView && rightEditorTasks.length > 0) {
+      aggregatedTasks.push(...rightEditorTasks);
     }
   }
 
@@ -525,7 +619,11 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
           onClearTagFilter={handleClearTagFilter}
           onSelectTag={handleSelectTag}
           onToggleTask={handleToggleTask}
-          activeFilePath={activeFilename}
+          activeFilePath={
+            isSplitView && activePane === "right"
+              ? rightFilename
+              : activeFilename
+          }
           onSelectFile={handleSelectFile}
           workspaceDir={workspaceDir}
           onMoveTaskToNote={handleMoveTaskToNote}
@@ -533,47 +631,159 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
           themeMode={themeMode}
           onToggleThemeMode={handleToggleThemeMode}
           onOpenSettings={() => setIsSettingsOpen(true)}
+          onOpenInSplitView={handleOpenInSplitView}
         />
-        {activeFilename ? (
-          isDashboardFile ? (
-            <DashboardView
-              key={activeFilename}
-              filePath={activeFilename}
-              workspaceFiles={workspaceFiles}
-              activeTagFilter={activeTagFilter}
-              onClearTagFilter={handleClearTagFilter}
-              onSelectTag={handleSelectTag}
-              onSelectFile={handleSelectFile}
-              onRefreshWorkspace={loadWorkspaceFiles}
-              onTasksChange={setActiveEditorTasks}
-              onRegisterToggleTask={handleRegisterToggleTask}
-            />
-          ) : (
-            <EditorPane
-              key={activeFilename}
-              filename={activeFilename}
-              workspaceDir={workspaceDir}
-              onTasksChange={setActiveEditorTasks}
-              onRegisterToggleTask={handleRegisterToggleTask}
-              onRegisterRemoveTask={handleRegisterRemoveTask}
-              onSelectTag={handleSelectTag}
-            />
-          )
-        ) : (
+        <div
+          ref={splitContainerRef}
+          data-testid="dual-column-editor-container"
+          style={{
+            display: "flex",
+            flex: 1,
+            height: "100%",
+            overflow: "hidden",
+            position: "relative",
+          }}
+        >
+          {/* Left / Primary Pane */}
           <div
+            data-testid="split-view-left-pane"
+            onClick={() => setActivePane("left")}
             style={{
-              flex: 1,
+              flex: isSplitView ? `0 0 calc(${splitRatio * 100}% - 3px)` : 1,
               display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "var(--rose-subtle)",
-              fontFamily: "var(--font-mono)",
-              fontSize: "13px",
+              flexDirection: "column",
+              height: "100%",
+              overflow: "hidden",
+              position: "relative",
+              outline:
+                isSplitView && activePane === "left"
+                  ? "1px solid var(--rose-pink)"
+                  : "none",
+              zIndex: isSplitView && activePane === "left" ? 2 : 1,
             }}
           >
-            No file selected
+            {activeFilename ? (
+              isDashboardFile ? (
+                <DashboardView
+                  key={activeFilename}
+                  filePath={activeFilename}
+                  workspaceFiles={workspaceFiles}
+                  activeTagFilter={activeTagFilter}
+                  onClearTagFilter={handleClearTagFilter}
+                  onSelectTag={handleSelectTag}
+                  onSelectFile={handleSelectFile}
+                  onRefreshWorkspace={loadWorkspaceFiles}
+                  onTasksChange={setActiveEditorTasks}
+                  onRegisterToggleTask={handleRegisterToggleTask}
+                />
+              ) : (
+                <EditorPane
+                  key={activeFilename}
+                  filename={activeFilename}
+                  workspaceDir={workspaceDir}
+                  onTasksChange={setActiveEditorTasks}
+                  onRegisterToggleTask={handleRegisterToggleTask}
+                  onRegisterRemoveTask={handleRegisterRemoveTask}
+                  onSelectTag={handleSelectTag}
+                  onToggleSplitView={handleToggleSplitView}
+                  isSplitView={isSplitView}
+                />
+              )
+            ) : (
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "var(--rose-subtle)",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "13px",
+                }}
+              >
+                No file selected
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Draggable Divider & Right Pane when in Split View */}
+          {isSplitView && (
+            <>
+              <div
+                data-testid="split-view-divider"
+                onMouseDown={handleDividerMouseDown}
+                style={{
+                  width: "6px",
+                  cursor: "col-resize",
+                  backgroundColor: isDraggingDivider
+                    ? "var(--rose-pink)"
+                    : "var(--rose-border-color)",
+                  transition: "background-color 150ms ease",
+                  zIndex: 10,
+                  userSelect: "none",
+                }}
+              />
+              <div
+                data-testid="split-view-right-pane"
+                onClick={() => setActivePane("right")}
+                style={{
+                  flex: `0 0 calc(${(1 - splitRatio) * 100}% - 3px)`,
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                  overflow: "hidden",
+                  position: "relative",
+                  outline:
+                    activePane === "right"
+                      ? "1px solid var(--rose-pink)"
+                      : "none",
+                  zIndex: activePane === "right" ? 2 : 1,
+                }}
+              >
+                {rightFilename ? (
+                  normalizePath(rightFilename).endsWith(".dashboard.md") ? (
+                    <DashboardView
+                      key={rightFilename}
+                      filePath={rightFilename}
+                      workspaceFiles={workspaceFiles}
+                      activeTagFilter={activeTagFilter}
+                      onClearTagFilter={handleClearTagFilter}
+                      onSelectTag={handleSelectTag}
+                      onSelectFile={handleSelectFile}
+                      onRefreshWorkspace={loadWorkspaceFiles}
+                      onTasksChange={setRightEditorTasks}
+                    />
+                  ) : (
+                    <EditorPane
+                      key={rightFilename}
+                      filename={rightFilename}
+                      workspaceDir={workspaceDir}
+                      onTasksChange={setRightEditorTasks}
+                      onSelectTag={handleSelectTag}
+                      onToggleSplitView={handleToggleSplitView}
+                      isSplitView={true}
+                      onCloseSplitPane={handleCloseSplitPane}
+                    />
+                  )
+                ) : (
+                  <div
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "var(--rose-subtle)",
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "13px",
+                    }}
+                  >
+                    No file selected in split view
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Live Background Backdrop */}

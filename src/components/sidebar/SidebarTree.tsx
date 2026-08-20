@@ -12,6 +12,7 @@ import {
   CornerLeftUp,
   Pencil,
   Trash2,
+  Columns2,
 } from "lucide-react";
 import { FileTreeNode } from "../../types/workspaceTree";
 import { isSameFilePath } from "../../services/fileService";
@@ -32,6 +33,7 @@ export interface SidebarTreeProps {
     targetNotePath: string,
     priority?: string
   ) => void;
+  onOpenInSplitView?: (path: string) => void;
   workspaceDir?: string;
 }
 
@@ -46,6 +48,7 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
   onDelete,
   onMovePath,
   onMoveTaskToNote,
+  onOpenInSplitView,
   workspaceDir,
 }) => {
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(
@@ -158,6 +161,7 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
     let payloadTitle = "";
     let payloadSource = "";
     let payloadPriority: string | undefined = undefined;
+    let payloadState: string | undefined = undefined;
     if (taskDataStr && taskDataStr.trim().startsWith("{")) {
       try {
         const payload = JSON.parse(taskDataStr);
@@ -165,10 +169,16 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
           payloadTitle = payload.taskTitle;
           payloadSource = payload.sourceFile || "";
           payloadPriority = payload.priority || undefined;
+          payloadState = payload.state;
         }
       } catch (err) {
         console.warn("Failed to parse task payload:", err);
       }
+    }
+
+    // Done/completed tasks cannot be moved across files via sidebar tree
+    if (payloadState === "completed") {
+      return;
     }
 
     const finalTaskTitle = payloadTitle || taskTitleFromFallback;
@@ -237,12 +247,6 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
         <div
           data-testid={`tree-node-${node.path}`}
           data-kind={node.kind}
-          draggable
-          onDragStart={(e) => handleDragStart(e, node)}
-          onDragEnter={(e) => handleDragEnter(e, node)}
-          onDragOver={(e) => handleDragOver(e, node)}
-          onDragLeave={(e) => handleDragLeave(e, node)}
-          onDrop={(e) => handleDropOnNode(e, node)}
           onClick={() => {
             if (isFolder) {
               setExpandedPaths((prev) => {
@@ -255,6 +259,18 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
               onSelectFile(node);
             }
           }}
+          onContextMenu={(e) => {
+            if (!isFolder && onOpenInSplitView) {
+              e.preventDefault();
+              onOpenInSplitView(node.path);
+            }
+          }}
+          draggable
+          onDragStart={(e) => handleDragStart(e, node)}
+          onDragEnter={(e) => handleDragEnter(e, node)}
+          onDragOver={(e) => handleDragOver(e, node)}
+          onDragLeave={(e) => handleDragLeave(e, node)}
+          onDrop={(e) => handleDropOnNode(e, node)}
           className="tactile-card"
           style={{
             display: "flex",
@@ -442,6 +458,20 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
               }
               return null;
             })()}
+            {!isFolder && onOpenInSplitView && (
+              <button
+                data-testid={`node-split-${node.path}`}
+                title="Open in Split View"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenInSplitView(node.path);
+                }}
+                style={actionBtnStyle}
+                className="tactile-btn"
+              >
+                <Columns2 size={12} style={{ color: "var(--rose-foam)" }} />
+              </button>
+            )}
             <button
               data-testid={`node-rename-${node.path}`}
               title="Rename"

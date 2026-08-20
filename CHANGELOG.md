@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.2.0] - 2026-08-20
+
+### Highlights & Features ✨
+
+- **Split View Dual-Pane Editing (Ticket 07 & ADR 0011)**:
+  - Side-by-side editable panes with independent active notes, Lexical editor states, and scroll positions.
+  - Instant pane splitting via `Ctrl+\` / `Cmd+\`, the Note Action Bar button, or sidebar file context menu.
+  - Draggable vertical splitter for smooth pane resizing, active pane focus routing for Quick Switcher/sidebar navigation, and single-click pane close.
+- **Device-to-Device Sync via Vault Archive (Ticket 06 & ADR 0010)**:
+  - Export entire active V-Folder into a self-contained `.zip` Vault Archive for reliable, offline-first backup and transfer across devices.
+  - Seamless archive import with automatic zip extraction, folder hierarchy preservation, and Replace vs. Merge conflict resolution.
+- **Unified "Import Note/Folder" & Auto Text-to-MD Conversion (Ticket 05)**:
+  - Intuitive mini-menu popover in sidebar offering "Import Files / Zip" and "Import Folder".
+  - File picker support for `.txt`, `.text`, `.md`, and `.zip` archives with automatic conversion of plain text into `.md` notes.
+  - Full drag-and-drop support directly onto the sidebar tree.
+- **Expanded Themes & Frosted Glassmorphism for Live Backgrounds (Ticket 04)**:
+  - Added 4 curated modern color palettes: **Catppuccin Mocha**, **Dracula Pro**, **Gruvbox Dark**, and **Catppuccin Latte** (7 themes total).
+  - Translucent frosted glass paneling with `backdrop-filter: blur(16px)` when Live Backgrounds are active, preserving WCAG AA text contrast.
+- **Unified Single-Row Note Action Bar (Ticket 02)**:
+  - Consolidated editor action bar featuring clean uppercase `PRIORITY:` header buttons (`[Urgent]`, `[High]`, `[Low]`), `STATUS:` badges, list marker picker, and inline rich text formatting (`B`, `I`, `S`, `==HL==`).
+
+### Bug Fixes & Improvements 🐛
+
+- **Task Drag Restrictions for Completed Tasks (Ticket 03)**:
+  - Completed (`- [x]`) tasks can now be reordered freely within their parent note, but are prevented from being accidentally dragged across notes or dropped onto sidebar tree nodes.
+- **Multi-Line Code Block Rendering (Ticket 01)**:
+  - Isolated block layout, pre-wrap whitespace, consistent line spacing, and horizontal scrolling for `.lexical-code-block` across all themes and modes.
+- **System-Wide Global OS Shortcuts (Ticket 01)**:
+  - Normalized shortcut handling for `Ctrl+Alt+N` (New Note) and `Ctrl+Alt+P` (Quick Switcher) to reliably bring Vault to the foreground and trigger actions even when minimized or running in the background.
+
+---
+
 ## [v1.1.1] - 2026-08-20
 
 ### Bug Fixes & Improvements 🐛

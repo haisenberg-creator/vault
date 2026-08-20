@@ -309,4 +309,98 @@ describe("SidebarTree Component", () => {
       backgroundColor: "rgba(235, 111, 146, 0.18)",
     });
   });
+
+  it("rejects dropping a completed task onto a sidebar note file and leaves source intact", () => {
+    const handleMoveTaskToNote = vi.fn();
+    render(
+      <SidebarTree
+        nodes={sampleNodes}
+        onSelectFile={vi.fn()}
+        onCreateNote={vi.fn()}
+        onCreateFolder={vi.fn()}
+        onCreateDashboard={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onMovePath={vi.fn()}
+        onMoveTaskToNote={handleMoveTaskToNote}
+      />
+    );
+
+    // Expand folder to see client-a.md
+    fireEvent.click(screen.getByText("Projects"));
+
+    const noteTarget = screen.getByTestId("tree-node-Projects/client-a.md");
+    const completedTaskPayload = JSON.stringify({
+      taskTitle: "Completed archived task",
+      sourceFile: "root-note.md",
+      state: "completed",
+    });
+
+    const dataTransfer = {
+      setData: vi.fn(),
+      getData: vi.fn((format: string) => {
+        if (format === "application/json") return completedTaskPayload;
+        if (format === "text/plain") return "task-drag:Completed archived task";
+        return "";
+      }),
+      types: ["application/json", "text/plain"],
+      dropEffect: "",
+      effectAllowed: "",
+    };
+
+    fireEvent.dragOver(noteTarget, { dataTransfer });
+    fireEvent.drop(noteTarget, { dataTransfer });
+
+    // Must NOT call onMoveTaskToNote for completed tasks
+    expect(handleMoveTaskToNote).not.toHaveBeenCalled();
+  });
+
+  it("allows dropping an in-progress or open task onto a sidebar note file", () => {
+    const handleMoveTaskToNote = vi.fn();
+    render(
+      <SidebarTree
+        nodes={sampleNodes}
+        onSelectFile={vi.fn()}
+        onCreateNote={vi.fn()}
+        onCreateFolder={vi.fn()}
+        onCreateDashboard={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onMovePath={vi.fn()}
+        onMoveTaskToNote={handleMoveTaskToNote}
+      />
+    );
+
+    fireEvent.click(screen.getByText("Projects"));
+
+    const noteTarget = screen.getByTestId("tree-node-Projects/client-a.md");
+    const openTaskPayload = JSON.stringify({
+      taskTitle: "Active in-progress task",
+      sourceFile: "root-note.md",
+      state: "in_progress",
+      priority: "high",
+    });
+
+    const dataTransfer = {
+      setData: vi.fn(),
+      getData: vi.fn((format: string) => {
+        if (format === "application/json") return openTaskPayload;
+        if (format === "text/plain") return "task-drag:Active in-progress task";
+        return "";
+      }),
+      types: ["application/json", "text/plain"],
+      dropEffect: "",
+      effectAllowed: "",
+    };
+
+    fireEvent.dragOver(noteTarget, { dataTransfer });
+    fireEvent.drop(noteTarget, { dataTransfer });
+
+    expect(handleMoveTaskToNote).toHaveBeenCalledWith(
+      "Active in-progress task",
+      "root-note.md",
+      "Projects/client-a.md",
+      "high"
+    );
+  });
 });

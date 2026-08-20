@@ -13,6 +13,54 @@ export const GLOBAL_SHORTCUT_NEW_NOTE = "CommandOrControl+Alt+N";
 export const GLOBAL_SHORTCUT_QUICK_SWITCHER = "CommandOrControl+Alt+P";
 
 /**
+ * Normalizes shortcut strings (e.g., "Ctrl+Alt+N", "cmd+opt+n", "CommandOrControl+Alt+N")
+ * into a canonical token string for cross-platform event matching.
+ */
+export function normalizeShortcut(shortcut: string): string {
+  if (!shortcut) return "";
+  const parts = shortcut
+    .toLowerCase()
+    .split("+")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const normalizedParts = parts.map((part) => {
+    if (
+      [
+        "commandorcontrol",
+        "ctrl",
+        "control",
+        "cmd",
+        "command",
+        "superorcontrol",
+      ].includes(part)
+    ) {
+      return "mod";
+    }
+    if (["alt", "opt", "option"].includes(part)) {
+      return "alt";
+    }
+    if (["shift"].includes(part)) {
+      return "shift";
+    }
+    if (["super", "meta", "win", "windows"].includes(part)) {
+      return "super";
+    }
+    return part;
+  });
+
+  return normalizedParts.sort().join("+");
+}
+
+/**
+ * Checks whether an incoming shortcut event string matches the target registered shortcut.
+ */
+export function isShortcutMatch(received: string, target: string): boolean {
+  if (!received || !target) return false;
+  return normalizeShortcut(received) === normalizeShortcut(target);
+}
+
+/**
  * Brings the Vault desktop window to the foreground:
  * unminimizes if minimized, shows window, and requests focus.
  */
@@ -51,14 +99,11 @@ export async function registerGlobalShortcuts(
     const shortcutHandler: ShortcutHandler = async (event: ShortcutEvent) => {
       if (event.state !== "Pressed") return;
 
-      if (
-        event.shortcut.toLowerCase() === GLOBAL_SHORTCUT_NEW_NOTE.toLowerCase()
-      ) {
+      if (isShortcutMatch(event.shortcut, GLOBAL_SHORTCUT_NEW_NOTE)) {
         await focusVaultWindow();
         await handlers.onNewNote?.();
       } else if (
-        event.shortcut.toLowerCase() ===
-        GLOBAL_SHORTCUT_QUICK_SWITCHER.toLowerCase()
+        isShortcutMatch(event.shortcut, GLOBAL_SHORTCUT_QUICK_SWITCHER)
       ) {
         await focusVaultWindow();
         await handlers.onOpenQuickSwitcher?.();

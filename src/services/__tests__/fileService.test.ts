@@ -20,7 +20,11 @@ import {
   resolveAbsolutePath,
   copyToClipboard,
   revealFileInExplorer,
+  exportVaultArchive,
+  importVaultArchive,
+  isWorkspaceEmpty,
 } from "../fileService";
+import JSZip from "jszip";
 
 describe("fileService", () => {
   beforeEach(() => {
@@ -348,6 +352,99 @@ describe("fileService", () => {
       );
 
       delete (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
+    });
+  });
+
+  describe("Vault Archive Sync (Export & Import)", () => {
+    it("exports workspace as a .zip Vault Archive preserving note contents", async () => {
+      setMockFileContent("notes/roadmap.md", "# Project Roadmap\n- [ ] Task A");
+      setMockFileContent("projects/client.md", "# Client Info");
+
+      const zipBlob = await exportVaultArchive();
+      expect(zipBlob).toBeDefined();
+
+      const arrayBuffer = await zipBlob.arrayBuffer();
+      const zip = await JSZip.loadAsync(arrayBuffer);
+
+      expect(zip.file("notes/roadmap.md")).not.toBeNull();
+      const roadmapContent = await zip
+        .file("notes/roadmap.md")
+        ?.async("string");
+      expect(roadmapContent).toBe("# Project Roadmap\n- [ ] Task A");
+
+      expect(zip.file("projects/client.md")).not.toBeNull();
+      const clientContent = await zip
+        .file("projects/client.md")
+        ?.async("string");
+      expect(clientContent).toBe("# Client Info");
+    });
+
+    it("imports a Vault Archive .zip with merge strategy, converting .txt to .md", async () => {
+      setMockFileContent("existing.md", "# Existing Note");
+
+      const zip = new JSZip();
+      zip.file("imported/plan.md", "# Imported Plan");
+      zip.file("imported/todo.txt", "# Converted Todo\n- [ ] Task 1");
+      const zipBuffer = await zip.generateAsync({ type: "arraybuffer" });
+
+      const result = await importVaultArchive(zipBuffer, "merge");
+      expect(result.success).toBe(true);
+      expect(result.count).toBe(2);
+
+      // Existing note preserved in merge
+      expect(getMockFileContent("existing.md")).toBe("# Existing Note");
+
+      // New notes added and converted
+      expect(getMockFileContent("imported/plan.md")).toBe("# Imported Plan");
+      expect(getMockFileContent("imported/todo.md")).toBe(
+        "# Converted Todo\n- [ ] Task 1"
+      );
+      expect(getMockFileContent("imported/todo.txt")).toBeUndefined();
+    });
+
+    it("imports a Vault Archive .zip with replace strategy, clearing old workspace", async () => {
+      setMockFileContent("old-note.md", "# Old Note to be replaced");
+
+      const zip = new JSZip();
+      zip.file("fresh/start.md", "# Fresh Start");
+      const zipBuffer = await zip.generateAsync({ type: "arraybuffer" });
+
+      const result = await importVaultArchive(zipBuffer, "replace");
+      expect(result.success).toBe(true);
+
+      // Old note wiped
+      expect(getMockFileContent("old-note.md")).toBeUndefined();
+
+      // Fresh note imported
+      expect(getMockFileContent("fresh/start.md")).toBe("# Fresh Start");
+    });
+
+    it("importFolderFiles automatically extracts .zip archives", async () => {
+      const zip = new JSZip();
+      zip.file("archive/sub/feature.md", "# Feature spec");
+      zip.file("archive/sub/notes.txt", "Raw notes");
+      const zipBuffer = await zip.generateAsync({ type: "arraybuffer" });
+
+      const result = await importFolderFiles([
+        {
+          path: "backup.zip",
+          buffer: zipBuffer,
+        },
+      ]);
+
+      expect(result).toContain("archive/sub/feature.md");
+      expect(result).toContain("archive/sub/notes.md");
+      expect(getMockFileContent("archive/sub/feature.md")).toBe(
+        "# Feature spec"
+      );
+      expect(getMockFileContent("archive/sub/notes.md")).toBe("Raw notes");
+    });
+
+    it("checks if workspace is empty", async () => {
+      expect(await isWorkspaceEmpty()).toBe(true);
+
+      setMockFileContent("workspace/note.md", "# Some Content");
+      expect(await isWorkspaceEmpty()).toBe(false);
     });
   });
 });

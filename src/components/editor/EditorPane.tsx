@@ -63,7 +63,6 @@ import {
 import { ALL_TRANSFORMERS } from "./checklistTransformer";
 import { TaskItem, TaskState } from "../sidebar/TaskDashboardSidebar";
 import { NoteActionBar } from "./NoteActionBar";
-import { FormattingToolbar } from "./FormattingToolbar";
 
 export interface EditorPaneProps {
   filename?: string;
@@ -72,6 +71,9 @@ export interface EditorPaneProps {
   onRegisterToggleTask?: (toggleFn: (nodeKey: string) => void) => void;
   onRegisterRemoveTask?: (removeFn: (taskTitle: string) => boolean) => void;
   onSelectTag?: (tag: string) => void;
+  onToggleSplitView?: () => void;
+  isSplitView?: boolean;
+  onCloseSplitPane?: () => void;
 }
 
 const EDITOR_NODES = [
@@ -1033,6 +1035,9 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
   onRegisterToggleTask,
   onRegisterRemoveTask,
   onSelectTag,
+  onToggleSplitView,
+  isSplitView,
+  onCloseSplitPane,
 }) => {
   const displayFilename = formatShortPath(filename, workspaceDir);
   const [markdownContent, setMarkdownContent] = useState<string>("");
@@ -1332,41 +1337,16 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
         </div>
       </div>
 
-      {/* Note Action Toolbar */}
-      <NoteActionBar
-        onAddTask={handleActionBarAddTask}
-        onChangeTaskStatus={handleActionBarChangeStatus}
-        onApplyPrefix={handleActionBarApplyPrefix}
-        onInsertPriorityTemplate={handleActionBarInsertPriorityTemplate}
-        onInsertPriorityHeader={handleActionBarInsertPriorityHeader}
-      />
-
-      {/* Editor Content Area */}
-      <div
-        style={{
-          flex: 1,
-          padding: "24px 32px",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
-        {errorMessage && (
-          <div
-            style={{
-              padding: "10px 14px",
-              borderRadius: "6px",
-              backgroundColor: "rgba(235, 111, 146, 0.15)",
-              color: "var(--rose-love)",
-              fontSize: "12px",
-              marginBottom: "12px",
-            }}
-          >
-            {errorMessage}
-          </div>
-        )}
-
-        {isLoading ? (
+      {isLoading ? (
+        <div
+          style={{
+            flex: 1,
+            padding: "24px 32px",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+          }}
+        >
           <div
             style={{
               color: "var(--rose-subtle)",
@@ -1377,9 +1357,47 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
           >
             Loading document...
           </div>
-        ) : (
-          <ActiveFileContext.Provider value={filename}>
-            <LexicalComposer initialConfig={initialConfig}>
+        </div>
+      ) : (
+        <ActiveFileContext.Provider value={filename}>
+          <LexicalComposer initialConfig={initialConfig}>
+            {/* Unified Note Action Toolbar */}
+            <NoteActionBar
+              onAddTask={handleActionBarAddTask}
+              onChangeTaskStatus={handleActionBarChangeStatus}
+              onApplyPrefix={handleActionBarApplyPrefix}
+              onInsertPriorityTemplate={handleActionBarInsertPriorityTemplate}
+              onInsertPriorityHeader={handleActionBarInsertPriorityHeader}
+              onToggleSplitView={onToggleSplitView}
+              isSplitView={isSplitView}
+              onCloseSplitPane={onCloseSplitPane}
+            />
+
+            {/* Editor Content Area */}
+            <div
+              style={{
+                flex: 1,
+                padding: "24px 32px",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+              }}
+            >
+              {errorMessage && (
+                <div
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: "6px",
+                    backgroundColor: "rgba(235, 111, 146, 0.15)",
+                    color: "var(--rose-love)",
+                    fontSize: "12px",
+                    marginBottom: "12px",
+                  }}
+                >
+                  {errorMessage}
+                </div>
+              )}
+
               <div
                 style={{
                   flex: 1,
@@ -1389,7 +1407,6 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
                   position: "relative",
                 }}
               >
-                <FormattingToolbar />
                 <div
                   style={{ flex: 1, position: "relative", overflowY: "auto" }}
                 >
@@ -1433,10 +1450,10 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
                 <ChecklistEnterPlugin />
                 <KeyboardSavePlugin onSave={handleManualSave} />
               </div>
-            </LexicalComposer>
-          </ActiveFileContext.Provider>
-        )}
-      </div>
+            </div>
+          </LexicalComposer>
+        </ActiveFileContext.Provider>
+      )}
     </main>
   );
 };

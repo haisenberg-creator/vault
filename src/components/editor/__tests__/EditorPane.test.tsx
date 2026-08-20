@@ -825,4 +825,24 @@ describe("EditorPane Component (Lexical)", () => {
 
     expect(screen.queryByTestId("checklist-node-open")).toBeNull();
   });
+
+  it("renders multi-line code blocks inside lexical-code-block correctly", async () => {
+    fileService.setMockFileContent(
+      "code-note.md",
+      "```js\nconst greeting = 'Hello Vault';\nconsole.log(greeting);\n```"
+    );
+
+    const { container } = render(<EditorPane filename="code-note.md" />);
+
+    const editor = await screen.findByTestId("editor-contenteditable");
+    expect(editor).toBeInTheDocument();
+
+    await waitFor(() => {
+      const codeBlock = container.querySelector(".lexical-code-block");
+      expect(codeBlock).toBeInTheDocument();
+      expect(codeBlock?.textContent).toContain(
+        "const greeting = 'Hello Vault';"
+      );
+    });
+  });
 });

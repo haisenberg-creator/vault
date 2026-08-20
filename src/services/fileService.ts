@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import mammoth from "mammoth";
+import JSZip from "jszip";
 import { FileTreeNode, FileKind } from "../types/workspaceTree";
 
 export interface WorkspaceFile {
@@ -777,8 +778,9 @@ export interface ImportFileInput {
 }
 
 /**
- * Imports external files or folders (.md, .txt, .docx, and other text formats) into the workspace.
- * Converts .txt and other plain text formats to .md, and parses .docx files into Markdown via mammoth.
+ * Imports external files or folders (.md, .txt, .docx, .zip, and other text formats) into the workspace.
+ * Converts .txt and other plain text formats to .md, parses .docx files into Markdown via mammoth,
+ * and extracts all contents from .zip archives.
  */
 export async function importFolderFiles(
   files: ImportFileInput[] | FileList | File[],
@@ -798,6 +800,51 @@ export async function importFolderFiles(
     }
 
     const lower = relPath.toLowerCase();
+
+    if (lower.endsWith(".zip")) {
+      const buffer = await getBuffer();
+      if (buffer && (buffer.byteLength > 0 || buffer instanceof ArrayBuffer)) {
+        const zip = await JSZip.loadAsync(buffer);
+        for (const [relativePath, zipEntry] of Object.entries(zip.files)) {
+          if (zipEntry.dir) continue;
+          if (
+            relativePath.startsWith("__MACOSX/") ||
+            relativePath.includes("/.") ||
+            relativePath.startsWith(".")
+          ) {
+            continue;
+          }
+
+          let entryPath = normalizePath(relativePath);
+          if (targetPrefix && !entryPath.startsWith(targetPrefix + "/")) {
+            entryPath = `${targetPrefix}/${entryPath}`;
+          }
+
+          const entryLower = entryPath.toLowerCase();
+          if (entryLower.endsWith(".docx")) {
+            const entryBuffer = await zipEntry.async("arraybuffer");
+            const markdown = await convertDocxToMarkdown(entryBuffer);
+            entryPath = entryPath.slice(0, -5) + ".md";
+            await writeMarkdownFile(entryPath, markdown);
+            importedPaths.push(entryPath);
+          } else if (
+            entryLower.endsWith(".txt") ||
+            entryLower.endsWith(".text")
+          ) {
+            const content = await zipEntry.async("string");
+            entryPath = entryPath.replace(/\.(txt|text)$/i, ".md");
+            await writeMarkdownFile(entryPath, content);
+            importedPaths.push(entryPath);
+          } else {
+            const content = await zipEntry.async("string");
+            await writeMarkdownFile(entryPath, content);
+            importedPaths.push(entryPath);
+          }
+        }
+      }
+      return;
+    }
+
     if (lower.endsWith(".docx")) {
       relPath = relPath.slice(0, -5) + ".md";
       const buffer = await getBuffer();
@@ -809,8 +856,8 @@ export async function importFolderFiles(
       }
       await writeMarkdownFile(relPath, markdown);
       importedPaths.push(relPath);
-    } else if (lower.endsWith(".txt")) {
-      relPath = relPath.slice(0, -4) + ".md";
+    } else if (lower.endsWith(".txt") || lower.endsWith(".text")) {
+      relPath = relPath.replace(/\.(txt|text)$/i, ".md");
       const content = await getText();
       await writeMarkdownFile(relPath, content);
       importedPaths.push(relPath);
@@ -819,7 +866,7 @@ export async function importFolderFiles(
       await writeMarkdownFile(relPath, content);
       importedPaths.push(relPath);
     } else {
-      // Other text formats (e.g. .text, .markdown, .rtf, .log, .csv)
+      // Other text formats (e.g. .markdown, .rtf, .log, .csv)
       if (!lower.endsWith(".md")) {
         const lastDot = relPath.lastIndexOf(".");
         if (lastDot > relPath.lastIndexOf("/")) {
@@ -862,4 +909,112 @@ export async function importFolderFiles(
 
   notifyWorkspaceChange();
   return importedPaths;
+}
+
+/**
+ * Check if the workspace is currently empty.
+ */
+export async function isWorkspaceEmpty(
+  workspaceDir?: string
+): Promise<boolean> {
+  const tree = await readWorkspaceTree(workspaceDir);
+  return tree.length === 0;
+}
+
+/**
+ * Exports the active workspace / V-Folder as a .zip Vault Archive.
+ */
+export async function exportVaultArchive(workspaceDir?: string): Promise<Blob> {
+  const zip = new JSZip();
+  const tree = await readWorkspaceTree(workspaceDir);
+
+  const addNodeToZip = async (nodes: FileTreeNode[]) => {
+    for (const node of nodes) {
+      if (node.kind === "file") {
+        try {
+          const content = await readMarkdownFile(node.path, workspaceDir);
+          zip.file(node.path, content);
+        } catch (e) {
+          console.warn(`Failed to read ${node.path} for archive export:`, e);
+        }
+      }
+      if (node.children && node.children.length > 0) {
+        await addNodeToZip(node.children);
+      }
+    }
+  };
+
+  await addNodeToZip(tree);
+
+  const blob = await zip.generateAsync({ type: "blob" });
+  return blob;
+}
+
+/**
+ * Imports a .zip Vault Archive with conflict resolution (merge or replace).
+ */
+export async function importVaultArchive(
+  zipData: ArrayBuffer | Uint8Array | Blob | File,
+  strategy: "merge" | "replace" = "merge",
+  targetFolderPath?: string
+): Promise<{ success: boolean; count: number; importedPaths: string[] }> {
+  if (strategy === "replace") {
+    clearMockStorage();
+  }
+
+  let buffer: ArrayBuffer | Uint8Array;
+  if (zipData instanceof ArrayBuffer || zipData instanceof Uint8Array) {
+    buffer = zipData;
+  } else if (typeof Blob !== "undefined" && zipData instanceof Blob) {
+    buffer = await zipData.arrayBuffer();
+  } else if (typeof File !== "undefined" && zipData instanceof File) {
+    buffer = await (zipData as File).arrayBuffer();
+  } else {
+    throw new Error("Unsupported zip data format");
+  }
+
+  const zip = await JSZip.loadAsync(buffer);
+  const importedPaths: string[] = [];
+  const targetPrefix = targetFolderPath ? normalizePath(targetFolderPath) : "";
+
+  for (const [relativePath, zipEntry] of Object.entries(zip.files)) {
+    if (zipEntry.dir) continue;
+    if (
+      relativePath.startsWith("__MACOSX/") ||
+      relativePath.includes("/.") ||
+      relativePath.startsWith(".")
+    ) {
+      continue;
+    }
+
+    let entryPath = normalizePath(relativePath);
+    if (targetPrefix && !entryPath.startsWith(targetPrefix + "/")) {
+      entryPath = `${targetPrefix}/${entryPath}`;
+    }
+
+    const entryLower = entryPath.toLowerCase();
+    if (entryLower.endsWith(".docx")) {
+      const entryBuffer = await zipEntry.async("arraybuffer");
+      const markdown = await convertDocxToMarkdown(entryBuffer);
+      entryPath = entryPath.slice(0, -5) + ".md";
+      await writeMarkdownFile(entryPath, markdown);
+      importedPaths.push(entryPath);
+    } else if (entryLower.endsWith(".txt") || entryLower.endsWith(".text")) {
+      const content = await zipEntry.async("string");
+      entryPath = entryPath.replace(/\.(txt|text)$/i, ".md");
+      await writeMarkdownFile(entryPath, content);
+      importedPaths.push(entryPath);
+    } else {
+      const content = await zipEntry.async("string");
+      await writeMarkdownFile(entryPath, content);
+      importedPaths.push(entryPath);
+    }
+  }
+
+  notifyWorkspaceChange();
+  return {
+    success: true,
+    count: importedPaths.length,
+    importedPaths,
+  };
 }

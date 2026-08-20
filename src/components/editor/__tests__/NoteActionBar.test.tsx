@@ -90,4 +90,40 @@ describe("NoteActionBar", () => {
     fireEvent.click(lowBtn);
     expect(handleInsertPriorityHeader).toHaveBeenLastCalledWith("Low");
   });
+
+  it("renders PRIORITY label matching STATUS label style", () => {
+    render(<NoteActionBar />);
+
+    expect(screen.getByTestId("note-action-priority-label")).toHaveTextContent(
+      "PRIORITY:"
+    );
+    expect(screen.getByText("STATUS:")).toBeInTheDocument();
+  });
+
+  it("renders inline text formatting buttons (B, I, S, HL) and triggers onFormatText", () => {
+    const handleFormatText = vi.fn();
+    render(<NoteActionBar onFormatText={handleFormatText} />);
+
+    const boldBtn = screen.getByTestId("formatting-bold-btn");
+    const italicBtn = screen.getByTestId("formatting-italic-btn");
+    const strikeBtn = screen.getByTestId("formatting-strikethrough-btn");
+    const highlightBtn = screen.getByTestId("formatting-highlight-btn");
+
+    expect(boldBtn).toBeInTheDocument();
+    expect(italicBtn).toBeInTheDocument();
+    expect(strikeBtn).toBeInTheDocument();
+    expect(highlightBtn).toBeInTheDocument();
+
+    fireEvent.click(boldBtn);
+    expect(handleFormatText).toHaveBeenCalledWith("bold");
+
+    fireEvent.click(italicBtn);
+    expect(handleFormatText).toHaveBeenCalledWith("italic");
+
+    fireEvent.click(strikeBtn);
+    expect(handleFormatText).toHaveBeenCalledWith("strikethrough");
+
+    fireEvent.click(highlightBtn);
+    expect(handleFormatText).toHaveBeenCalledWith("highlight");
+  });
 });

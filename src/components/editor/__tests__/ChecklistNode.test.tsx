@@ -132,7 +132,7 @@ describe("EditorPane with Custom Checklist Nodes", () => {
     );
   });
 
-  it("disables dragging for completed tasks in the editor", async () => {
+  it("allows dragging for completed tasks in the editor with completed state in payload", async () => {
     const markdownContent = "- [ ] Open Task\n- [x] Completed Task";
     vi.mocked(fileService.readMarkdownFile).mockResolvedValue(markdownContent);
 
@@ -148,7 +148,7 @@ describe("EditorPane with Custom Checklist Nodes", () => {
     const completedBadge = await screen.findByTestId(
       "checklist-node-completed"
     );
-    expect(completedBadge).toHaveAttribute("draggable", "false");
+    expect(completedBadge).toHaveAttribute("draggable", "true");
 
     const setDataSpy = vi.fn();
     fireEvent.dragStart(completedBadge, {
@@ -156,6 +156,9 @@ describe("EditorPane with Custom Checklist Nodes", () => {
         setData: setDataSpy,
       },
     });
-    expect(setDataSpy).not.toHaveBeenCalled();
+    expect(setDataSpy).toHaveBeenCalledWith(
+      "application/json",
+      expect.stringContaining('"state":"completed"')
+    );
   });
 });

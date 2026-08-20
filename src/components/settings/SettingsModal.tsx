@@ -81,6 +81,30 @@ const THEME_PALETTES: {
     desc: "Deep neon palette celebrating the lights of downtown Tokyo",
     colors: ["#16161e", "#bb9af7", "#7dcfff", "#e0af68", "#f7768e"],
   },
+  {
+    id: "catppuccin-mocha",
+    name: "Catppuccin Mocha",
+    desc: "Soothing velvety dark palette with soft pastel accents",
+    colors: ["#1e1e2e", "#cba6f7", "#fab387", "#94e2d5", "#f5c2e7"],
+  },
+  {
+    id: "dracula-pro",
+    name: "Dracula Pro",
+    desc: "High-contrast dark palette with vibrant obsidian neon accents",
+    colors: ["#181920", "#ff79c6", "#f1fa8c", "#8be9fd", "#50fa7b"],
+  },
+  {
+    id: "gruvbox-dark",
+    name: "Gruvbox Dark",
+    desc: "Warm retro earthy groove with rich autumnal tones",
+    colors: ["#1d2021", "#fb4934", "#fabd2f", "#b8bb26", "#d3869b"],
+  },
+  {
+    id: "catppuccin-latte",
+    name: "Catppuccin Latte",
+    desc: "Crisp light palette with warm accents and crystal clarity",
+    colors: ["#eff1f5", "#8839ef", "#fe640b", "#179299", "#1e66f5"],
+  },
 ];
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({

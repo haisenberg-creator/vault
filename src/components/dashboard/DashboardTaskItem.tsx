@@ -67,6 +67,7 @@ export const DashboardTaskItem: React.FC<DashboardTaskItemProps> = ({
             taskTitle: task.title,
             sourceFile: task.sourceFile,
             priority: task.priority,
+            state: task.state,
           })
         );
         e.dataTransfer.setData("text/plain", `task-drag:${task.title}`);

@@ -88,3 +88,11 @@ _Avoid_: OS hotkey, system shortcut
 **Local Shortcut**:
 A keyboard shortcut that only triggers when the Vault application window is in focus (e.g., `Ctrl+N`).
 _Avoid_: App hotkey, window shortcut
+
+**Vault Archive**:
+A compressed `.zip` archive containing the entire V-Folder (Notes, Dashboards, Folders, and attachments) used for offline device-to-device synchronization and backup.
+_Avoid_: Export file, sync dump, backup zip
+
+**Import Note/Folder**:
+A unified import action allowing users to import individual files (`.md`, `.txt`), entire folders, or `.zip` Vault Archives into the active V-Folder, with automatic conversion of `.txt` to `.md`.
+_Avoid_: File upload, folder upload

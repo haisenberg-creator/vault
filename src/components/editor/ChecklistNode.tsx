@@ -187,11 +187,6 @@ export const ChecklistComponent: React.FC<ChecklistComponentProps> = ({
   const info = getStyleAndIcon();
 
   const handleDragStart = (e: React.DragEvent) => {
-    if (state === "completed") {
-      e.preventDefault();
-      return;
-    }
-
     let taskTitle = "";
     editor.getEditorState().read(() => {
       const node = $getNodeByKey(nodeKey);
@@ -218,21 +213,19 @@ export const ChecklistComponent: React.FC<ChecklistComponentProps> = ({
     }
   };
 
-  const isDraggable = state !== "completed";
-
   return (
     <span
       data-testid={`checklist-node-${state}`}
       data-task-state={state}
       onClick={handleClick}
-      draggable={isDraggable}
+      draggable={true}
       onDragStart={handleDragStart}
       role="button"
       tabIndex={0}
       title={
-        isDraggable
-          ? `Click to change state from ${state}, or drag to move task to another note`
-          : `Click to change state from ${state}`
+        state === "completed"
+          ? `Click to change state from ${state}, or drag to reorder task within note`
+          : `Click to change state from ${state}, or drag to move/reorder task`
       }
       className="tactile-btn"
       style={{
@@ -246,7 +239,7 @@ export const ChecklistComponent: React.FC<ChecklistComponentProps> = ({
         color: info.color,
         border: info.border,
         boxShadow: info.shadow,
-        cursor: isDraggable ? "grab" : "pointer",
+        cursor: "grab",
         userSelect: "none",
         fontSize: "12px",
         fontFamily: "var(--font-mono, monospace)",
