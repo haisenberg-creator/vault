@@ -28,8 +28,14 @@ import {
   getThemeMode,
   toggleThemeMode,
   applyThemeMode,
+  initTheme,
+  subscribeTheme,
+  getLiveBackground,
+  getLiveBackgroundOpacity,
+  getLiveBackgroundBlur,
   ThemeMode,
 } from "../../services/themeService";
+import { SettingsModal } from "../settings/SettingsModal";
 import { useGlobalShortcuts } from "../../hooks/useGlobalShortcuts";
 
 export interface DualColumnLayoutProps {
@@ -46,11 +52,31 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
   const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
   const [isQuickSwitcherOpen, setIsQuickSwitcherOpen] =
     useState<boolean>(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [themeMode, setThemeModeState] = useState<ThemeMode>(() =>
     getThemeMode()
   );
+  const [liveBg, setLiveBg] = useState<string | null>(() =>
+    getLiveBackground()
+  );
+  const [bgOpacity, setBgOpacity] = useState<number>(() =>
+    getLiveBackgroundOpacity()
+  );
+  const [bgBlur, setBgBlur] = useState<number>(() => getLiveBackgroundBlur());
+
   const toggleTaskFnRef = useRef<((nodeKey: string) => void) | null>(null);
   const removeTaskFnRef = useRef<((taskTitle: string) => boolean) | null>(null);
+
+  useEffect(() => {
+    initTheme();
+    const unsub = subscribeTheme(() => {
+      setThemeModeState(getThemeMode());
+      setLiveBg(getLiveBackground());
+      setBgOpacity(getLiveBackgroundOpacity());
+      setBgBlur(getLiveBackgroundBlur());
+    });
+    return unsub;
+  }, []);
 
   const handleSelectTag = useCallback((tag: string) => {
     setActiveTagFilter(tag);
@@ -506,6 +532,7 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
           onDeleteTask={handleDeleteTask}
           themeMode={themeMode}
           onToggleThemeMode={handleToggleThemeMode}
+          onOpenSettings={() => setIsSettingsOpen(true)}
         />
         {activeFilename ? (
           isDashboardFile ? (
@@ -548,6 +575,21 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
           </div>
         )}
       </div>
+
+      {/* Live Background Backdrop */}
+      {liveBg && (
+        <div
+          data-testid="live-bg-backdrop"
+          className="live-bg-container"
+          style={{
+            backgroundImage: `url("${liveBg}")`,
+            opacity: bgOpacity,
+            filter: bgBlur > 0 ? `blur(${bgBlur}px)` : "none",
+          }}
+        />
+      )}
+
+      {/* Modals */}
       <QuickSwitcher
         isOpen={isQuickSwitcherOpen}
         notes={workspaceFiles}
@@ -555,6 +597,10 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
         workspaceDir={workspaceDir}
         onSelectNote={handleSelectFile}
         onClose={() => setIsQuickSwitcherOpen(false)}
+      />
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
       />
     </div>
   );

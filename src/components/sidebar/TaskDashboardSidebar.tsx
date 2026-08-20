@@ -15,11 +15,13 @@ import {
   FileText,
   ChevronRight,
   ChevronDown,
+  Settings,
 } from "lucide-react";
 import { FileTreeNode } from "../../types/workspaceTree";
 import { PinnedDashboards } from "./PinnedDashboards";
 import { SidebarTree } from "./SidebarTree";
 import { FileOperationModal, OperationMode } from "./FileOperationModal";
+import { SettingsModal } from "../settings/SettingsModal";
 import {
   readWorkspaceTree,
   createFile,
@@ -70,6 +72,7 @@ export interface TaskDashboardSidebarProps {
   onDeleteTask?: (taskId: string) => void;
   themeMode?: ThemeMode;
   onToggleThemeMode?: () => void;
+  onOpenSettings?: () => void;
 }
 
 export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
@@ -87,8 +90,10 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
   initialTab = "files",
   onMoveTaskToNote,
   onDeleteTask,
+  onOpenSettings,
 }) => {
   const [activeTab, setActiveTab] = useState<"files" | "tasks">(initialTab);
+  const [internalSettingsOpen, setInternalSettingsOpen] = useState(false);
   const [treeNodes, setTreeNodes] = useState<FileTreeNode[]>([]);
   const [internalFilter, setInternalFilter] = useState<TaskState | "all">(
     "all"
@@ -1289,6 +1294,54 @@ sections:
             </div>
           </div>
         </div>
+      )}
+
+      {/* Sidebar Footer with Settings Gear */}
+      <div
+        style={{
+          padding: "8px 12px",
+          borderTop: "1px solid rgba(110, 106, 134, 0.2)",
+          backgroundColor: "rgba(25, 23, 36, 0.4)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <button
+          data-testid="sidebar-settings-btn"
+          onClick={() => {
+            if (onOpenSettings) onOpenSettings();
+            else setInternalSettingsOpen(true);
+          }}
+          className="tactile-btn"
+          title="Vault Settings (Themes & Live Backgrounds)"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "5px 10px",
+            borderRadius: "var(--radius-sm)",
+            border: "1px solid rgba(110, 106, 134, 0.25)",
+            backgroundColor: "var(--rose-bg-overlay)",
+            color: "var(--rose-text)",
+            fontSize: "11px",
+            fontWeight: 600,
+            cursor: "pointer",
+            width: "100%",
+            justifyContent: "center",
+          }}
+        >
+          <Settings size={14} color="var(--rose-pink)" />
+          <span>Settings</span>
+        </button>
+      </div>
+
+      {/* Settings Modal when managed internally */}
+      {!onOpenSettings && (
+        <SettingsModal
+          isOpen={internalSettingsOpen}
+          onClose={() => setInternalSettingsOpen(false)}
+        />
       )}
     </aside>
   );

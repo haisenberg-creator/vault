@@ -447,4 +447,26 @@ describe("DualColumnLayout Integration", () => {
 
     registerSpy.mockRestore();
   });
+
+  it("opens Settings modal when clicking sidebar settings button and changes theme", async () => {
+    fileService.setMockFileContent("test.md", "# Test Note");
+
+    render(<DualColumnLayout />);
+
+    const settingsBtn = screen.getByTestId("sidebar-settings-btn");
+    expect(settingsBtn).toBeInTheDocument();
+
+    fireEvent.click(settingsBtn);
+
+    expect(screen.getByTestId("settings-modal")).toBeInTheDocument();
+    expect(screen.getByText("Vault Settings")).toBeInTheDocument();
+
+    // Switch theme to Nord
+    fireEvent.click(screen.getByTestId("theme-option-nord"));
+    expect(document.documentElement.dataset.theme).toBe("nord");
+
+    // Close settings modal
+    fireEvent.click(screen.getByTestId("settings-close-btn"));
+    expect(screen.queryByTestId("settings-modal")).not.toBeInTheDocument();
+  });
 });

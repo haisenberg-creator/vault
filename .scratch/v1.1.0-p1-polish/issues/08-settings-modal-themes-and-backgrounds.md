@@ -4,12 +4,12 @@
 
 **Blocked by:** 06 — Sidebar Visual Refresh with Lucide Icons
 
-**Status:** ready-for-agent
+**Status:** closed
 
-- [ ] A Settings gear icon is visible at the bottom of the sidebar, opening the Settings modal on click
-- [ ] Settings modal has tabs for "Themes" and "Live Background"
-- [ ] Selecting a Theme (Rosé Pine, Nord, Tokyo Night) updates the global CSS variable palette immediately
-- [ ] Selecting a Live Background allows choosing a local image/GIF, rendering it as the fixed backdrop behind translucent glass panels
-- [ ] Selected Theme and Live Background settings persist across app restarts
-- [ ] Escape key and outside clicks dismiss the Settings modal cleanly
-- [ ] Automated tests verify theme switching, background state persistence, and modal lifecycle
+- [x] A Settings gear icon is visible at the bottom of the sidebar, opening the Settings modal on click
+- [x] Settings modal has tabs for "Themes" and "Live Background"
+- [x] Selecting a Theme (Rosé Pine, Nord, Tokyo Night) updates the global CSS variable palette immediately
+- [x] Selecting a Live Background allows choosing a local image/GIF, rendering it as the fixed backdrop behind translucent glass panels
+- [x] Selected Theme and Live Background settings persist across app restarts
+- [x] Escape key and outside clicks dismiss the Settings modal cleanly
+- [x] Automated tests verify theme switching, background state persistence, and modal lifecycle
