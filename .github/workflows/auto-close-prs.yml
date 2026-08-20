@@ -1,0 +1,32 @@
+name: "Close External PRs"
+
+on:
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  pull-requests: write
+  issues: write
+  contents: read
+
+jobs:
+  close-pr:
+    runs-on: ubuntu-latest
+    if: github.actor != 'haisenberg-creator'
+    steps:
+      - name: Close and comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: 'Thank you for your interest! However, this repository is a personal project and does not accept external pull requests at this time.'
+            });
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              state: 'closed'
+            });
