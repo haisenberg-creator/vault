@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.1.0] - 2026-08-20
+
+### Highlights & Features ✨
+
+- **Settings Modal & Dynamic Live Backgrounds (Ticket 08)**:
+  - Added dedicated Settings modal with theme selection (Rosé Pine, Arcade, Charcoal, OLED), font family customization, UI scaling, and auto-save controls.
+  - Interactive live animated canvas backgrounds: Matrix rain, Starfield, Aurora borealis, and Geometric mesh.
+- **Universal Note & Document Importer (Ticket 07)**:
+  - Universal importer supporting batch import of Markdown (`.md`), plain text (`.txt`), and Microsoft Word (`.docx`) documents with automatic conversion via Mammoth.
+- **Sidebar & Icon Polish (Ticket 06)**:
+  - Upgraded sidebar visuals with Lucide icons, improved tab layout, and refined navigation.
+- **Global & Local Keyboard Shortcuts + Quick Switcher (Tickets 04 & OS shortcuts)**:
+  - Fuzzy Quick Switcher modal (`Ctrl+P` / `Cmd+P`) for instantaneous note search and switching.
+  - Native OS-level global shortcuts via Tauri global shortcut plugin (`Alt+Shift+V` / `Alt+Shift+N`).
+  - Contextual in-app shortcuts for note creation (`Ctrl+N` / `Cmd+N`) and tab navigation (`Ctrl+1..3`).
+- **Interactive Tagging System & Dashboard Filtering (Ticket 03)**:
+  - Automatic `#tag` extraction from notes and task lines with interactive tag filtering in the Task Dashboard.
+- **Rich Text Formatting Toolbar & Highlight Extension (Ticket 02)**:
+  - Floating and top-level Lexical editor toolbar supporting Bold, Italic, Strikethrough, Code block, and Custom Text Highlighting.
+- **TitleBar & NoteActionBar Redesign (Ticket 01)**:
+  - Polished TitleBar chrome, breadcrumb truncation, and integrated NoteActionBar actions.
+
+---
+
 ## [v1.0.0] - 2026-08-18
 
 ### Highlights & Features ✨
