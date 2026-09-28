@@ -923,19 +923,35 @@ export async function isWorkspaceEmpty(
 
 /**
  * Exports the active workspace / V-Folder as a .zip Vault Archive.
+ * Optionally filters files by selected relative paths (preserving hierarchy).
  */
-export async function exportVaultArchive(workspaceDir?: string): Promise<Blob> {
+export async function exportVaultArchive(
+  workspaceDir?: string,
+  selectedPaths?: string[]
+): Promise<Blob> {
   const zip = new JSZip();
   const tree = await readWorkspaceTree(workspaceDir);
 
+  const selectedSet = selectedPaths
+    ? new Set(selectedPaths.map(normalizePath))
+    : null;
+
   const addNodeToZip = async (nodes: FileTreeNode[]) => {
     for (const node of nodes) {
-      if (node.kind === "file") {
-        try {
-          const content = await readMarkdownFile(node.path, workspaceDir);
-          zip.file(node.path, content);
-        } catch (e) {
-          console.warn(`Failed to read ${node.path} for archive export:`, e);
+      if (node.kind === "file" || node.kind === "dashboard") {
+        const normPath = normalizePath(node.path);
+        const isIncluded =
+          !selectedSet ||
+          selectedSet.has(normPath) ||
+          Array.from(selectedSet).some((sel) => normPath.startsWith(sel + "/"));
+
+        if (isIncluded) {
+          try {
+            const content = await readMarkdownFile(node.path, workspaceDir);
+            zip.file(node.path, content);
+          } catch (e) {
+            console.warn(`Failed to read ${node.path} for archive export:`, e);
+          }
         }
       }
       if (node.children && node.children.length > 0) {
@@ -948,6 +964,16 @@ export async function exportVaultArchive(workspaceDir?: string): Promise<Blob> {
 
   const blob = await zip.generateAsync({ type: "blob" });
   return blob;
+}
+
+/**
+ * Selectively packages chosen notes/folders into a .zip Vault Archive.
+ */
+export async function exportSelectiveVaultZip(
+  selectedRelativePaths: string[],
+  workspaceDir?: string
+): Promise<Blob> {
+  return exportVaultArchive(workspaceDir, selectedRelativePaths);
 }
 
 /**

@@ -495,5 +495,40 @@ describe("TaskDashboardSidebar Component", () => {
 
       expect(handleToggle).toHaveBeenCalledTimes(1);
     });
+
+    it("opens ExportArchiveModal when clicking Sync / Export Vault Archive button", async () => {
+      await act(async () => {
+        render(<TaskDashboardSidebar initialTab="files" />);
+      });
+
+      // Open import dropdown
+      const importBtn = screen.getByTestId("sidebar-action-import-folder");
+      await act(async () => {
+        fireEvent.click(importBtn);
+      });
+
+      expect(screen.getByTestId("import-menu-popover")).toBeInTheDocument();
+
+      // Click export archive action
+      const exportActionBtn = screen.getByTestId(
+        "sidebar-action-export-archive"
+      );
+      await act(async () => {
+        fireEvent.click(exportActionBtn);
+      });
+
+      // ExportArchiveModal should be open
+      expect(screen.getByTestId("export-archive-modal")).toBeInTheDocument();
+      expect(screen.getByText("Export Vault Archive")).toBeInTheDocument();
+
+      // Cancel closes the modal
+      const cancelBtn = screen.getByTestId("export-modal-cancel");
+      await act(async () => {
+        fireEvent.click(cancelBtn);
+      });
+      expect(
+        screen.queryByTestId("export-archive-modal")
+      ).not.toBeInTheDocument();
+    });
   });
 });

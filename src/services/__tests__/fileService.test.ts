@@ -21,6 +21,7 @@ import {
   copyToClipboard,
   revealFileInExplorer,
   exportVaultArchive,
+  exportSelectiveVaultZip,
   importVaultArchive,
   isWorkspaceEmpty,
 } from "../fileService";
@@ -377,6 +378,45 @@ describe("fileService", () => {
         .file("projects/client.md")
         ?.async("string");
       expect(clientContent).toBe("# Client Info");
+    });
+
+    it("exports only selected paths when selective archive paths are provided", async () => {
+      setMockFileContent("notes/roadmap.md", "# Project Roadmap");
+      setMockFileContent("notes/archive.md", "# Old Notes");
+      setMockFileContent("projects/client.md", "# Client Info");
+      setMockFileContent(
+        "dashboards/tasks.dashboard.md",
+        "---\ntitle: Tasks\n---"
+      );
+
+      // Export only notes/roadmap.md and dashboards/tasks.dashboard.md
+      const zipBlob = await exportVaultArchive("workspace", [
+        "notes/roadmap.md",
+        "dashboards/tasks.dashboard.md",
+      ]);
+      expect(zipBlob).toBeDefined();
+
+      const arrayBuffer = await zipBlob.arrayBuffer();
+      const zip = await JSZip.loadAsync(arrayBuffer);
+
+      // Selected items should exist
+      expect(zip.file("notes/roadmap.md")).not.toBeNull();
+      expect(zip.file("dashboards/tasks.dashboard.md")).not.toBeNull();
+
+      // Unselected items should NOT exist
+      expect(zip.file("notes/archive.md")).toBeNull();
+      expect(zip.file("projects/client.md")).toBeNull();
+    });
+
+    it("exports selective zip using exportSelectiveVaultZip helper", async () => {
+      setMockFileContent("folder/a.md", "# A");
+      setMockFileContent("folder/b.md", "# B");
+
+      const zipBlob = await exportSelectiveVaultZip(["folder/a.md"]);
+      const zip = await JSZip.loadAsync(await zipBlob.arrayBuffer());
+
+      expect(zip.file("folder/a.md")).not.toBeNull();
+      expect(zip.file("folder/b.md")).toBeNull();
     });
 
     it("imports a Vault Archive .zip with merge strategy, converting .txt to .md", async () => {

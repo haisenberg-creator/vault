@@ -23,6 +23,7 @@ import { FileTreeNode } from "../../types/workspaceTree";
 import { PinnedDashboards } from "./PinnedDashboards";
 import { SidebarTree, formatTreeDisplayName } from "./SidebarTree";
 import { FileOperationModal, OperationMode } from "./FileOperationModal";
+import { ExportArchiveModal } from "./ExportArchiveModal";
 import { SettingsModal } from "../settings/SettingsModal";
 import {
   readWorkspaceTree,
@@ -36,7 +37,6 @@ import {
   isSameFilePath,
   stripWorkspacePrefix,
   importFolderFiles,
-  exportVaultArchive,
   importVaultArchive,
   isWorkspaceEmpty,
 } from "../../services/fileService";
@@ -169,6 +169,8 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
 
   const [isImportMenuOpen, setIsImportMenuOpen] = useState(false);
   const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
+  const [isExportArchiveModalOpen, setIsExportArchiveModalOpen] =
+    useState(false);
   const [pendingArchiveFile, setPendingArchiveFile] = useState<File | null>(
     null
   );
@@ -227,22 +229,6 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
     await handleImportFilesList(files);
     if (e.target) {
       e.target.value = "";
-    }
-  };
-
-  const handleExportArchive = async () => {
-    try {
-      const blob = await exportVaultArchive(workspaceDir);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "vault-archive.zip";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.warn("Failed to export vault archive:", err);
     }
   };
 
@@ -1430,7 +1416,7 @@ sections:
                       className="tactile-btn"
                       onClick={() => {
                         setIsImportMenuOpen(false);
-                        handleExportArchive();
+                        setIsExportArchiveModalOpen(true);
                       }}
                       style={{
                         display: "flex",
@@ -1925,6 +1911,14 @@ sections:
             </div>
           </div>
         )}
+
+        {/* Selective Vault Archive Export Modal */}
+        <ExportArchiveModal
+          isOpen={isExportArchiveModalOpen}
+          onClose={() => setIsExportArchiveModalOpen(false)}
+          workspaceDir={workspaceDir}
+          tree={treeNodes}
+        />
       </div>
     </aside>
   );
