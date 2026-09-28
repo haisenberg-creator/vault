@@ -17,6 +17,7 @@ import {
   ChevronDown,
   Settings,
   Archive,
+  PanelLeftClose,
 } from "lucide-react";
 import { FileTreeNode } from "../../types/workspaceTree";
 import { PinnedDashboards } from "./PinnedDashboards";
@@ -87,6 +88,12 @@ export interface TaskDashboardSidebarProps {
   onToggleThemeMode?: () => void;
   onOpenSettings?: () => void;
   onOpenInSplitView?: (path: string) => void;
+  isSidebarCollapsed?: boolean;
+  onToggleCollapse?: () => void;
+  sidebarWidth?: number;
+  onSidebarWidthChange?: (width: number) => void;
+  expandedPaths?: string[];
+  onExpandedPathsChange?: (paths: string[]) => void;
 }
 
 export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
@@ -107,6 +114,11 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
   onDeleteTask,
   onOpenSettings,
   onOpenInSplitView,
+  isSidebarCollapsed = false,
+  onToggleCollapse,
+  sidebarWidth = 300,
+  expandedPaths,
+  onExpandedPathsChange,
 }) => {
   const [activeTab, setActiveTab] = useState<"files" | "tasks">(initialTab);
   const [internalSettingsOpen, setInternalSettingsOpen] = useState(false);
@@ -938,18 +950,20 @@ sections:
       data-testid="sidebar-container"
       className={liveBg && bgScope === "sidebar" ? "has-sidebar-live-bg" : ""}
       style={{
-        width: "300px",
-        minWidth: "260px",
-        maxWidth: "360px",
+        width: isSidebarCollapsed ? "0px" : `${sidebarWidth}px`,
+        minWidth: isSidebarCollapsed ? "0px" : "200px",
+        maxWidth: isSidebarCollapsed ? "0px" : "800px",
         height: "100%",
+        display: isSidebarCollapsed ? "none" : "flex",
         backgroundColor:
           liveBg && bgScope === "sidebar"
             ? "rgba(31, 29, 46, 0.75)"
             : "var(--rose-bg-surface)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
-        borderRight: "1px solid rgba(110, 106, 134, 0.25)",
-        display: "flex",
+        borderRight: isSidebarCollapsed
+          ? "none"
+          : "1px solid rgba(110, 106, 134, 0.25)",
         flexDirection: "column",
         userSelect: "none",
         position: "relative",
@@ -1128,6 +1142,28 @@ sections:
               Tasks ({(activeFileTasks ?? tasks).filter(matchesTag).length})
             </span>
           </button>
+          {onToggleCollapse && (
+            <button
+              type="button"
+              data-testid="sidebar-collapse-btn"
+              onClick={onToggleCollapse}
+              title="Collapse sidebar"
+              className="tactile-btn"
+              style={{
+                background: "none",
+                border: "none",
+                color: "var(--rose-subtle)",
+                cursor: "pointer",
+                padding: "8px 10px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "color 150ms ease",
+              }}
+            >
+              <PanelLeftClose size={14} />
+            </button>
+          )}
         </div>
 
         {/* Tab Content: Files & Folders */}
@@ -1448,6 +1484,8 @@ sections:
               onMoveTaskToNote={onMoveTaskToNote}
               onOpenInSplitView={onOpenInSplitView}
               workspaceDir={workspaceDir}
+              expandedPaths={expandedPaths}
+              onExpandedPathsChange={onExpandedPathsChange}
             />
           </div>
         )}

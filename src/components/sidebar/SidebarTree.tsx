@@ -36,6 +36,8 @@ export interface SidebarTreeProps {
   ) => void;
   onOpenInSplitView?: (path: string) => void;
   workspaceDir?: string;
+  expandedPaths?: string[];
+  onExpandedPathsChange?: (expandedPaths: string[]) => void;
 }
 
 export function formatTreeDisplayName(name: string, kind?: string): string {
@@ -67,23 +69,34 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
   onMoveTaskToNote,
   onOpenInSplitView,
   workspaceDir,
+  expandedPaths: propsExpandedPaths,
+  onExpandedPathsChange,
 }) => {
-  const [expandedPaths, setExpandedPaths] = useState<Set<string>>(
-    new Set([""])
-  );
+  const [internalExpandedPaths, setInternalExpandedPaths] = useState<
+    Set<string>
+  >(() => new Set(propsExpandedPaths ?? [""]));
   const [dragOverPath, setDragOverPath] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (propsExpandedPaths) {
+      setInternalExpandedPaths(new Set(propsExpandedPaths));
+    }
+  }, [propsExpandedPaths]);
+
+  const toggleFolder = (path: string) => {
+    const next = new Set(internalExpandedPaths);
+    if (next.has(path)) {
+      next.delete(path);
+    } else {
+      next.add(path);
+    }
+    setInternalExpandedPaths(next);
+    onExpandedPathsChange?.(Array.from(next));
+  };
 
   const toggleExpand = (path: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setExpandedPaths((prev) => {
-      const next = new Set(prev);
-      if (next.has(path)) {
-        next.delete(path);
-      } else {
-        next.add(path);
-      }
-      return next;
-    });
+    toggleFolder(path);
   };
 
   const handleDragStart = (e: React.DragEvent, node: FileTreeNode) => {
@@ -251,7 +264,7 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
   const renderNode = (node: FileTreeNode, depth: number = 0) => {
     const isFolder = node.kind === "folder";
     const isDashboard = node.kind === "dashboard" || node.isDashboard;
-    const isExpanded = expandedPaths.has(node.path);
+    const isExpanded = internalExpandedPaths.has(node.path);
     const isActive = isSameFilePath(
       activeFilePath || "",
       node.path,
@@ -267,12 +280,7 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
           onClick={() => {
             if (isFolder) {
               onSelectFolder?.(node.path);
-              setExpandedPaths((prev) => {
-                const next = new Set(prev);
-                if (next.has(node.path)) next.delete(node.path);
-                else next.add(node.path);
-                return next;
-              });
+              toggleFolder(node.path);
             } else {
               onSelectFile(node);
             }

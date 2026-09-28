@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { PanelLeftOpen } from "lucide-react";
 import {
   TaskDashboardSidebar,
   TaskItem,
@@ -8,6 +9,12 @@ import { EditorPane } from "../editor/EditorPane";
 import { DashboardView } from "../dashboard/DashboardView";
 import { TitleBar } from "./TitleBar";
 import { QuickSwitcher } from "../ui/QuickSwitcher";
+import {
+  loadSession,
+  saveSession,
+  flushSession,
+  pruneSessionFiles,
+} from "../../services/sessionService";
 import {
   readWorkspaceFiles,
   subscribeToWorkspaceChanges,
@@ -52,11 +59,18 @@ export interface DualColumnLayoutProps {
 export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
   workspaceDir = "workspace",
 }) => {
-  const [activeFilename, setActiveFilename] = useState<string>("");
+  const [activeFilename, setActiveFilename] = useState<string>(
+    () => loadSession().activeFilename || ""
+  );
   const [activeEditorTasks, setActiveEditorTasks] = useState<TaskItem[]>([]);
   const [workspaceFiles, setWorkspaceFiles] = useState<WorkspaceFile[]>([]);
-  const [activeFilter, setActiveFilter] = useState<TaskState | "all">("all");
-  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
+  const [isWorkspaceLoaded, setIsWorkspaceLoaded] = useState<boolean>(false);
+  const [activeFilter, setActiveFilter] = useState<TaskState | "all">(
+    () => loadSession().activeFilter
+  );
+  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(
+    () => loadSession().activeTagFilter
+  );
   const [isQuickSwitcherOpen, setIsQuickSwitcherOpen] =
     useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
@@ -81,12 +95,28 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
   const [bgBlur, setBgBlur] = useState<number>(() => getLiveBackgroundBlur());
 
   // Split View Dual-Pane State
-  const [isSplitView, setIsSplitView] = useState<boolean>(false);
+  const [isSplitView, setIsSplitView] = useState<boolean>(
+    () => loadSession().isSplitView
+  );
   const [activePane, setActivePane] = useState<"left" | "right">("left");
-  const [rightFilename, setRightFilename] = useState<string>("");
-  const [splitRatio, setSplitRatio] = useState<number>(0.5);
+  const [rightFilename, setRightFilename] = useState<string>(
+    () => loadSession().rightFilename || ""
+  );
+  const [splitRatio, setSplitRatio] = useState<number>(
+    () => loadSession().splitRatio
+  );
   const [isDraggingDivider, setIsDraggingDivider] = useState<boolean>(false);
   const [rightEditorTasks, setRightEditorTasks] = useState<TaskItem[]>([]);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(
+    () => loadSession().isSidebarCollapsed
+  );
+  const [sidebarWidth, setSidebarWidth] = useState<number>(
+    () => loadSession().sidebarWidth
+  );
+  const [isDraggingSidebar, setIsDraggingSidebar] = useState<boolean>(false);
+  const [expandedPaths, setExpandedPaths] = useState<string[]>(
+    () => loadSession().expandedPaths
+  );
   const splitContainerRef = useRef<HTMLDivElement | null>(null);
 
   const toggleTaskFnRef = useRef<((nodeKey: string) => void) | null>(null);
@@ -127,6 +157,8 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
       setWorkspaceFiles(files);
     } catch (err) {
       console.warn("Failed to load workspace files:", err);
+    } finally {
+      setIsWorkspaceLoaded(true);
     }
   }, [workspaceDir]);
 
@@ -140,9 +172,37 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
     };
   }, [loadWorkspaceFiles]);
 
-  // Auto-select: pick first file when active file is missing (initial load or after deletion)
+  const isFirstLoadDone = useRef(false);
+
+  // Restore and prune session when workspace files load, plus handle subsequent file deletions
   useEffect(() => {
-    if (workspaceFiles.length === 0) return;
+    if (!isWorkspaceLoaded) return;
+
+    const validPaths = workspaceFiles.map((f) => f.path);
+
+    if (!isFirstLoadDone.current) {
+      isFirstLoadDone.current = true;
+      const currentSession = loadSession();
+      const pruned = pruneSessionFiles(
+        currentSession,
+        validPaths,
+        workspaceDir
+      );
+
+      setActiveFilename(
+        pruned.activeFilename ||
+          (workspaceFiles.length > 0 ? workspaceFiles[0].path : "")
+      );
+      setRightFilename(pruned.rightFilename || "");
+      return;
+    }
+
+    if (workspaceFiles.length === 0) {
+      setActiveFilename("");
+      setRightFilename("");
+      return;
+    }
+
     setActiveFilename((prev) => {
       if (!prev) return workspaceFiles[0].path;
       const exists = workspaceFiles.some(
@@ -151,7 +211,75 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
       if (!exists) return workspaceFiles[0].path;
       return prev;
     });
-  }, [workspaceFiles]);
+
+    setRightFilename((prev) => {
+      if (!prev) return "";
+      const exists = workspaceFiles.some(
+        (f) => isSameFilePath(f.path, prev, workspaceDir) || f.name === prev
+      );
+      if (!exists) return "";
+      return prev;
+    });
+  }, [isWorkspaceLoaded, workspaceFiles, workspaceDir]);
+
+  // Sync state changes to debounced session storage
+  useEffect(() => {
+    if (!isWorkspaceLoaded) return;
+
+    saveSession({
+      activeFilename: activeFilename || null,
+      isSplitView,
+      rightFilename: rightFilename || null,
+      splitRatio,
+      isSidebarCollapsed,
+      sidebarWidth,
+      expandedPaths,
+      activeFilter,
+      activeTagFilter,
+    });
+  }, [
+    isWorkspaceLoaded,
+    activeFilename,
+    isSplitView,
+    rightFilename,
+    splitRatio,
+    isSidebarCollapsed,
+    sidebarWidth,
+    expandedPaths,
+    activeFilter,
+    activeTagFilter,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      flushSession();
+    };
+  }, []);
+
+  const handleSidebarDividerMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDraggingSidebar(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isDraggingSidebar) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const clamped = Math.max(180, Math.min(800, e.clientX));
+      setSidebarWidth(clamped);
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingSidebar(false);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDraggingSidebar]);
 
   const handleRegisterToggleTask = useCallback(
     (toggleFn: (nodeKey: string) => void) => {
@@ -716,7 +844,57 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
           onToggleThemeMode={handleToggleThemeMode}
           onOpenSettings={() => setIsSettingsOpen(true)}
           onOpenInSplitView={handleOpenInSplitView}
+          isSidebarCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
+          sidebarWidth={sidebarWidth}
+          onSidebarWidthChange={setSidebarWidth}
+          expandedPaths={expandedPaths}
+          onExpandedPathsChange={setExpandedPaths}
         />
+        {!isSidebarCollapsed && (
+          <div
+            data-testid="sidebar-resize-divider"
+            className="sidebar-resize-divider"
+            onMouseDown={handleSidebarDividerMouseDown}
+            style={{
+              width: "4px",
+              cursor: "col-resize",
+              backgroundColor: isDraggingSidebar
+                ? "var(--rose-pink)"
+                : "transparent",
+              zIndex: 20,
+              userSelect: "none",
+              transition: "background-color 150ms ease",
+            }}
+          />
+        )}
+        {isSidebarCollapsed && (
+          <button
+            type="button"
+            data-testid="sidebar-expand-btn"
+            onClick={() => setIsSidebarCollapsed(false)}
+            title="Expand sidebar"
+            className="tactile-btn"
+            style={{
+              position: "absolute",
+              top: "42px",
+              left: "6px",
+              zIndex: 50,
+              backgroundColor: "var(--rose-bg-surface)",
+              border: "1px solid var(--rose-border-color)",
+              borderRadius: "var(--radius-sm)",
+              padding: "6px",
+              cursor: "pointer",
+              color: "var(--rose-pink)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
+            }}
+          >
+            <PanelLeftOpen size={16} />
+          </button>
+        )}
         <div
           ref={splitContainerRef}
           data-testid="dual-column-editor-container"

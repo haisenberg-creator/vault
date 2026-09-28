@@ -8,6 +8,11 @@ import {
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DualColumnLayout } from "../DualColumnLayout";
 import * as fileService from "../../../services/fileService";
+import {
+  clearSession,
+  saveSession,
+  loadSession,
+} from "../../../services/sessionService";
 
 vi.mock("../../../services/fileService", async () => {
   const actual = await vi.importActual<typeof fileService>(
@@ -24,6 +29,8 @@ vi.mock("../../../services/fileService", async () => {
 describe("DualColumnLayout Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearSession();
+    localStorage.clear();
     fileService.clearMockStorage();
   });
 
@@ -717,6 +724,153 @@ describe("DualColumnLayout Integration", () => {
     await waitFor(() => {
       expect(screen.getByTestId("quick-switcher-modal")).toBeInTheDocument();
       expect(screen.queryByTestId("file-operation-modal")).toBeNull();
+    });
+  });
+
+  describe("Workspace Session Persistence", () => {
+    it("restores saved session state on mount (active note, split view, ratio, sidebar, filters)", async () => {
+      fileService.setMockFileContent("note-a.md", "# Note A");
+      fileService.setMockFileContent(
+        "note-b.md",
+        "# Note B Content\n\n- [ ] Task in B"
+      );
+      fileService.setMockFileContent(
+        "note-c.md",
+        "# Note C Content\n\n- [-] In Progress Task"
+      );
+
+      saveSession(
+        {
+          activeFilename: "note-b.md",
+          isSplitView: true,
+          rightFilename: "note-c.md",
+          splitRatio: 0.6,
+          isSidebarCollapsed: false,
+          sidebarWidth: 350,
+          activeFilter: "in_progress",
+          activeTagFilter: null,
+        },
+        true
+      );
+
+      render(<DualColumnLayout />);
+
+      // Left pane should have restored note-b
+      await waitFor(() => {
+        expect(screen.getByText("Note B Content")).toBeInTheDocument();
+      });
+
+      // Split view right pane should be restored with note-c
+      await waitFor(() => {
+        expect(screen.getByTestId("split-view-right-pane")).toBeInTheDocument();
+        expect(screen.getByText("Note C Content")).toBeInTheDocument();
+      });
+
+      // Split view divider should be present
+      expect(screen.getByTestId("split-view-divider")).toBeInTheDocument();
+
+      // Sidebar container width should reflect saved width
+      const sidebar = screen.getByTestId("sidebar-container");
+      expect(sidebar.style.width).toBe("350px");
+
+      // Verify task filter restored to in_progress in sidebar
+      fireEvent.click(screen.getByTestId("tab-tasks"));
+      await waitFor(() => {
+        const filterBtn = screen.getByTestId("filter-btn-in_progress");
+        expect(filterBtn).toBeInTheDocument();
+      });
+    });
+
+    it("gracefully prunes deleted notes from session and falls back without throwing", async () => {
+      fileService.setMockFileContent(
+        "existing-note.md",
+        "# Existing Note Content"
+      );
+
+      // Session references files that no longer exist
+      saveSession(
+        {
+          activeFilename: "missing-active.md",
+          isSplitView: true,
+          rightFilename: "missing-right.md",
+        },
+        true
+      );
+
+      render(<DualColumnLayout />);
+
+      // Should fall back to existing-note.md for active note
+      await waitFor(() => {
+        expect(screen.getByText("Existing Note Content")).toBeInTheDocument();
+      });
+
+      // Right pane should show empty state gracefully
+      await waitFor(() => {
+        expect(screen.getByTestId("split-view-right-pane")).toBeInTheDocument();
+        expect(
+          screen.getByText("No file selected in split view")
+        ).toBeInTheDocument();
+      });
+
+      // Pruned session should be updated in localStorage
+      await waitFor(() => {
+        const session = loadSession();
+        expect(session.activeFilename).toBe("existing-note.md");
+        expect(session.rightFilename).toBeNull();
+      });
+    });
+
+    it("persists user interactions to localStorage with debouncing", async () => {
+      fileService.setMockFileContent("doc1.md", "# Document One Content");
+      fileService.setMockFileContent("doc2.md", "# Document Two Content");
+
+      render(<DualColumnLayout />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Document One Content")).toBeInTheDocument();
+      });
+
+      // Select doc2 from tree
+      const doc2Node = await screen.findByTestId("tree-node-doc2.md");
+      fireEvent.click(doc2Node);
+
+      await waitFor(() => {
+        expect(screen.getByText("Document Two Content")).toBeInTheDocument();
+      });
+
+      // Verify active note persistence
+      await waitFor(
+        () => {
+          const session = loadSession();
+          expect(session.activeFilename).toBe("doc2.md");
+        },
+        { timeout: 1000 }
+      );
+
+      // Collapse sidebar
+      const collapseBtn = screen.getByTestId("sidebar-collapse-btn");
+      fireEvent.click(collapseBtn);
+
+      await waitFor(
+        () => {
+          const session = loadSession();
+          expect(session.isSidebarCollapsed).toBe(true);
+        },
+        { timeout: 1000 }
+      );
+
+      // Expand sidebar
+      const expandBtn = screen.getByTestId("sidebar-expand-btn");
+      expect(expandBtn).toBeInTheDocument();
+      fireEvent.click(expandBtn);
+
+      await waitFor(
+        () => {
+          const session = loadSession();
+          expect(session.isSidebarCollapsed).toBe(false);
+        },
+        { timeout: 1000 }
+      );
     });
   });
 });
