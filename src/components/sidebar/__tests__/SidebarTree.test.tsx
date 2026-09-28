@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import { SidebarTree } from "../SidebarTree";
+import { SidebarTree, formatTreeDisplayName } from "../SidebarTree";
 import { FileTreeNode } from "../../../types/workspaceTree";
 
 describe("SidebarTree Component", () => {
@@ -49,11 +49,16 @@ describe("SidebarTree Component", () => {
     );
 
     expect(screen.getByText("Projects")).toBeInTheDocument();
-    expect(screen.getByText("root-note.md")).toBeInTheDocument();
+    expect(screen.getByText("root-note")).toBeInTheDocument();
+    expect(screen.queryByText("root-note.md")).not.toBeInTheDocument();
 
-    // Check icon indicators
-    expect(screen.getByTestId("icon-folder")).toBeInTheDocument();
-    expect(screen.getByTestId("icon-note")).toBeInTheDocument();
+    // Check icon indicators and flexShrink geometry
+    const folderIcon = screen.getByTestId("icon-folder");
+    const noteIcon = screen.getByTestId("icon-note");
+    expect(folderIcon).toBeInTheDocument();
+    expect(folderIcon).toHaveStyle({ flexShrink: "0" });
+    expect(noteIcon).toBeInTheDocument();
+    expect(noteIcon).toHaveStyle({ flexShrink: "0" });
   });
 
   it("expands and collapses folder nodes on click", () => {
@@ -71,18 +76,22 @@ describe("SidebarTree Component", () => {
     );
 
     // Children are not visible initially before expand click
-    expect(screen.queryByText("client-a.md")).not.toBeInTheDocument();
+    expect(screen.queryByText("client-a")).not.toBeInTheDocument();
 
     // Click folder to expand
     fireEvent.click(screen.getByText("Projects"));
 
-    expect(screen.getByText("client-a.md")).toBeInTheDocument();
-    expect(screen.getByText("overview.dashboard.md")).toBeInTheDocument();
-    expect(screen.getByTestId("icon-dashboard")).toBeInTheDocument();
+    expect(screen.getByText("client-a")).toBeInTheDocument();
+    expect(screen.queryByText("client-a.md")).not.toBeInTheDocument();
+    expect(screen.getByText("overview")).toBeInTheDocument();
+    expect(screen.queryByText("overview.dashboard.md")).not.toBeInTheDocument();
+    const dashIcon = screen.getByTestId("icon-dashboard");
+    expect(dashIcon).toBeInTheDocument();
+    expect(dashIcon).toHaveStyle({ flexShrink: "0" });
 
     // Click folder again to collapse
     fireEvent.click(screen.getByText("Projects"));
-    expect(screen.queryByText("client-a.md")).not.toBeInTheDocument();
+    expect(screen.queryByText("client-a")).not.toBeInTheDocument();
   });
 
   it("triggers onSelectFile when a note or dashboard item is clicked", () => {
@@ -100,7 +109,7 @@ describe("SidebarTree Component", () => {
       />
     );
 
-    fireEvent.click(screen.getByText("root-note.md"));
+    fireEvent.click(screen.getByText("root-note"));
 
     expect(handleSelect).toHaveBeenCalledTimes(1);
     expect(handleSelect).toHaveBeenCalledWith(
@@ -402,5 +411,83 @@ describe("SidebarTree Component", () => {
       "Projects/client-a.md",
       "high"
     );
+  });
+
+  describe("Extension masking & Icon geometry", () => {
+    it("formatTreeDisplayName masks .md and .dashboard.md but preserves non-markdown files and folders", () => {
+      expect(formatTreeDisplayName("meeting.md", "file")).toBe("meeting");
+      expect(formatTreeDisplayName("notes.MD", "file")).toBe("notes");
+      expect(formatTreeDisplayName("projects.dashboard.md", "dashboard")).toBe(
+        "projects"
+      );
+      expect(formatTreeDisplayName("projects.DASHBOARD.MD", "dashboard")).toBe(
+        "projects"
+      );
+      expect(formatTreeDisplayName("archive.zip", "file")).toBe("archive.zip");
+      expect(formatTreeDisplayName("image.png", "file")).toBe("image.png");
+      expect(formatTreeDisplayName("folder.md", "folder")).toBe("folder.md");
+      expect(formatTreeDisplayName(".md", "file")).toBe(".md");
+      expect(formatTreeDisplayName(".dashboard.md", "file")).toBe(
+        ".dashboard.md"
+      );
+    });
+
+    it("renders non-markdown files with full extension intact and locks icon geometry for long names", () => {
+      const longNameNodes: FileTreeNode[] = [
+        {
+          id: "long-note",
+          name: "extremely-long-architectural-decision-record-for-vault-v2-features.md",
+          path: "extremely-long-architectural-decision-record-for-vault-v2-features.md",
+          kind: "file",
+        },
+        {
+          id: "data-file",
+          name: "metrics-data.json",
+          path: "metrics-data.json",
+          kind: "file",
+        },
+      ];
+
+      render(
+        <SidebarTree
+          nodes={longNameNodes}
+          onSelectFile={vi.fn()}
+          onCreateNote={vi.fn()}
+          onCreateFolder={vi.fn()}
+          onCreateDashboard={vi.fn()}
+          onRename={vi.fn()}
+          onDelete={vi.fn()}
+          onMovePath={vi.fn()}
+        />
+      );
+
+      // Long markdown note should be masked without .md
+      expect(
+        screen.getByText(
+          "extremely-long-architectural-decision-record-for-vault-v2-features"
+        )
+      ).toBeInTheDocument();
+
+      // Non-markdown file retains full filename
+      expect(screen.getByText("metrics-data.json")).toBeInTheDocument();
+
+      // Verify icons are present with flex-shrink: 0
+      const noteIcons = screen.getAllByTestId("icon-note");
+      expect(noteIcons.length).toBe(2);
+      noteIcons.forEach((icon) => {
+        expect(icon).toHaveStyle({ flexShrink: "0" });
+      });
+
+      // Verify label container styling for truncation
+      const labelText = screen.getByText(
+        "extremely-long-architectural-decision-record-for-vault-v2-features"
+      );
+      expect(labelText).toHaveStyle({
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        flex: "1 1 0%",
+      });
+    });
   });
 });

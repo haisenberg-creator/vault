@@ -37,6 +37,21 @@ export interface SidebarTreeProps {
   workspaceDir?: string;
 }
 
+export function formatTreeDisplayName(name: string, kind?: string): string {
+  if (kind === "folder") return name;
+  const lower = name.toLowerCase();
+  if (lower === ".dashboard.md" || lower === ".md") {
+    return name;
+  }
+  if (lower.endsWith(".dashboard.md")) {
+    return name.slice(0, -".dashboard.md".length);
+  }
+  if (lower.endsWith(".md")) {
+    return name.slice(0, -".md".length);
+  }
+  return name;
+}
+
 export const SidebarTree: React.FC<SidebarTreeProps> = ({
   nodes,
   activeFilePath,
@@ -306,13 +321,14 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
         >
           {/* Left: Icon & Label */}
           <div
+            title={node.name}
             style={{
               display: "flex",
               alignItems: "center",
               gap: "6px",
               overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
+              flex: 1,
+              minWidth: 0,
             }}
           >
             {isFolder ? (
@@ -324,6 +340,7 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
                   color: "var(--rose-gold)",
                   cursor: "pointer",
                   gap: "2px",
+                  flexShrink: 0,
                 }}
               >
                 {isExpanded ? (
@@ -332,6 +349,7 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
                     style={{
                       transition: "transform 150ms ease",
                       color: "var(--rose-subtle)",
+                      flexShrink: 0,
                     }}
                   />
                 ) : (
@@ -340,6 +358,7 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
                     style={{
                       transition: "transform 150ms ease",
                       color: "var(--rose-subtle)",
+                      flexShrink: 0,
                     }}
                   />
                 )}
@@ -348,12 +367,14 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
                     data-testid="icon-folder"
                     size={16}
                     color="var(--rose-gold)"
+                    style={{ flexShrink: 0 }}
                   />
                 ) : (
                   <Folder
                     data-testid="icon-folder"
                     size={16}
                     color="var(--rose-gold)"
+                    style={{ flexShrink: 0 }}
                   />
                 )}
               </span>
@@ -362,12 +383,14 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
                 data-testid="icon-dashboard"
                 size={16}
                 color="var(--rose-pink)"
+                style={{ flexShrink: 0 }}
               />
             ) : (
               <FileText
                 data-testid="icon-note"
                 size={16}
                 color={isActive ? "var(--rose-pink)" : "var(--rose-text)"}
+                style={{ flexShrink: 0 }}
               />
             )}
 
@@ -383,9 +406,14 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
                       ? "var(--rose-rose)"
                       : "var(--rose-text)",
                 fontFamily: isFolder ? "var(--font-ui)" : "var(--font-mono)",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                flex: 1,
+                minWidth: 0,
               }}
             >
-              {node.name}
+              {formatTreeDisplayName(node.name, node.kind)}
             </span>
           </div>
 

@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { FileTreeNode } from "../../types/workspaceTree";
 import { PinnedDashboards } from "./PinnedDashboards";
-import { SidebarTree } from "./SidebarTree";
+import { SidebarTree, formatTreeDisplayName } from "./SidebarTree";
 import { FileOperationModal, OperationMode } from "./FileOperationModal";
 import { SettingsModal } from "../settings/SettingsModal";
 import {
@@ -572,20 +572,47 @@ sections:
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "3px",
+                flexShrink: 0,
               }}
             >
               {isExpanded ? (
-                <ChevronDown size={12} color="var(--rose-subtle)" />
+                <ChevronDown
+                  size={12}
+                  color="var(--rose-subtle)"
+                  style={{ flexShrink: 0 }}
+                />
               ) : (
-                <ChevronRight size={12} color="var(--rose-subtle)" />
+                <ChevronRight
+                  size={12}
+                  color="var(--rose-subtle)"
+                  style={{ flexShrink: 0 }}
+                />
               )}
               {isExpanded ? (
-                <FolderOpen size={14} color="var(--rose-gold)" />
+                <FolderOpen
+                  size={14}
+                  color="var(--rose-gold)"
+                  style={{ flexShrink: 0 }}
+                />
               ) : (
-                <Folder size={14} color="var(--rose-gold)" />
+                <Folder
+                  size={14}
+                  color="var(--rose-gold)"
+                  style={{ flexShrink: 0 }}
+                />
               )}
             </span>
-            <span>{node.name}</span>
+            <span
+              style={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                flex: 1,
+                minWidth: 0,
+              }}
+            >
+              {formatTreeDisplayName(node.name, node.kind)}
+            </span>
           </div>
           {isExpanded && (
             <div>
@@ -629,30 +656,58 @@ sections:
           }}
           onClick={() => onSelectFile?.(node.fullPath || node.path)}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <div
+            title={node.name}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              overflow: "hidden",
+              flex: 1,
+              minWidth: 0,
+            }}
+          >
             <span
               onClick={(e) => toggleTaskNodeExpand(node.path, e)}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 cursor: "pointer",
+                flexShrink: 0,
               }}
             >
               {isExpanded ? (
-                <ChevronDown size={12} color="var(--rose-subtle)" />
+                <ChevronDown
+                  size={12}
+                  color="var(--rose-subtle)"
+                  style={{ flexShrink: 0 }}
+                />
               ) : (
-                <ChevronRight size={12} color="var(--rose-subtle)" />
+                <ChevronRight
+                  size={12}
+                  color="var(--rose-subtle)"
+                  style={{ flexShrink: 0 }}
+                />
               )}
             </span>
-            <FileText size={14} color="var(--rose-text)" />
+            <FileText
+              size={14}
+              color="var(--rose-text)"
+              style={{ flexShrink: 0 }}
+            />
             <span
               style={{
                 fontSize: "12px",
                 fontWeight: 600,
                 color: "var(--rose-text)",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                flex: 1,
+                minWidth: 0,
               }}
             >
-              {node.name}
+              {formatTreeDisplayName(node.name, node.kind)}
             </span>
           </div>
           <span
@@ -1563,7 +1618,7 @@ sections:
                 >
                   {availableNotes.map((note) => (
                     <option key={note.path} value={note.path}>
-                      {note.name || note.path}
+                      {formatTreeDisplayName(note.name || note.path, note.kind)}
                     </option>
                   ))}
                 </select>
