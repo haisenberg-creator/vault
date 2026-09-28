@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import bookIcon from "../../assets/book.png";
 import enchantedBookIcon from "../../assets/enchanted-book.png";
 import {
@@ -17,6 +18,8 @@ export interface TitleBarProps {
   themeMode?: ThemeMode;
   onToggleThemeMode?: () => void;
   onOpenQuickSwitcher?: () => void;
+  isSidebarCollapsed?: boolean;
+  onToggleSidebar?: () => void;
 }
 
 export const TitleBar: React.FC<TitleBarProps> = ({
@@ -25,6 +28,8 @@ export const TitleBar: React.FC<TitleBarProps> = ({
   themeMode = "working",
   onToggleThemeMode,
   onOpenQuickSwitcher,
+  isSidebarCollapsed = false,
+  onToggleSidebar,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number }>({
@@ -155,6 +160,45 @@ export const TitleBar: React.FC<TitleBarProps> = ({
           } as React.CSSProperties
         }
       >
+        {/* Sidebar Toggle Button */}
+        {onToggleSidebar && (
+          <button
+            type="button"
+            data-testid="titlebar-toggle-sidebar-btn"
+            onClick={onToggleSidebar}
+            className="tactile-btn"
+            style={
+              {
+                padding: "3px 6px",
+                borderRadius: "var(--radius-sm)",
+                border: "1px solid rgba(110, 106, 134, 0.25)",
+                backgroundColor: "rgba(38, 35, 58, 0.6)",
+                color: isSidebarCollapsed
+                  ? "var(--rose-pink)"
+                  : "var(--rose-subtle)",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "4px",
+                pointerEvents: "auto",
+                WebkitAppRegion: "no-drag",
+              } as React.CSSProperties
+            }
+            title={
+              isSidebarCollapsed
+                ? "Expand Sidebar (Ctrl+B)"
+                : "Collapse Sidebar (Ctrl+B)"
+            }
+          >
+            {isSidebarCollapsed ? (
+              <PanelLeftOpen size={14} />
+            ) : (
+              <PanelLeftClose size={14} />
+            )}
+          </button>
+        )}
+
         {/* Lectern / Book Icon with Context Menu */}
         <div
           data-testid="titlebar-note-icon"

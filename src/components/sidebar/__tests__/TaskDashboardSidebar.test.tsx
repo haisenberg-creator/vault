@@ -444,4 +444,56 @@ describe("TaskDashboardSidebar Component", () => {
 
     expect(handleSelectTag).toHaveBeenCalledWith("#perf");
   });
+
+  describe("Sidebar Shell Ergonomics and Resizing (Ticket 06)", () => {
+    it("renders with default width 280px and smooth CSS transition", async () => {
+      await act(async () => {
+        render(<TaskDashboardSidebar tasks={sampleTasks} />);
+      });
+
+      const aside = screen.getByTestId("sidebar-container");
+      expect(aside.style.width).toBe("280px");
+      expect(aside.style.transition).toContain("width 200ms");
+    });
+
+    it("disables width transition when isDragging is true for 1:1 instant response", async () => {
+      await act(async () => {
+        render(<TaskDashboardSidebar tasks={sampleTasks} isDragging={true} />);
+      });
+
+      const aside = screen.getByTestId("sidebar-container");
+      expect(aside.style.transition).toBe("none");
+    });
+
+    it("collapses to 0px with pointerEvents none when isSidebarCollapsed is true", async () => {
+      await act(async () => {
+        render(
+          <TaskDashboardSidebar tasks={sampleTasks} isSidebarCollapsed={true} />
+        );
+      });
+
+      const aside = screen.getByTestId("sidebar-container");
+      expect(aside.style.width).toBe("0px");
+      expect(aside.style.pointerEvents).toBe("none");
+    });
+
+    it("calls onToggleCollapse when clicking sidebar-collapse-btn", async () => {
+      const handleToggle = vi.fn();
+      await act(async () => {
+        render(
+          <TaskDashboardSidebar
+            tasks={sampleTasks}
+            onToggleCollapse={handleToggle}
+          />
+        );
+      });
+
+      const collapseBtn = screen.getByTestId("sidebar-collapse-btn");
+      await act(async () => {
+        fireEvent.click(collapseBtn);
+      });
+
+      expect(handleToggle).toHaveBeenCalledTimes(1);
+    });
+  });
 });

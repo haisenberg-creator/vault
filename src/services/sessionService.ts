@@ -22,7 +22,7 @@ export const DEFAULT_SESSION_STATE: WorkspaceSessionState = {
   rightFilename: null,
   splitRatio: 0.5,
   isSidebarCollapsed: false,
-  sidebarWidth: 300,
+  sidebarWidth: 280,
   expandedPaths: [""],
   activeFilter: "all",
   activeTagFilter: null,
@@ -70,7 +70,7 @@ export function validateSessionState(raw: unknown): WorkspaceSessionState {
   let sidebarWidth =
     typeof obj.sidebarWidth === "number" && !Number.isNaN(obj.sidebarWidth)
       ? obj.sidebarWidth
-      : 300;
+      : 280;
   sidebarWidth = Math.max(180, Math.min(800, sidebarWidth));
 
   let expandedPaths: string[] = [""];

@@ -94,6 +94,7 @@ export interface TaskDashboardSidebarProps {
   onSidebarWidthChange?: (width: number) => void;
   expandedPaths?: string[];
   onExpandedPathsChange?: (paths: string[]) => void;
+  isDragging?: boolean;
 }
 
 export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
@@ -116,9 +117,10 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
   onOpenInSplitView,
   isSidebarCollapsed = false,
   onToggleCollapse,
-  sidebarWidth = 300,
+  sidebarWidth = 280,
   expandedPaths,
   onExpandedPathsChange,
+  isDragging = false,
 }) => {
   const [activeTab, setActiveTab] = useState<"files" | "tasks">(initialTab);
   const [internalSettingsOpen, setInternalSettingsOpen] = useState(false);
@@ -791,6 +793,8 @@ sections:
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
+                    flexWrap: "wrap",
+                    gap: "6px",
                     transition: "all 150ms ease",
                   }}
                 >
@@ -833,6 +837,7 @@ sections:
                       display: "flex",
                       alignItems: "center",
                       gap: "6px",
+                      flexWrap: "wrap",
                     }}
                   >
                     <button
@@ -952,9 +957,9 @@ sections:
       style={{
         width: isSidebarCollapsed ? "0px" : `${sidebarWidth}px`,
         minWidth: isSidebarCollapsed ? "0px" : "200px",
-        maxWidth: isSidebarCollapsed ? "0px" : "800px",
+        maxWidth: isSidebarCollapsed ? "0px" : "480px",
         height: "100%",
-        display: isSidebarCollapsed ? "none" : "flex",
+        display: "flex",
         backgroundColor:
           liveBg && bgScope === "sidebar"
             ? "rgba(31, 29, 46, 0.75)"
@@ -968,7 +973,14 @@ sections:
         userSelect: "none",
         position: "relative",
         overflow: "hidden",
+        overflowX: "hidden",
+        boxSizing: "border-box",
+        transition: isDragging
+          ? "none"
+          : "width 200ms cubic-bezier(0.16, 1, 0.3, 1)",
+        pointerEvents: isSidebarCollapsed ? "none" : "auto",
       }}
+      aria-hidden={isSidebarCollapsed}
     >
       {/* Sidebar Live Background Backdrop */}
       {liveBg && bgScope === "sidebar" && (
@@ -994,9 +1006,13 @@ sections:
           display: "flex",
           flexDirection: "column",
           height: "100%",
+          width: `${sidebarWidth}px`,
+          minWidth: "200px",
           position: "relative",
           zIndex: 1,
           overflow: "hidden",
+          overflowX: "hidden",
+          boxSizing: "border-box",
         }}
       >
         {/* Pinned Dashboards Bar */}
@@ -1067,6 +1083,7 @@ sections:
         <div
           style={{
             display: "flex",
+            alignItems: "center",
             borderBottom: "1px solid rgba(110, 106, 134, 0.25)",
             backgroundColor: "rgba(25, 23, 36, 0.4)",
           }}
@@ -1084,9 +1101,11 @@ sections:
               setActiveTab("files");
             }}
             className="tactile-btn"
+            title="Files & Folders"
             style={{
               flex: 1,
-              padding: "8px 12px",
+              minWidth: 0,
+              padding: "8px 6px",
               border: "none",
               borderBottom:
                 activeTab === "files" ? "2px solid var(--rose-pink)" : "none",
@@ -1104,19 +1123,30 @@ sections:
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "6px",
+              gap: "4px",
             }}
           >
-            <Files size={13} />
-            <span>Files & Folders</span>
+            <Files size={13} style={{ flexShrink: 0 }} />
+            <span
+              style={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                minWidth: 0,
+              }}
+            >
+              Files & Folders
+            </span>
           </button>
           <button
             data-testid="tab-tasks"
             onClick={() => setActiveTab("tasks")}
             className="tactile-btn"
+            title="Tasks"
             style={{
               flex: 1,
-              padding: "8px 12px",
+              minWidth: 0,
+              padding: "8px 6px",
               border: "none",
               borderBottom:
                 activeTab === "tasks" ? "2px solid var(--rose-pink)" : "none",
@@ -1134,11 +1164,18 @@ sections:
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "6px",
+              gap: "4px",
             }}
           >
-            <CheckSquare size={13} />
-            <span>
+            <CheckSquare size={13} style={{ flexShrink: 0 }} />
+            <span
+              style={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                minWidth: 0,
+              }}
+            >
               Tasks ({(activeFileTasks ?? tasks).filter(matchesTag).length})
             </span>
           </button>
@@ -1147,17 +1184,18 @@ sections:
               type="button"
               data-testid="sidebar-collapse-btn"
               onClick={onToggleCollapse}
-              title="Collapse sidebar"
+              title="Collapse sidebar (Ctrl+B)"
               className="tactile-btn"
               style={{
                 background: "none",
                 border: "none",
                 color: "var(--rose-subtle)",
                 cursor: "pointer",
-                padding: "8px 10px",
+                padding: "8px 8px",
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
+                flexShrink: 0,
                 transition: "color 150ms ease",
               }}
             >
@@ -1505,9 +1543,10 @@ sections:
               style={{
                 display: "flex",
                 gap: "4px",
-                padding: "10px 12px",
+                padding: "8px 10px",
                 borderBottom: "1px solid rgba(110, 106, 134, 0.15)",
                 flexWrap: "wrap",
+                boxSizing: "border-box",
               }}
             >
               {(
@@ -1521,9 +1560,11 @@ sections:
                     onClick={() => handleFilterClick(filter)}
                     className="tactile-btn"
                     style={{
+                      flex: "1 1 auto",
+                      minWidth: "0px",
                       fontSize: "11px",
                       fontWeight: 600,
-                      padding: "4px 8px",
+                      padding: "4px 6px",
                       borderRadius: "var(--radius-sm)",
                       border: "none",
                       cursor: "pointer",
@@ -1532,6 +1573,8 @@ sections:
                         : "rgba(38, 35, 58, 0.6)",
                       color: isActive ? "#191724" : "var(--rose-subtle)",
                       textTransform: "capitalize",
+                      whiteSpace: "nowrap",
+                      textAlign: "center",
                     }}
                   >
                     {filter.replace("_", " ")} ({counts[filter]})

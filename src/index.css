@@ -781,3 +781,37 @@ html.has-live-bg[data-theme="catppuccin-latte"] {
 .split-view-divider:hover .split-view-divider-grip span {
   color: var(--rose-pink) !important;
 }
+
+/* SIDEBAR RESIZE DIVIDER */
+.sidebar-resize-divider {
+  width: 4px;
+  cursor: col-resize;
+  background-color: transparent;
+  position: relative;
+  z-index: 20;
+  user-select: none;
+  flex-shrink: 0;
+  transition:
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.sidebar-resize-divider::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -3px;
+  right: -3px;
+  cursor: col-resize;
+}
+
+.sidebar-resize-divider:hover {
+  background-color: var(--rose-pink) !important;
+  box-shadow: 0 0 8px rgba(235, 111, 146, 0.4) !important;
+}
+
+.sidebar-resize-divider.is-dragging {
+  background-color: var(--rose-pink) !important;
+  box-shadow: 0 0 12px rgba(235, 111, 146, 0.55) !important;
+}

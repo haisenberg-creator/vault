@@ -46,7 +46,7 @@ export const PinnedDashboards: React.FC<PinnedDashboardsProps> = ({
         style={{
           display: "flex",
           gap: "6px",
-          overflowX: "auto",
+          flexWrap: "wrap",
           paddingBottom: "2px",
         }}
       >

@@ -872,5 +872,184 @@ describe("DualColumnLayout Integration", () => {
         { timeout: 1000 }
       );
     });
+
+    describe("Collapsible and Resizable Sidebar Shell (Ticket 06)", () => {
+      it("toggles sidebar collapse and expand via Ctrl+B and Cmd+B keyboard shortcuts", async () => {
+        fileService.setMockFileContent("ticket06-doc.md", "# Test Content");
+
+        render(<DualColumnLayout />);
+
+        await waitFor(() => {
+          expect(screen.getByTestId("sidebar-container")).toBeInTheDocument();
+        });
+
+        const sidebar = screen.getByTestId("sidebar-container");
+        expect(sidebar.style.width).toBe("280px");
+
+        // 1. Press Ctrl+B to collapse sidebar
+        fireEvent.keyDown(window, { key: "b", ctrlKey: true });
+
+        expect(sidebar.style.width).toBe("0px");
+        await waitFor(() => {
+          expect(loadSession().isSidebarCollapsed).toBe(true);
+        });
+
+        // 2. Press Ctrl+B to expand sidebar back to 280px
+        fireEvent.keyDown(window, { key: "b", ctrlKey: true });
+
+        expect(sidebar.style.width).toBe("280px");
+        await waitFor(() => {
+          expect(loadSession().isSidebarCollapsed).toBe(false);
+        });
+
+        // 3. Press Cmd+B (macOS variant) to collapse sidebar
+        fireEvent.keyDown(window, { key: "B", metaKey: true });
+
+        expect(sidebar.style.width).toBe("0px");
+        await waitFor(() => {
+          expect(loadSession().isSidebarCollapsed).toBe(true);
+        });
+
+        // 4. Press Cmd+B to expand sidebar back to 280px
+        fireEvent.keyDown(window, { key: "b", metaKey: true });
+
+        expect(sidebar.style.width).toBe("280px");
+        await waitFor(() => {
+          expect(loadSession().isSidebarCollapsed).toBe(false);
+        });
+      });
+
+      it("toggles sidebar collapse and expand via TitleBar sidebar toggle button", async () => {
+        fileService.setMockFileContent("ticket06-doc.md", "# TitleBar Test");
+
+        render(<DualColumnLayout />);
+
+        await waitFor(() => {
+          expect(
+            screen.getByTestId("titlebar-toggle-sidebar-btn")
+          ).toBeInTheDocument();
+        });
+
+        const toggleBtn = screen.getByTestId("titlebar-toggle-sidebar-btn");
+        const sidebar = screen.getByTestId("sidebar-container");
+        expect(sidebar.style.width).toBe("280px");
+
+        // Click TitleBar toggle button to collapse
+        fireEvent.click(toggleBtn);
+
+        expect(sidebar.style.width).toBe("0px");
+        expect(screen.getByTestId("sidebar-expand-btn")).toBeInTheDocument();
+        await waitFor(() => {
+          expect(loadSession().isSidebarCollapsed).toBe(true);
+        });
+
+        // Click TitleBar toggle button again to expand
+        fireEvent.click(toggleBtn);
+
+        expect(sidebar.style.width).toBe("280px");
+        await waitFor(() => {
+          expect(loadSession().isSidebarCollapsed).toBe(false);
+        });
+      });
+
+      it("resizes sidebar width via mouse drag and clamps within 200px to 480px boundaries", async () => {
+        fileService.setMockFileContent(
+          "ticket06-doc.md",
+          "# Drag Clamping Test"
+        );
+
+        render(<DualColumnLayout />);
+
+        await waitFor(() => {
+          expect(
+            screen.getByTestId("sidebar-resize-divider")
+          ).toBeInTheDocument();
+        });
+
+        const divider = screen.getByTestId("sidebar-resize-divider");
+        const sidebar = screen.getByTestId("sidebar-container");
+        expect(sidebar.style.width).toBe("280px");
+
+        // Start drag
+        fireEvent.mouseDown(divider);
+
+        // Drag to 360px (within bounds)
+        fireEvent.mouseMove(window, { clientX: 360 });
+        expect(sidebar.style.width).toBe("360px");
+
+        // Drag below minimum boundary (180px >= 160px auto-collapse threshold -> clamped to 200px)
+        fireEvent.mouseMove(window, { clientX: 180 });
+        expect(sidebar.style.width).toBe("200px");
+
+        // Drag above maximum boundary (600px > 480px -> clamped to 480px)
+        fireEvent.mouseMove(window, { clientX: 600 });
+        expect(sidebar.style.width).toBe("480px");
+
+        // Drag to 320px and release
+        fireEvent.mouseMove(window, { clientX: 320 });
+        expect(sidebar.style.width).toBe("320px");
+        fireEvent.mouseUp(window);
+
+        // Verify debounced session persistence
+        await waitFor(
+          () => {
+            const session = loadSession();
+            expect(session.sidebarWidth).toBe(320);
+            expect(session.isSidebarCollapsed).toBe(false);
+          },
+          { timeout: 1000 }
+        );
+      });
+
+      it("auto-collapses sidebar when dragged narrower than 160px and restores previous width on expand", async () => {
+        fileService.setMockFileContent(
+          "ticket06-doc.md",
+          "# Snap Collapse Test"
+        );
+
+        render(<DualColumnLayout />);
+
+        await waitFor(() => {
+          expect(
+            screen.getByTestId("sidebar-resize-divider")
+          ).toBeInTheDocument();
+        });
+
+        let divider = screen.getByTestId("sidebar-resize-divider");
+        const sidebar = screen.getByTestId("sidebar-container");
+
+        // 1. Resize sidebar to 340px first
+        fireEvent.mouseDown(divider);
+        fireEvent.mouseMove(window, { clientX: 340 });
+        fireEvent.mouseUp(window);
+        expect(sidebar.style.width).toBe("340px");
+
+        // 2. Drag narrower than 160px (e.g. 140px) -> triggers auto-collapse
+        divider = screen.getByTestId("sidebar-resize-divider");
+        fireEvent.mouseDown(divider);
+        fireEvent.mouseMove(window, { clientX: 140 });
+        fireEvent.mouseUp(window);
+
+        // Sidebar collapsed to 0px
+        expect(sidebar.style.width).toBe("0px");
+        expect(screen.getByTestId("sidebar-expand-btn")).toBeInTheDocument();
+
+        await waitFor(() => {
+          const session = loadSession();
+          expect(session.isSidebarCollapsed).toBe(true);
+          expect(session.sidebarWidth).toBe(340);
+        });
+
+        // 3. Uncollapse via Ctrl+B shortcut -> restores last uncollapsed width (340px)
+        fireEvent.keyDown(window, { key: "b", ctrlKey: true });
+
+        expect(sidebar.style.width).toBe("340px");
+        await waitFor(() => {
+          const session = loadSession();
+          expect(session.isSidebarCollapsed).toBe(false);
+          expect(session.sidebarWidth).toBe(340);
+        });
+      });
+    });
   });
 });

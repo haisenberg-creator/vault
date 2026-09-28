@@ -111,9 +111,12 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
     () => loadSession().isSidebarCollapsed
   );
   const [sidebarWidth, setSidebarWidth] = useState<number>(
-    () => loadSession().sidebarWidth
+    () => loadSession().sidebarWidth || 280
   );
   const [isDraggingSidebar, setIsDraggingSidebar] = useState<boolean>(false);
+  const lastWidthRef = useRef<number>(
+    loadSession().sidebarWidth >= 200 ? loadSession().sidebarWidth : 280
+  );
   const [expandedPaths, setExpandedPaths] = useState<string[]>(
     () => loadSession().expandedPaths
   );
@@ -256,6 +259,25 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
     };
   }, []);
 
+  const handleToggleSidebar = useCallback(() => {
+    setIsSidebarCollapsed((prev) => {
+      if (prev) {
+        // Uncollapse: restore last uncollapsed width
+        setSidebarWidth((curr) => {
+          return curr >= 200
+            ? curr
+            : lastWidthRef.current >= 200
+              ? lastWidthRef.current
+              : 280;
+        });
+        return false;
+      } else {
+        // Collapse
+        return true;
+      }
+    });
+  }, []);
+
   const handleSidebarDividerMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     setIsDraggingSidebar(true);
@@ -265,8 +287,15 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
     if (!isDraggingSidebar) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const clamped = Math.max(180, Math.min(800, e.clientX));
-      setSidebarWidth(clamped);
+      // If dragged narrower than 160px during an active drag, trigger auto-collapse to 0px
+      if (e.clientX < 160) {
+        setIsSidebarCollapsed(true);
+      } else {
+        const clamped = Math.max(200, Math.min(480, e.clientX));
+        setSidebarWidth(clamped);
+        lastWidthRef.current = clamped;
+        setIsSidebarCollapsed(false);
+      }
     };
 
     const handleMouseUp = () => {
@@ -517,13 +546,31 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
         handleOpenCreateFolderModal();
         return;
       }
+
+      // 5. Ctrl+B / Cmd+B -> Toggle Sidebar Collapse / Expand
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        !e.altKey &&
+        !e.shiftKey &&
+        e.key.toLowerCase() === "b"
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleToggleSidebar();
+        return;
+      }
     };
 
     window.addEventListener("keydown", handleGlobalKeyDown, true);
     return () => {
       window.removeEventListener("keydown", handleGlobalKeyDown, true);
     };
-  }, [handleCreateNewNote, handleToggleSplitView, handleOpenCreateFolderModal]);
+  }, [
+    handleCreateNewNote,
+    handleToggleSplitView,
+    handleOpenCreateFolderModal,
+    handleToggleSidebar,
+  ]);
 
   // System-wide Global OS Shortcuts (Ctrl+Alt+N / Cmd+Option+N and Ctrl+Alt+P / Cmd+Option+P)
   useGlobalShortcuts({
@@ -810,6 +857,8 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
         themeMode={themeMode}
         onToggleThemeMode={handleToggleThemeMode}
         onOpenQuickSwitcher={() => setIsQuickSwitcherOpen(true)}
+        isSidebarCollapsed={isSidebarCollapsed}
+        onToggleSidebar={handleToggleSidebar}
       />
       <div
         style={{
@@ -845,16 +894,17 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
           onOpenSettings={() => setIsSettingsOpen(true)}
           onOpenInSplitView={handleOpenInSplitView}
           isSidebarCollapsed={isSidebarCollapsed}
-          onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
+          onToggleCollapse={handleToggleSidebar}
           sidebarWidth={sidebarWidth}
           onSidebarWidthChange={setSidebarWidth}
           expandedPaths={expandedPaths}
           onExpandedPathsChange={setExpandedPaths}
+          isDragging={isDraggingSidebar}
         />
         {!isSidebarCollapsed && (
           <div
             data-testid="sidebar-resize-divider"
-            className="sidebar-resize-divider"
+            className={`sidebar-resize-divider ${isDraggingSidebar ? "is-dragging" : ""}`}
             onMouseDown={handleSidebarDividerMouseDown}
             style={{
               width: "4px",
@@ -862,9 +912,13 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
               backgroundColor: isDraggingSidebar
                 ? "var(--rose-pink)"
                 : "transparent",
+              boxShadow: isDraggingSidebar
+                ? "0 0 10px rgba(235, 111, 146, 0.45)"
+                : "none",
               zIndex: 20,
               userSelect: "none",
-              transition: "background-color 150ms ease",
+              flexShrink: 0,
+              transition: "background-color 150ms ease, box-shadow 150ms ease",
             }}
           />
         )}
@@ -872,8 +926,8 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
           <button
             type="button"
             data-testid="sidebar-expand-btn"
-            onClick={() => setIsSidebarCollapsed(false)}
-            title="Expand sidebar"
+            onClick={handleToggleSidebar}
+            title="Expand sidebar (Ctrl+B)"
             className="tactile-btn"
             style={{
               position: "absolute",
