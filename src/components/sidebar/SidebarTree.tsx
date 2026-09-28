@@ -21,6 +21,7 @@ export interface SidebarTreeProps {
   nodes: FileTreeNode[];
   activeFilePath?: string;
   onSelectFile: (node: FileTreeNode) => void;
+  onSelectFolder?: (folderPath: string) => void;
   onCreateNote: (targetFolderPath?: string) => void;
   onCreateFolder: (targetFolderPath?: string) => void;
   onCreateDashboard: (targetFolderPath?: string) => void;
@@ -56,6 +57,7 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
   nodes,
   activeFilePath,
   onSelectFile,
+  onSelectFolder,
   onCreateNote,
   onCreateFolder,
   onCreateDashboard,
@@ -264,6 +266,7 @@ export const SidebarTree: React.FC<SidebarTreeProps> = ({
           data-kind={node.kind}
           onClick={() => {
             if (isFolder) {
+              onSelectFolder?.(node.path);
               setExpandedPaths((prev) => {
                 const next = new Set(prev);
                 if (next.has(node.path)) next.delete(node.path);

@@ -17,6 +17,7 @@ vi.mock("../../../services/fileService", async () => {
     ...actual,
     readMarkdownFile: vi.fn(actual.readMarkdownFile),
     writeMarkdownFile: vi.fn(actual.writeMarkdownFile),
+    createFolder: vi.fn(actual.createFolder),
   };
 });
 
@@ -359,10 +360,12 @@ describe("DualColumnLayout Integration", () => {
     });
 
     // If Untitled.md already exists, Ctrl+N creates Untitled 1.md
-    fileService.setMockFileContent(
-      "workspace/docs/Untitled.md",
-      "# Untitled\n\n"
-    );
+    await act(async () => {
+      fileService.setMockFileContent(
+        "workspace/docs/Untitled.md",
+        "# Untitled\n\n"
+      );
+    });
 
     fireEvent.keyDown(window, { key: "n", ctrlKey: true });
 
@@ -592,5 +595,128 @@ describe("DualColumnLayout Integration", () => {
     fireEvent.mouseDown(divider);
     fireEvent.mouseMove(window, { clientX: 300 });
     fireEvent.mouseUp(window);
+  });
+
+  it("opens FileOperationModal preset to create-folder with active note parent directory when Ctrl+Shift+N is pressed", async () => {
+    fileService.setMockFileContent(
+      "workspace/docs/guide.md",
+      "# Guide Note Content"
+    );
+
+    render(<DualColumnLayout />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Guide Note Content")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByTestId("file-operation-modal")).toBeNull();
+
+    // Trigger Ctrl+Shift+N
+    fireEvent.keyDown(window, { key: "N", ctrlKey: true, shiftKey: true });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("file-operation-modal")).toBeInTheDocument();
+      expect(screen.getByText("Create New Folder")).toBeInTheDocument();
+      expect(screen.getByText("Target: workspace/docs")).toBeInTheDocument();
+      expect(screen.getByTestId("file-operation-input")).toBeInTheDocument();
+    });
+
+    // Confirm creating folder
+    const input = screen.getByTestId("file-operation-input");
+    fireEvent.change(input, { target: { value: "components" } });
+    fireEvent.click(screen.getByTestId("modal-submit-btn"));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("file-operation-modal")).toBeNull();
+      expect(fileService.createFolder).toHaveBeenCalledWith(
+        "workspace/docs/components"
+      );
+    });
+  });
+
+  it("targets workspace root when Ctrl+Shift+N is pressed and active note is at root level", async () => {
+    fileService.setMockFileContent("root-file.md", "# Root File");
+
+    render(<DualColumnLayout />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Root File")).toBeInTheDocument();
+    });
+
+    fireEvent.keyDown(window, { key: "n", ctrlKey: true, shiftKey: true });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("file-operation-modal")).toBeInTheDocument();
+      expect(screen.getByText("Create New Folder")).toBeInTheDocument();
+      expect(screen.getByText("Target: workspace")).toBeInTheDocument();
+    });
+  });
+
+  it("targets parent directory when a folder is selected and Ctrl+Shift+N is pressed", async () => {
+    fileService.setMockFileContent("Projects/sub/note.md", "# Subfolder Note");
+
+    render(<DualColumnLayout />);
+
+    // Expand Projects folder in tree
+    const projectsFolder = await screen.findByTestId("tree-node-Projects");
+    fireEvent.click(projectsFolder);
+
+    // Click subfolder
+    const subFolder = await screen.findByTestId("tree-node-Projects/sub");
+    fireEvent.click(subFolder);
+
+    // Trigger Cmd+Shift+N (macOS shortcut variant)
+    fireEvent.keyDown(window, { key: "N", metaKey: true, shiftKey: true });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("file-operation-modal")).toBeInTheDocument();
+      expect(screen.getByText("Target: Projects")).toBeInTheDocument();
+    });
+  });
+
+  it("ensures Ctrl+Shift+N does not conflict with Ctrl+N note creation or Ctrl+P quick switcher", async () => {
+    fileService.setMockFileContent(
+      "workspace/docs/guide.md",
+      "# Guide Note Content"
+    );
+
+    render(<DualColumnLayout />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Guide Note Content")).toBeInTheDocument();
+    });
+
+    // 1. Pressing Ctrl+Shift+N opens folder modal and does NOT call writeMarkdownFile for Untitled note
+    fireEvent.keyDown(window, { key: "n", ctrlKey: true, shiftKey: true });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("file-operation-modal")).toBeInTheDocument();
+    });
+    expect(fileService.writeMarkdownFile).not.toHaveBeenCalledWith(
+      expect.stringContaining("Untitled"),
+      expect.any(String)
+    );
+
+    // Close folder modal
+    fireEvent.click(screen.getByTestId("modal-cancel-btn"));
+    await waitFor(() => {
+      expect(screen.queryByTestId("file-operation-modal")).toBeNull();
+    });
+
+    // 2. Pressing Ctrl+N still creates a note as before
+    fireEvent.keyDown(window, { key: "n", ctrlKey: true, shiftKey: false });
+    await waitFor(() => {
+      expect(fileService.writeMarkdownFile).toHaveBeenCalledWith(
+        "workspace/docs/Untitled.md",
+        expect.stringContaining("# Untitled")
+      );
+    });
+
+    // 3. Pressing Ctrl+P still opens quick switcher without opening folder modal
+    fireEvent.keyDown(window, { key: "p", ctrlKey: true, shiftKey: false });
+    await waitFor(() => {
+      expect(screen.getByTestId("quick-switcher-modal")).toBeInTheDocument();
+      expect(screen.queryByTestId("file-operation-modal")).toBeNull();
+    });
   });
 });

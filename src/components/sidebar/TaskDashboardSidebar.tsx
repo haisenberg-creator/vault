@@ -73,6 +73,7 @@ export interface TaskDashboardSidebarProps {
   onToggleTask?: (taskId: string) => void;
   activeFilePath?: string;
   onSelectFile?: (filePath: string) => void;
+  onSelectFolder?: (folderPath: string) => void;
   workspaceDir?: string;
   initialTab?: "files" | "tasks";
   onMoveTaskToNote?: (
@@ -99,6 +100,7 @@ export const TaskDashboardSidebar: React.FC<TaskDashboardSidebarProps> = ({
   onToggleTask,
   activeFilePath,
   onSelectFile,
+  onSelectFolder,
   workspaceDir = "workspace",
   initialTab = "files",
   onMoveTaskToNote,
@@ -1430,6 +1432,7 @@ sections:
               nodes={treeNodes}
               activeFilePath={activeFilePath}
               onSelectFile={(node) => onSelectFile?.(node.path)}
+              onSelectFolder={onSelectFolder}
               onCreateNote={(folder) =>
                 handleOpenCreateModal("create-note", folder)
               }

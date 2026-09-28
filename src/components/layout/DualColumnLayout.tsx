@@ -14,6 +14,7 @@ import {
   writeMarkdownFile,
   readMarkdownFile,
   createFile,
+  createFolder,
   normalizePath,
   isSameFilePath,
   WorkspaceFile,
@@ -38,6 +39,10 @@ import {
   LiveBackgroundScope,
 } from "../../services/themeService";
 import { SettingsModal } from "../settings/SettingsModal";
+import {
+  FileOperationModal,
+  OperationMode,
+} from "../sidebar/FileOperationModal";
 import { useGlobalShortcuts } from "../../hooks/useGlobalShortcuts";
 
 export interface DualColumnLayoutProps {
@@ -55,6 +60,12 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
   const [isQuickSwitcherOpen, setIsQuickSwitcherOpen] =
     useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [isFolderModalOpen, setIsFolderModalOpen] = useState<boolean>(false);
+  const [folderModalTargetPath, setFolderModalTargetPath] =
+    useState<string>("");
+  const [selectedFolderPath, setSelectedFolderPath] = useState<string | null>(
+    null
+  );
   const [themeMode, setThemeModeState] = useState<ThemeMode>(() =>
     getThemeMode()
   );
@@ -156,8 +167,13 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
     []
   );
 
+  const handleSelectFolder = useCallback((folderPath: string) => {
+    setSelectedFolderPath(folderPath);
+  }, []);
+
   const handleSelectFile = useCallback(
     (path: string) => {
+      setSelectedFolderPath(null);
       if (isSplitView && activePane === "right") {
         setRightEditorTasks([]);
         setRightFilename(path);
@@ -273,6 +289,53 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
     }
   }, [activeFilename, workspaceDir, workspaceFiles, loadWorkspaceFiles]);
 
+  const handleOpenCreateFolderModal = useCallback(() => {
+    const defaultDir = workspaceDir || "workspace";
+    let targetFolder = defaultDir;
+
+    const currentItem =
+      selectedFolderPath ||
+      (isSplitView && activePane === "right" && rightFilename
+        ? rightFilename
+        : activeFilename);
+
+    if (currentItem) {
+      const norm = normalizePath(currentItem);
+      const lastSlash = norm.lastIndexOf("/");
+      if (lastSlash !== -1) {
+        targetFolder = norm.substring(0, lastSlash);
+      } else {
+        targetFolder = defaultDir;
+      }
+    }
+
+    setFolderModalTargetPath(targetFolder);
+    setIsFolderModalOpen(true);
+  }, [
+    selectedFolderPath,
+    isSplitView,
+    activePane,
+    rightFilename,
+    activeFilename,
+    workspaceDir,
+  ]);
+
+  const handleCreateFolderSubmit = useCallback(
+    async (folderName: string, _mode: OperationMode, targetPath?: string) => {
+      try {
+        const defaultDir = workspaceDir || "workspace";
+        const effectiveDir =
+          targetPath && targetPath.trim() ? targetPath : defaultDir;
+        const fullPath = `${effectiveDir}/${folderName}`;
+        await createFolder(fullPath);
+        await loadWorkspaceFiles();
+      } catch (err) {
+        console.error("Failed to create folder via shortcut modal:", err);
+      }
+    },
+    [workspaceDir, loadWorkspaceFiles]
+  );
+
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       // 1. Ctrl+P / Cmd+P -> Toggle Quick Switcher
@@ -313,13 +376,26 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
         handleToggleSplitView();
         return;
       }
+
+      // 4. Ctrl+Shift+N / Cmd+Shift+N -> Create New Folder
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        !e.altKey &&
+        e.shiftKey &&
+        e.key.toLowerCase() === "n"
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleOpenCreateFolderModal();
+        return;
+      }
     };
 
     window.addEventListener("keydown", handleGlobalKeyDown, true);
     return () => {
       window.removeEventListener("keydown", handleGlobalKeyDown, true);
     };
-  }, [handleCreateNewNote, handleToggleSplitView]);
+  }, [handleCreateNewNote, handleToggleSplitView, handleOpenCreateFolderModal]);
 
   // System-wide Global OS Shortcuts (Ctrl+Alt+N / Cmd+Option+N and Ctrl+Alt+P / Cmd+Option+P)
   useGlobalShortcuts({
@@ -626,11 +702,13 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
           onSelectTag={handleSelectTag}
           onToggleTask={handleToggleTask}
           activeFilePath={
-            isSplitView && activePane === "right"
+            selectedFolderPath ||
+            (isSplitView && activePane === "right"
               ? rightFilename
-              : activeFilename
+              : activeFilename)
           }
           onSelectFile={handleSelectFile}
+          onSelectFolder={handleSelectFolder}
           workspaceDir={workspaceDir}
           onMoveTaskToNote={handleMoveTaskToNote}
           onDeleteTask={handleDeleteTask}
@@ -868,6 +946,13 @@ export const DualColumnLayout: React.FC<DualColumnLayoutProps> = ({
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+      />
+      <FileOperationModal
+        isOpen={isFolderModalOpen}
+        mode="create-folder"
+        targetPath={folderModalTargetPath}
+        onSubmit={handleCreateFolderSubmit}
+        onClose={() => setIsFolderModalOpen(false)}
       />
     </div>
   );
