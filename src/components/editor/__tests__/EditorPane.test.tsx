@@ -4,6 +4,7 @@ import {
   fireEvent,
   waitFor,
   act,
+  within,
 } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { $getRoot, $createParagraphNode, $createTextNode } from "lexical";
@@ -923,5 +924,82 @@ describe("EditorPane Component (Lexical)", () => {
     expect(openBadge).toHaveStyle({ display: "inline-flex" });
     expect(progressBadge).toHaveStyle({ display: "inline-flex" });
     expect(completedBadge).toHaveStyle({ display: "inline-flex" });
+  });
+
+  it("toggles Mind Map outline panel via action bar toggle button", async () => {
+    fileService.setMockFileContent(
+      "mindmap-test.md",
+      "# Project Roadmap\n## Phase 1 MVP\n### Design Specs\n## Phase 2 Scale"
+    );
+
+    render(<EditorPane filename="mindmap-test.md" />);
+
+    await screen.findByTestId("editor-contenteditable");
+    await waitFor(() => {
+      expect(screen.getByText("Project Roadmap")).toBeInTheDocument();
+    });
+
+    const toggleBtn = screen.getByTestId("note-action-mindmap-toggle");
+    expect(toggleBtn).toBeInTheDocument();
+    expect(screen.queryByTestId("note-mindmap-view")).not.toBeInTheDocument();
+
+    // Toggle on Mind Map
+    fireEvent.click(toggleBtn);
+
+    await waitFor(() => {
+      const mindmapView = screen.getByTestId("note-mindmap-view");
+      expect(mindmapView).toBeInTheDocument();
+      expect(screen.getByTestId("mindmap-heading-count")).toHaveTextContent(
+        "4"
+      );
+      expect(within(mindmapView).getByText("Phase 1 MVP")).toBeInTheDocument();
+      expect(
+        within(mindmapView).getByText("Phase 2 Scale")
+      ).toBeInTheDocument();
+    });
+
+    // Close Mind Map via Close button
+    const closeBtn = screen.getByTestId("mindmap-close-btn");
+    fireEvent.click(closeBtn);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("note-mindmap-view")).not.toBeInTheDocument();
+    });
+  });
+
+  it("clicking a Mind Map node triggers smooth scrollIntoView on heading element", async () => {
+    const scrollSpy = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = scrollSpy;
+
+    fileService.setMockFileContent(
+      "scroll-heading.md",
+      "# Root Topic\n## Target Section"
+    );
+
+    render(<EditorPane filename="scroll-heading.md" />);
+
+    await screen.findByTestId("editor-contenteditable");
+    await waitFor(() => {
+      expect(screen.getByText("Target Section")).toBeInTheDocument();
+    });
+
+    // Open Mind Map
+    const toggleBtn = screen.getByTestId("note-action-mindmap-toggle");
+    fireEvent.click(toggleBtn);
+
+    const mindmapView = await screen.findByTestId("note-mindmap-view");
+    expect(mindmapView).toBeInTheDocument();
+
+    // Find and click the "Target Section" node in SVG
+    const targetNode = within(mindmapView).getByRole("button", {
+      name: /Target Section/,
+    });
+    expect(targetNode).toBeDefined();
+
+    fireEvent.click(targetNode);
+    expect(scrollSpy).toHaveBeenCalledWith({
+      behavior: "smooth",
+      block: "start",
+    });
   });
 });

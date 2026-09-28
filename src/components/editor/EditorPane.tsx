@@ -64,6 +64,8 @@ import { ALL_TRANSFORMERS } from "./checklistTransformer";
 import { TaskItem, TaskState } from "../sidebar/TaskDashboardSidebar";
 import { NoteActionBar } from "./NoteActionBar";
 import { CodeBlockActionPlugin } from "./CodeBlockActionPlugin";
+import { OutlineExtractorPlugin, HeadingItem } from "./outlineExtractor";
+import { NoteMindMapView } from "./NoteMindMapView";
 
 export interface EditorPaneProps {
   filename?: string;
@@ -1092,6 +1094,20 @@ function TagClickHandlerPlugin({
   return null;
 }
 
+// Helper plugin to capture lexical editor instance for scroll-to-heading lookups
+function LexicalInstanceCapturePlugin({
+  editorRef,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  editorRef: React.MutableRefObject<any>;
+}) {
+  const [editor] = useLexicalComposerContext();
+  useEffect(() => {
+    editorRef.current = editor;
+  }, [editor, editorRef]);
+  return null;
+}
+
 export const EditorPane: React.FC<EditorPaneProps> = ({
   filename = "workspace-note.md",
   workspaceDir,
@@ -1116,6 +1132,79 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const addTaskFnRef = useRef<(() => void) | null>(null);
   const changeStatusFnRef = useRef<((status: TaskState) => void) | null>(null);
+
+  const [isMindMapOpen, setIsMindMapOpen] = useState<boolean>(false);
+  const [headings, setHeadings] = useState<HeadingItem[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const lexicalEditorRef = useRef<any>(null);
+
+  const handleToggleMindMap = useCallback(() => {
+    setIsMindMapOpen((prev) => !prev);
+  }, []);
+
+  const handleSelectHeading = useCallback(
+    (key: string, heading: HeadingItem) => {
+      if (key === "root") {
+        const editorRoot = document.querySelector(".lexical-editor-root");
+        if (editorRoot) {
+          editorRoot.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        return;
+      }
+
+      let targetEl: HTMLElement | null = null;
+      if (
+        lexicalEditorRef.current &&
+        typeof lexicalEditorRef.current.getElementByKey === "function"
+      ) {
+        targetEl = lexicalEditorRef.current.getElementByKey(key);
+      }
+
+      if (!targetEl) {
+        const editorRoot = document.querySelector(".lexical-editor-root");
+        if (editorRoot) {
+          const headingElements = editorRoot.querySelectorAll(
+            "h1, h2, h3, h4, h5, h6"
+          );
+          for (const el of Array.from(headingElements)) {
+            if (
+              el.textContent?.trim().toLowerCase() ===
+              heading.text.trim().toLowerCase()
+            ) {
+              targetEl = el as HTMLElement;
+              break;
+            }
+          }
+        }
+      }
+
+      if (!targetEl) {
+        const allMatching = document.querySelectorAll(
+          `[data-lexical-node-key="${key}"]`
+        );
+        if (allMatching.length > 0) {
+          targetEl = allMatching[0] as HTMLElement;
+        }
+      }
+
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (typeof targetEl.animate === "function") {
+          targetEl.animate(
+            [
+              {
+                backgroundColor: "rgba(156, 207, 216, 0.35)",
+                borderRadius: "4px",
+              },
+              { backgroundColor: "transparent", borderRadius: "4px" },
+            ],
+            { duration: 800, easing: "cubic-bezier(0.23, 1, 0.32, 1)" }
+          );
+        }
+      }
+    },
+    []
+  );
 
   currentContentRef.current = markdownContent;
 
@@ -1435,87 +1524,127 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
               onToggleSplitView={onToggleSplitView}
               isSplitView={isSplitView}
               onCloseSplitPane={onCloseSplitPane}
+              onToggleMindMap={handleToggleMindMap}
+              isMindMapActive={isMindMapOpen}
             />
 
-            {/* Editor Content Area */}
+            {/* Workspace Area: Editor Pane + Collapsible Mind Map Drawer */}
             <div
               style={{
                 flex: 1,
-                padding: "24px 32px",
                 display: "flex",
-                flexDirection: "column",
+                flexDirection: "row",
                 overflow: "hidden",
+                position: "relative",
               }}
             >
-              {errorMessage && (
-                <div
-                  style={{
-                    padding: "10px 14px",
-                    borderRadius: "6px",
-                    backgroundColor: "rgba(235, 111, 146, 0.15)",
-                    color: "var(--rose-love)",
-                    fontSize: "12px",
-                    marginBottom: "12px",
-                  }}
-                >
-                  {errorMessage}
-                </div>
-              )}
-
+              {/* Editor Content Area */}
               <div
                 style={{
                   flex: 1,
+                  padding: "24px 32px",
                   display: "flex",
                   flexDirection: "column",
                   overflow: "hidden",
-                  position: "relative",
+                  minWidth: 0,
                 }}
               >
+                {errorMessage && (
+                  <div
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: "6px",
+                      backgroundColor: "rgba(235, 111, 146, 0.15)",
+                      color: "var(--rose-love)",
+                      fontSize: "12px",
+                      marginBottom: "12px",
+                    }}
+                  >
+                    {errorMessage}
+                  </div>
+                )}
+
                 <div
-                  style={{ flex: 1, position: "relative", overflowY: "auto" }}
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    overflow: "hidden",
+                    position: "relative",
+                  }}
                 >
-                  <RichTextPlugin
-                    contentEditable={
-                      <ContentEditable
-                        data-testid="editor-contenteditable"
-                        aria-label={`Editor for ${filename}`}
-                        className="lexical-editor-root"
-                        spellCheck={false}
-                      />
-                    }
-                    ErrorBoundary={LexicalErrorBoundary}
+                  <div
+                    style={{ flex: 1, position: "relative", overflowY: "auto" }}
+                  >
+                    <RichTextPlugin
+                      contentEditable={
+                        <ContentEditable
+                          data-testid="editor-contenteditable"
+                          aria-label={`Editor for ${filename}`}
+                          className="lexical-editor-root"
+                          spellCheck={false}
+                        />
+                      }
+                      ErrorBoundary={LexicalErrorBoundary}
+                    />
+                  </div>
+                  <HistoryPlugin />
+                  <TaskExtractorPlugin
+                    filename={filename}
+                    onTasksChange={onTasksChange}
+                  />
+                  <TaskToggleHandlerPlugin
+                    onRegisterToggleTask={onRegisterToggleTask}
+                  />
+                  <TaskRemoveHandlerPlugin
+                    onRegisterRemoveTask={onRegisterRemoveTask}
+                  />
+                  <TaskInsertHandlerPlugin
+                    onRegisterAddTask={handleRegisterAddTask}
+                    onRegisterChangeStatus={handleRegisterChangeStatus}
+                  />
+                  <TaskKeyboardPlugin />
+                  <MarkdownSyncPlugin
+                    initialContent={markdownContent}
+                    onMarkdownChange={handleMarkdownChange}
+                  />
+                  <MarkdownShortcutPlugin transformers={ALL_TRANSFORMERS} />
+                  <CodeBlockActionPlugin />
+                  <HashtagPlugin />
+                  <TagClickHandlerPlugin onSelectTag={onSelectTag} />
+                  <PriorityHeaderPlugin />
+                  <TaskDragDropPlugin />
+                  <TaskLayoutPlugin />
+                  <ChecklistEnterPlugin />
+                  <KeyboardSavePlugin onSave={handleManualSave} />
+                  <OutlineExtractorPlugin onHeadingsChange={setHeadings} />
+                  <LexicalInstanceCapturePlugin editorRef={lexicalEditorRef} />
+                </div>
+              </div>
+
+              {/* Mind Map Drawer */}
+              {isMindMapOpen && (
+                <div
+                  data-testid="mindmap-container"
+                  style={{
+                    width: "360px",
+                    minWidth: "280px",
+                    maxWidth: "50%",
+                    display: "flex",
+                    flexDirection: "column",
+                    overflow: "hidden",
+                    borderLeft: "1px solid rgba(110, 106, 134, 0.25)",
+                    transition: "width 200ms cubic-bezier(0.23, 1, 0.32, 1)",
+                  }}
+                >
+                  <NoteMindMapView
+                    headings={headings}
+                    noteTitle={displayFilename}
+                    onSelectHeading={handleSelectHeading}
+                    onClose={() => setIsMindMapOpen(false)}
                   />
                 </div>
-                <HistoryPlugin />
-                <TaskExtractorPlugin
-                  filename={filename}
-                  onTasksChange={onTasksChange}
-                />
-                <TaskToggleHandlerPlugin
-                  onRegisterToggleTask={onRegisterToggleTask}
-                />
-                <TaskRemoveHandlerPlugin
-                  onRegisterRemoveTask={onRegisterRemoveTask}
-                />
-                <TaskInsertHandlerPlugin
-                  onRegisterAddTask={handleRegisterAddTask}
-                  onRegisterChangeStatus={handleRegisterChangeStatus}
-                />
-                <TaskKeyboardPlugin />
-                <MarkdownSyncPlugin
-                  initialContent={markdownContent}
-                  onMarkdownChange={handleMarkdownChange}
-                />
-                <MarkdownShortcutPlugin transformers={ALL_TRANSFORMERS} />
-                <CodeBlockActionPlugin />
-                <HashtagPlugin />
-                <TagClickHandlerPlugin onSelectTag={onSelectTag} />
-                <PriorityHeaderPlugin />
-                <TaskDragDropPlugin />
-                <TaskLayoutPlugin />
-                <ChecklistEnterPlugin />
-                <KeyboardSavePlugin onSave={handleManualSave} />
-              </div>
+              )}
             </div>
           </LexicalComposer>
         </ActiveFileContext.Provider>

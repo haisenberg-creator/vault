@@ -8,7 +8,7 @@ import {
   COMMAND_PRIORITY_LOW,
   TextFormatType,
 } from "lexical";
-import { Columns2 } from "lucide-react";
+import { Columns2, Network } from "lucide-react";
 import { TaskState } from "../sidebar/TaskDashboardSidebar";
 
 export interface NoteActionBarProps {
@@ -29,6 +29,8 @@ export interface NoteActionBarProps {
   onToggleSplitView?: () => void;
   isSplitView?: boolean;
   onCloseSplitPane?: () => void;
+  onToggleMindMap?: () => void;
+  isMindMapActive?: boolean;
 }
 
 const MARKER_STYLES = [
@@ -54,6 +56,8 @@ export const NoteActionBar: React.FC<NoteActionBarProps> = ({
   onToggleSplitView,
   isSplitView,
   onCloseSplitPane,
+  onToggleMindMap,
+  isMindMapActive,
 }) => {
   const [showMarkerDropdown, setShowMarkerDropdown] = useState(false);
 
@@ -561,6 +565,38 @@ export const NoteActionBar: React.FC<NoteActionBarProps> = ({
           </div>
         )}
       </div>
+
+      {/* Mind Map Outline Toggle Button */}
+      <button
+        type="button"
+        data-testid="note-action-mindmap-toggle"
+        className="tactile-btn"
+        title="Toggle Mind Map Outline"
+        aria-label="Toggle Mind Map Outline"
+        aria-pressed={Boolean(isMindMapActive)}
+        onClick={() => onToggleMindMap?.()}
+        style={{
+          padding: "3px 8px",
+          borderRadius: "var(--radius-sm)",
+          border: isMindMapActive
+            ? "1px solid var(--rose-foam)"
+            : "1px solid rgba(110, 106, 134, 0.3)",
+          backgroundColor: isMindMapActive
+            ? "rgba(156, 207, 216, 0.22)"
+            : "var(--rose-bg-surface)",
+          color: isMindMapActive ? "var(--rose-foam)" : "var(--rose-text)",
+          fontSize: "10px",
+          fontWeight: 600,
+          cursor: "pointer",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "5px",
+          transition: "all 150ms cubic-bezier(0.23, 1, 0.32, 1)",
+        }}
+      >
+        <Network size={12} />
+        <span>Mind Map</span>
+      </button>
 
       {/* Split View Toggle & Close Actions */}
       {onToggleSplitView && (

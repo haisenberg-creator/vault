@@ -131,4 +131,27 @@ describe("NoteActionBar", () => {
     fireEvent.click(highlightBtn);
     expect(handleFormatText).toHaveBeenCalledWith("highlight");
   });
+
+  it("renders Mind Map toggle button and triggers onToggleMindMap when clicked", () => {
+    const handleToggleMindMap = vi.fn();
+    render(<NoteActionBar onToggleMindMap={handleToggleMindMap} />);
+
+    const mindMapBtn = screen.getByTestId("note-action-mindmap-toggle");
+    expect(mindMapBtn).toBeInTheDocument();
+    expect(mindMapBtn).toHaveAttribute("title", "Toggle Mind Map Outline");
+    expect(mindMapBtn).toHaveAttribute("aria-pressed", "false");
+    expect(mindMapBtn).toHaveTextContent("Mind Map");
+
+    fireEvent.click(mindMapBtn);
+    expect(handleToggleMindMap).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders Mind Map toggle button in active state when isMindMapActive is true", () => {
+    const { rerender } = render(<NoteActionBar isMindMapActive={false} />);
+    const mindMapBtn = screen.getByTestId("note-action-mindmap-toggle");
+    expect(mindMapBtn).toHaveAttribute("aria-pressed", "false");
+
+    rerender(<NoteActionBar isMindMapActive={true} />);
+    expect(mindMapBtn).toHaveAttribute("aria-pressed", "true");
+  });
 });
