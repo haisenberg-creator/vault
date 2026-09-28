@@ -37,6 +37,7 @@ export function parseTasksFromMarkdown(
       if (
         headingText === "urgent" ||
         headingText === "high" ||
+        headingText === "medium" ||
         headingText === "low"
       ) {
         currentPriority = headingText;

@@ -67,7 +67,7 @@ describe("NoteActionBar", () => {
     expect(handleInsertPriorityTemplate).toHaveBeenCalledTimes(1);
   });
 
-  it("triggers onInsertPriorityHeader when Urgent, High, or Low buttons are clicked", () => {
+  it("triggers onInsertPriorityHeader when Urgent, High, Medium, or Low buttons are clicked", () => {
     const handleInsertPriorityHeader = vi.fn();
     render(
       <NoteActionBar onInsertPriorityHeader={handleInsertPriorityHeader} />
@@ -75,10 +75,12 @@ describe("NoteActionBar", () => {
 
     const urgentBtn = screen.getByTestId("note-action-priority-urgent");
     const highBtn = screen.getByTestId("note-action-priority-high");
+    const mediumBtn = screen.getByTestId("note-action-priority-medium");
     const lowBtn = screen.getByTestId("note-action-priority-low");
 
     expect(urgentBtn).toBeInTheDocument();
     expect(highBtn).toBeInTheDocument();
+    expect(mediumBtn).toBeInTheDocument();
     expect(lowBtn).toBeInTheDocument();
 
     fireEvent.click(urgentBtn);
@@ -86,6 +88,9 @@ describe("NoteActionBar", () => {
 
     fireEvent.click(highBtn);
     expect(handleInsertPriorityHeader).toHaveBeenLastCalledWith("High");
+
+    fireEvent.click(mediumBtn);
+    expect(handleInsertPriorityHeader).toHaveBeenLastCalledWith("Medium");
 
     fireEvent.click(lowBtn);
     expect(handleInsertPriorityHeader).toHaveBeenLastCalledWith("Low");

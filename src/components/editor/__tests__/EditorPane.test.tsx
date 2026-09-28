@@ -260,7 +260,7 @@ describe("EditorPane Component (Lexical)", () => {
   it("decorates H2 priority headers with data-priority attributes in the editor DOM", async () => {
     fileService.setMockFileContent(
       "priority-headers.md",
-      "## Urgent\n- [ ] Critical\n\n## High\n- [ ] Medium\n\n## Low\n- [ ] Minor"
+      "## Urgent\n- [ ] Critical\n\n## High\n- [ ] Major\n\n## Medium\n- [ ] Moderate\n\n## Low\n- [ ] Minor\n\n## Introduction\nGeneral overview text"
     );
 
     const { container } = render(<EditorPane filename="priority-headers.md" />);
@@ -270,7 +270,9 @@ describe("EditorPane Component (Lexical)", () => {
     await waitFor(() => {
       const urgentH2 = container.querySelector('h2[data-priority="urgent"]');
       const highH2 = container.querySelector('h2[data-priority="high"]');
+      const mediumH2 = container.querySelector('h2[data-priority="medium"]');
       const lowH2 = container.querySelector('h2[data-priority="low"]');
+      const genericH2 = container.querySelector("h2:not([data-priority])");
 
       expect(urgentH2).toBeInTheDocument();
       expect(urgentH2).toHaveTextContent("Urgent");
@@ -278,8 +280,49 @@ describe("EditorPane Component (Lexical)", () => {
       expect(highH2).toBeInTheDocument();
       expect(highH2).toHaveTextContent("High");
 
+      expect(mediumH2).toBeInTheDocument();
+      expect(mediumH2).toHaveTextContent("Medium");
+
       expect(lowH2).toBeInTheDocument();
       expect(lowH2).toHaveTextContent("Low");
+
+      expect(genericH2).toBeInTheDocument();
+      expect(genericH2).toHaveTextContent("Introduction");
+      expect(genericH2).not.toHaveAttribute("data-priority");
+    });
+  });
+
+  it("applies hanging-indent flex layout to task items in the editor DOM", async () => {
+    fileService.setMockFileContent(
+      "hanging-indent.md",
+      "- [ ] Complex task item with multiple lines of description text to check hanging indent\n- [x] Done task"
+    );
+
+    const { container } = render(<EditorPane filename="hanging-indent.md" />);
+
+    await screen.findByTestId("editor-contenteditable");
+
+    await waitFor(() => {
+      const openBadge = screen.getByTestId("checklist-node-open");
+      expect(openBadge).toBeInTheDocument();
+      expect(openBadge.style.flexShrink).toBe("0");
+
+      const taskContainers = container.querySelectorAll(
+        '[data-task-item="true"]'
+      );
+      expect(taskContainers.length).toBeGreaterThanOrEqual(1);
+
+      const firstContainer = taskContainers[0] as HTMLElement;
+      expect(firstContainer.style.display).toBe("flex");
+      expect(firstContainer.style.alignItems).toBe("flex-start");
+      expect(firstContainer.style.gap).toBe("6px");
+
+      const contentText = container.querySelector(
+        ".task-content-text"
+      ) as HTMLElement | null;
+      expect(contentText).toBeInTheDocument();
+      expect(contentText?.style.flex).toContain("1");
+      expect(contentText?.style.wordBreak).toBe("break-word");
     });
   });
 

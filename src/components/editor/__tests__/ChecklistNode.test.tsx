@@ -74,6 +74,16 @@ describe("ChecklistNode Lexical Node", () => {
       expect(imported.getState()).toBe("blocked");
     });
   });
+
+  it("creates DOM element with flexShrink 0 and inline-flex display", () => {
+    const editor = createEditor({ nodes: [ChecklistNode] });
+    editor.update(() => {
+      const node = $createChecklistNode("open");
+      const dom = node.createDOM();
+      expect(dom.style.display).toBe("inline-flex");
+      expect(dom.style.flexShrink).toBe("0");
+    });
+  });
 });
 
 describe("EditorPane with Custom Checklist Nodes", () => {
@@ -160,5 +170,43 @@ describe("EditorPane with Custom Checklist Nodes", () => {
       "application/json",
       expect.stringContaining('"state":"completed"')
     );
+  });
+
+  it("structures task items as flex containers with hanging indent styles", async () => {
+    const markdownContent =
+      "- [ ] First task with a very long line of descriptive text that wraps\n- [-] Second in-progress task";
+    vi.mocked(fileService.readMarkdownFile).mockResolvedValue(markdownContent);
+
+    const { container } = render(
+      <EditorPane filename="test-hanging-indent.md" />
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText("Loading document...")).not.toBeInTheDocument();
+    });
+
+    const openBadge = await screen.findByTestId("checklist-node-open");
+    expect(openBadge).toBeInTheDocument();
+    // Verify badge has flexShrink: 0
+    expect(openBadge.style.flexShrink).toBe("0");
+
+    await waitFor(() => {
+      // Find the task item container paragraph
+      const taskContainer = container.querySelector(
+        '[data-task-item="true"]'
+      ) as HTMLElement | null;
+      expect(taskContainer).toBeInTheDocument();
+      expect(taskContainer?.style.display).toBe("flex");
+      expect(taskContainer?.style.alignItems).toBe("flex-start");
+      expect(taskContainer?.style.gap).toBe("6px");
+
+      // Verify task content text has hanging-indent properties
+      const taskContent = container.querySelector(
+        ".task-content-text"
+      ) as HTMLElement | null;
+      expect(taskContent).toBeInTheDocument();
+      expect(taskContent?.style.flex).toContain("1");
+      expect(taskContent?.style.wordBreak).toBe("break-word");
+    });
   });
 });

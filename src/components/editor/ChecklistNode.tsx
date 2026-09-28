@@ -231,9 +231,10 @@ export const ChecklistComponent: React.FC<ChecklistComponentProps> = ({
       style={{
         display: "inline-flex",
         alignItems: "center",
+        flexShrink: 0,
         gap: "4px",
         padding: "2px 8px",
-        margin: "0 4px 6px 0",
+        margin: "2px 0 0 0",
         lineHeight: 1.8,
         borderRadius: "4px",
         backgroundColor: info.bg,
@@ -289,6 +290,8 @@ export class ChecklistNode extends DecoratorNode<React.ReactNode> {
   createDOM(): HTMLElement {
     const span = document.createElement("span");
     span.style.display = "inline-flex";
+    span.style.alignItems = "flex-start";
+    span.style.flexShrink = "0";
     return span;
   }
 

@@ -81,12 +81,14 @@ describe("workspaceService", () => {
 - [-] Performance optimization
 ## Other Heading
 - [ ] Task without priority
+## Medium
+- [ ] Regular maintenance task
 ## Low
 - [x] Minor documentation fix
 `;
 
     const tasks = parseTasksFromMarkdown(markdown, "tasks.md");
-    expect(tasks).toHaveLength(4);
+    expect(tasks).toHaveLength(5);
 
     expect(tasks[0]).toMatchObject({
       title: "Fix critical production crash",
@@ -104,6 +106,11 @@ describe("workspaceService", () => {
     });
 
     expect(tasks[3]).toMatchObject({
+      title: "Regular maintenance task",
+      priority: "medium",
+    });
+
+    expect(tasks[4]).toMatchObject({
       title: "Minor documentation fix",
       priority: "low",
     });

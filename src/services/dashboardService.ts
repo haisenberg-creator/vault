@@ -103,7 +103,12 @@ export function parseDashboardSchema(
           rawFilter.priority.forEach((pr: any) => {
             if (typeof pr === "string" && pr.trim()) {
               const pStr = pr.trim().toLowerCase();
-              if (pStr === "urgent" || pStr === "high" || pStr === "low") {
+              if (
+                pStr === "urgent" ||
+                pStr === "high" ||
+                pStr === "medium" ||
+                pStr === "low"
+              ) {
                 priority.push(pStr);
               }
             }
@@ -210,6 +215,7 @@ export function parseTasksFromVaultFiles(
         if (
           headingText === "urgent" ||
           headingText === "high" ||
+          headingText === "medium" ||
           headingText === "low"
         ) {
           currentPriority = headingText;

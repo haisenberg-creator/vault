@@ -16,7 +16,9 @@ export interface NoteActionBarProps {
   onChangeTaskStatus?: (status: TaskState) => void;
   onApplyPrefix?: (prefix: string) => void;
   onInsertPriorityTemplate?: () => void;
-  onInsertPriorityHeader?: (priority: "Urgent" | "High" | "Low") => void;
+  onInsertPriorityHeader?: (
+    priority: "Urgent" | "High" | "Medium" | "Low"
+  ) => void;
   onFormatText?: (format: TextFormatType) => void;
   activeFormats?: {
     isBold?: boolean;
@@ -231,8 +233,8 @@ export const NoteActionBar: React.FC<NoteActionBarProps> = ({
           High
         </button>
         <button
-          data-testid="note-action-priority-low"
-          onClick={() => onInsertPriorityHeader?.("Low")}
+          data-testid="note-action-priority-medium"
+          onClick={() => onInsertPriorityHeader?.("Medium")}
           className="tactile-btn"
           style={{
             padding: "3px 7px",
@@ -240,6 +242,23 @@ export const NoteActionBar: React.FC<NoteActionBarProps> = ({
             border: "1px solid var(--rose-foam)",
             backgroundColor: "rgba(156, 207, 216, 0.15)",
             color: "var(--rose-foam)",
+            fontSize: "10px",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          Medium
+        </button>
+        <button
+          data-testid="note-action-priority-low"
+          onClick={() => onInsertPriorityHeader?.("Low")}
+          className="tactile-btn"
+          style={{
+            padding: "3px 7px",
+            borderRadius: "var(--radius-sm)",
+            border: "1px solid var(--rose-pine)",
+            backgroundColor: "rgba(49, 116, 143, 0.15)",
+            color: "var(--rose-pine)",
             fontSize: "10px",
             fontWeight: 600,
             cursor: "pointer",

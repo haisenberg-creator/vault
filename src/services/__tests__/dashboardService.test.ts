@@ -223,17 +223,20 @@ invalid_yaml: [ [ [ broken syntax:
       const priorityTasks = [
         { ...sampleTasks[0], priority: "urgent" },
         { ...sampleTasks[1], priority: "high" },
-        { ...sampleTasks[2], priority: "low" },
-        { ...sampleTasks[3] },
+        { ...sampleTasks[2], priority: "medium" },
+        { ...sampleTasks[3], priority: "low" },
       ];
 
       const resultUrgent = queryTasks(priorityTasks, { priority: ["urgent"] });
       expect(resultUrgent.map((t) => t.id)).toEqual(["1"]);
 
+      const resultMedium = queryTasks(priorityTasks, { priority: ["medium"] });
+      expect(resultMedium.map((t) => t.id)).toEqual(["3"]);
+
       const resultHighLow = queryTasks(priorityTasks, {
         priority: ["high", "low"],
       });
-      expect(resultHighLow.map((t) => t.id)).toEqual(["2", "3"]);
+      expect(resultHighLow.map((t) => t.id)).toEqual(["2", "4"]);
     });
   });
 

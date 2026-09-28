@@ -603,6 +603,8 @@ function PriorityHeaderPlugin() {
                 dom.setAttribute("data-priority", "urgent");
               } else if (text.includes("high")) {
                 dom.setAttribute("data-priority", "high");
+              } else if (text.includes("medium")) {
+                dom.setAttribute("data-priority", "medium");
               } else if (text.includes("low")) {
                 dom.setAttribute("data-priority", "low");
               } else {
@@ -617,6 +619,67 @@ function PriorityHeaderPlugin() {
     updateHeaderAttributes();
     return editor.registerUpdateListener(() => {
       updateHeaderAttributes();
+    });
+  }, [editor]);
+
+  return null;
+}
+
+// Plugin to enforce hanging-indent flex layout on task items
+function TaskLayoutPlugin() {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    const updateTaskLayout = () => {
+      editor.getEditorState().read(() => {
+        const rootElement = editor.getRootElement();
+        if (rootElement) {
+          const marked = rootElement.querySelectorAll(
+            '[data-task-item="true"]'
+          );
+          marked.forEach((el) => {
+            if (!el.querySelector("[data-task-state]")) {
+              el.removeAttribute("data-task-item");
+              (el as HTMLElement).style.display = "";
+              (el as HTMLElement).style.alignItems = "";
+              (el as HTMLElement).style.gap = "";
+            }
+          });
+        }
+
+        const checklistNodes = $nodesOfType(ChecklistNode);
+        for (const checkNode of checklistNodes) {
+          const parent = checkNode.getParent();
+          if (parent && $isElementNode(parent)) {
+            const pDom = editor.getElementByKey(parent.getKey());
+            if (pDom) {
+              pDom.setAttribute("data-task-item", "true");
+              pDom.style.display = "flex";
+              pDom.style.alignItems = "flex-start";
+              pDom.style.gap = "6px";
+
+              const children = parent.getChildren();
+              for (const child of children) {
+                if (!$isChecklistNode(child)) {
+                  const childDom = editor.getElementByKey(child.getKey());
+                  if (childDom) {
+                    childDom.classList.add("task-content-text");
+                    childDom.style.flex = "1";
+                    childDom.style.minWidth = "0";
+                    childDom.style.wordBreak = "break-word";
+                    childDom.style.lineHeight = "1.6";
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+    };
+
+    updateTaskLayout();
+    return editor.registerUpdateListener(() => {
+      updateTaskLayout();
     });
   }, [editor]);
 
@@ -1226,7 +1289,7 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
   }, [handleMarkdownChange]);
 
   const handleActionBarInsertPriorityHeader = useCallback(
-    (priority: "Urgent" | "High" | "Low") => {
+    (priority: "Urgent" | "High" | "Medium" | "Low") => {
       const headerText = `## ${priority}\n- [ ] `;
       let lineToAdd = headerText;
       if (currentContentRef.current) {
@@ -1449,6 +1512,7 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
                 <TagClickHandlerPlugin onSelectTag={onSelectTag} />
                 <PriorityHeaderPlugin />
                 <TaskDragDropPlugin />
+                <TaskLayoutPlugin />
                 <ChecklistEnterPlugin />
                 <KeyboardSavePlugin onSave={handleManualSave} />
               </div>
