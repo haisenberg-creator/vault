@@ -1,0 +1,3 @@
+interface:
+  display_name: "Run Local Mobile"
+  short_description: "Expose local dev server to LAN WiFi and generate QR code for mobile testing"

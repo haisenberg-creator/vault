@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v2.0.0] - 2026-09-28
+
+### Highlights & Features ✨
+
+- **Note Outline Mind Map View (Ticket 08 & ADR 0013)**:
+  - Localized, zero-runtime-dependency (<15KB) reactive SVG tree visualizer dynamically derived from Markdown headings (`#`, `##`, `###`).
+  - Organic cubic bezier branches, level badges, zoom/pan controls, and smooth click-to-scroll section navigation with amber highlight wash.
+  - Toggled conveniently from the Note Action Bar via the new Mind Map button.
+- **Workspace Session Persistence Engine (Ticket 05 & ADR 0015)**:
+  - Automatic, debounced (150ms) caching of active UI state to `localStorage` (`vault_session_v2`).
+  - Seamlessly restores open notes, split view ratio, sidebar width, collapsed state, expanded folder trees, and active task/tag filters across restarts.
+  - Safe, graceful pruning and fallback if files were deleted or renamed externally.
+- **Collapsible & Resizable Sidebar Shell (Ticket 06 & ADR 0015)**:
+  - Tactile vertical resize handle allowing fluid sidebar width adjustment between 200px and 480px (with auto-collapse below 160px).
+  - 0px Zen collapse mode toggled via `Ctrl+B` (or `Cmd+B` on macOS) or the Title Bar toggle button.
+  - Responsive reflow of inner components (filter pills, stat counters, action toolbar) across custom widths.
+- **Selective Archive Export Modal (Ticket 07 & ADR 0014)**:
+  - Interactive hierarchical folder and note tree modal with tri-state indeterminate checkboxes.
+  - Master "Select All / Deselect All" toggle and live selection item counter.
+  - Packages only selected notes (`.md`) and dashboards (`.dashboard.md`) into a `.zip` archive while preserving directory hierarchy.
+- **Dedicated Folder Creation Shortcut (Ticket 04)**:
+  - Added `Ctrl+Shift+N` (and `Cmd+Shift+N` on macOS) global shortcut to immediately open folder creation targeting the active directory or vault root.
+- **Unified 4-Tier Priority Headers (Ticket 03)**:
+  - Added `## Medium` priority detection (`data-priority="medium"`) styled in distinct Rosé Pine Foam (`#9ccfd8`).
+  - Clean neutral styling for generic Level-2 headers (`h2:not([data-priority])`), ensuring clear separation from priority sections.
+  - Added Medium button to Note Action Bar.
+- **Sidebar Display Masking & Rigid Icon Geometry (Ticket 02)**:
+  - Stripped `.md` and `.dashboard.md` extensions from sidebar note and dashboard labels while preserving canonical file paths.
+  - Locked tree icons with `flex-shrink: 0` to prevent squishing on long filenames, with clean ellipsis truncation.
+- **Task Hanging-Indent Flex Layout (Ticket 03)**:
+  - Refactored checklist node wrappers to `align-items: flex-start` with status badge locked to `flex-shrink: 0`.
+  - Multi-line task text wraps cleanly beneath itself in a neat hanging-indent block across narrow panes and Split View.
+- **Formally Codified Performance Invariants in Domain Docs (Ticket 01)**:
+  - Documented explicit quantitative budgets in `CONTEXT.md`: idle RAM < 120MB, bundle size < 2MB, zero external daemons/databases, and scale invariance for > 10,000 notes.
+  - Recorded ADRs 0013, 0014, and 0015.
+
+---
+
 ## [v1.3.0] - 2026-08-20
 
 ### Highlights & Features ✨

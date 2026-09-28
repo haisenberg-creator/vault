@@ -73,6 +73,10 @@ _Avoid_: Dual pane, side-by-side mode
 A read-only visual graph rendering the wikilink connections between Notes in the V-Folder. Does not support editing or mind-mapping.
 _Avoid_: Mind map, knowledge graph
 
+**Mind Map View**:
+A dynamic, localized visual outline rendered from a single Note's heading hierarchy (#, ##, ###) for structural navigation. Distinct from the read-only wikilink Graph View.
+_Avoid_: Full graph canvas, knowledge map
+
 **Quick Switcher**:
 A command-palette overlay (default `Ctrl+P`) for searching and jumping to any Note by name.
 _Avoid_: Command palette, file finder
@@ -89,8 +93,8 @@ _Avoid_: OS hotkey, system shortcut
 A keyboard shortcut that only triggers when the Vault application window is in focus (e.g., `Ctrl+N`).
 _Avoid_: App hotkey, window shortcut
 
-**Vault Archive**:
-A compressed `.zip` archive containing the entire V-Folder (Notes, Dashboards, Folders, and attachments) used for offline device-to-device synchronization and backup.
+**Archive**:
+A compressed `.zip` file containing either the entire V-Folder or a user-selected subset of Notes and Folders. Used for exporting data or offline backups.
 _Avoid_: Export file, sync dump, backup zip
 
 **Import Note/Folder**:
@@ -108,3 +112,18 @@ _Avoid_: Notification icon, background dock
 **Split View Divider**:
 The draggable visual separator between two open panes in Split View, providing visual feedback, drag handle affordance, and dynamic resize control.
 _Avoid_: Split bar, pane line, separator
+
+**Workspace Session**:
+The complete transient UI layout state—including active note panes, split view ratios, sidebar width and collapse state, expanded folders, and active filters—persisted across app restarts.
+_Avoid_: User profile, workspace cache, project state
+
+## Core Principles
+
+**High Performance & Low Resource Consumption**:
+Vault is built to prioritize high performance, keeping storage footprint and memory consumption as low as possible at all times:
+
+- Idle RAM footprint maintained below 120MB.
+- App production bundle maintained below 2MB.
+- Strictly zero external database engines or background synchronization daemons.
+- Lazy-loaded file trees ensuring fluid rendering in vaults exceeding 10,000 Notes.
+- Local-first plain-text files remain 100% human-readable and completely unpolluted by internal editor metadata.

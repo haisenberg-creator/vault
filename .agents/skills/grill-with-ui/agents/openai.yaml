@@ -1,0 +1,7 @@
+interface:
+  display_name: "Grill With UI"
+  short_description: "Run a grilling interview on a local browser page"
+  input_schema:
+    type: object
+policy:
+  allow_implicit_invocation: false

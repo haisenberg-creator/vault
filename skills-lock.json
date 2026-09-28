@@ -5,7 +5,7 @@
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/ask-matt/SKILL.md",
-      "computedHash": "455cda808a526aa4e5a3789b982ef34bf9783c50fcba81f8609a8e0008ef08f0"
+      "computedHash": "852ed59095164e3d278866f0b42cc74920e130eac6d8e0b9f0815b89bd1f56cf"
     },
     "claude-handoff": {
       "source": "haisenberg-creator/skills",
@@ -17,13 +17,13 @@
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/code-review/SKILL.md",
-      "computedHash": "a2b4f450871538dd7be9f6e4f99e3671df2724f07a8f5303ca11167fe4626814"
+      "computedHash": "eb13dedd73010ebb495408a3dd4a7ab215f726a673ef4e4c459c15394ce52f89"
     },
     "codebase-design": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/codebase-design/SKILL.md",
-      "computedHash": "385da7f2747bd681c24029b7aaf18b58e5649383f0402522db4233344d8fc7d5"
+      "computedHash": "aac9ae6ce1269aba0e5386f5d1a20655d822a31b5a5e4b713d89b09580e732db"
     },
     "commit-and-push": {
       "source": "haisenberg-creator/skills",
@@ -43,23 +43,35 @@
       "skillPath": ".agents/skills/design-an-interface/SKILL.md",
       "computedHash": "7012bc90f6f71495e52632e0454c2f4c63bf0ebe21d5969be40220f06aef4a1a"
     },
+    "design-taste-frontend": {
+      "source": "haisenberg-creator/skills",
+      "sourceType": "github",
+      "skillPath": "skills/design/taste-skill/SKILL.md",
+      "computedHash": "439a2e92ff5836a84c6bed52f87cb8882e8faca5d653aa2f6c6a399cf993daa0"
+    },
     "diagnosing-bugs": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/diagnosing-bugs/SKILL.md",
-      "computedHash": "b69bc2ee03ee31200639deed65168ab9e48db43af3ed47889a66c4bd190601eb"
+      "computedHash": "dcaaa3eb81195329f65f27574d9a67dc776160dd2e4d7798d1afb1e4a5f3695a"
     },
     "domain-modeling": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/domain-modeling/SKILL.md",
-      "computedHash": "b747e8b4dcd0f367ef940c290b14f858bf9576ad9961fd6684bacff5688f4a2b"
+      "computedHash": "29555443644bce0187475af77d6914e05604440f0aedb14300e9eea61e4ef302"
+    },
+    "emil-design-eng": {
+      "source": "haisenberg-creator/skills",
+      "sourceType": "github",
+      "skillPath": "skills/design/emil-design-eng/SKILL.md",
+      "computedHash": "aaf39241cc11333aaed38cee8d1a9e155a7c5bcec07fd0e17fed9cd29b663b30"
     },
     "execute-tickets": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/execute-tickets/SKILL.md",
-      "computedHash": "70f25e4a254eaa4572df69ef19128264d6a5ec7e3760e1afca294fc5bb33823c"
+      "computedHash": "eccf3505e298e2c69a6b61feb9fd15b02743b2126dea7553b92be2521ca1b88e"
     },
     "git-guardrails-claude-code": {
       "source": "haisenberg-creator/skills",
@@ -71,25 +83,31 @@
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/productivity/grill-me/SKILL.md",
-      "computedHash": "7edd436132b43ea2973710f0c28a9879c9b0910651eb89a991a7e98cb6dbbacb"
+      "computedHash": "5e0c683385eafd83f106ac6c9d67dfbbfe5aa4b3fe65aad114eb1055a99c818f"
     },
     "grill-with-docs": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
-      "computedHash": "96718e0a89e48c7d76cc9759c7094a82ff34eb89ddc46a30388063fa9812356f"
+      "computedHash": "bc77e8e38fd812c4fad6ab175c79ad8cfb220ca13fd8546d1518cddd74017fde"
+    },
+    "grill-with-ui": {
+      "source": "haisenberg-creator/skills",
+      "sourceType": "github",
+      "skillPath": "skills/in-progress/grill-with-ui/SKILL.md",
+      "computedHash": "d1f3905de9a70b1d6661f747f607ad6c1f02adf447bfc89c753b626b283f2f3b"
     },
     "grilling": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/productivity/grilling/SKILL.md",
-      "computedHash": "4eb5bf61b1e602f9cedbd3a5e4469dfba1db0247d5d40956d03299c455b91197"
+      "computedHash": "4fa026e5979770347b3357ff5139e1e41d21c3a9f7335e9cd2811cb5b8d32f2f"
     },
     "handoff": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/productivity/handoff/SKILL.md",
-      "computedHash": "7b03a812d5ca10fa8fe69d4cf8a34542684db51f5db0271254b96074e9f3a243"
+      "computedHash": "9ea2a5de5ca2d717f913356de982fdc4fe27d28a300c16598cd43a4865491008"
     },
     "implement": {
       "source": "haisenberg-creator/skills",
@@ -97,17 +115,35 @@
       "skillPath": "skills/engineering/implement/SKILL.md",
       "computedHash": "130cac2d72bfde8cd526bf3b754211e2fe00e84bc4d9f9c56f749b9541a3afad"
     },
+    "implement-spec": {
+      "source": "haisenberg-creator/skills",
+      "sourceType": "github",
+      "skillPath": "skills/in-progress/implement-spec/SKILL.md",
+      "computedHash": "1bbece7b74c00d938ecb79e2337310d8c3c2c307b48f105026e161601b1c6be8"
+    },
     "improve-codebase-architecture": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
-      "computedHash": "43f8148082b60edf066169905d431a687a08ed493dea0d53ab44c8cdf0a36ba7"
+      "computedHash": "8300771482fb81ffe95905f420bf42e5037df4c5e98e2905019abbf38212f5a7"
     },
     "loop-me": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/in-progress/loop-me/SKILL.md",
-      "computedHash": "dd2c27c0d103e4611815a5f85b6b819ddcc8ba3b4b7ef96883523925b9fa411d"
+      "computedHash": "d7fbcf41b5af203a6f2a7937afaaaebdd9941b0aa4cc3654b52daec01d3fb564"
+    },
+    "pick-ui-library": {
+      "source": "haisenberg-creator/skills",
+      "sourceType": "github",
+      "skillPath": "skills/design/pick-ui-library/SKILL.md",
+      "computedHash": "e23f014f8452303364504932f55d34c81737cd5e73a80f4b02c9dae444e43eee"
+    },
+    "pr": {
+      "source": "haisenberg-creator/skills",
+      "sourceType": "github",
+      "skillPath": "skills/in-progress/pr/SKILL.md",
+      "computedHash": "955f1e70167dc12e928d80bb22f51b9c4825d2477e949adf83c54d42eaf7aff5"
     },
     "precision-prototype": {
       "source": "haisenberg-creator/skills",
@@ -143,13 +179,19 @@
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/prototype/SKILL.md",
-      "computedHash": "c1dff37ee020d33f30036747a7730cd7d93d0b775b146e2ea7e54a9d2bcc679c"
+      "computedHash": "989187753137991a13ef9867cdb5677a150f44b365f02a2c8a35e510583a010f"
     },
     "qa": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": ".agents/skills/qa/SKILL.md",
       "computedHash": "bd0c413e93b2c36b06d8467c29934ab65af329ef33679edb92cacc359a2d2eb6"
+    },
+    "redesign-existing-projects": {
+      "source": "haisenberg-creator/skills",
+      "sourceType": "github",
+      "skillPath": "skills/design/redesign-skill/SKILL.md",
+      "computedHash": "0fbb658f78e424af15e53a46afd72f4832894871fb54b1ee6ddba7cb88149969"
     },
     "request-refactor-plan": {
       "source": "haisenberg-creator/skills",
@@ -161,19 +203,25 @@
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/research/SKILL.md",
-      "computedHash": "0ce7d7a48175ab30c80240df350a73c216489f775324c8d27c8a10b1b38a49bf"
+      "computedHash": "2c8b768d5f0309eaea9f92ef740101e813645b39aef88fb82733a52eae23dc0b"
     },
     "resolving-merge-conflicts": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/resolving-merge-conflicts/SKILL.md",
-      "computedHash": "6a005119c18c477c2122321a380a43d40242bae3cc7027125f13497d90875be2"
+      "computedHash": "436698459190d8e9f03dc32ada08401b56e352fb6a19bf71a2227fad8b80d98f"
+    },
+    "retro": {
+      "source": "haisenberg-creator/skills",
+      "sourceType": "github",
+      "skillPath": "skills/in-progress/retro/SKILL.md",
+      "computedHash": "e63bb774fba4e601edfffc56bbd5c938d76c8faa2dff49456dff3b1e679cd3b6"
     },
     "run-local-mobile": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
-      "skillPath": ".agents/skills/run-local-mobile/SKILL.md",
-      "computedHash": "86bfbfa32f5f6a25af6afb750fae1c303a99ff69573498db12a7e5c223060ace"
+      "skillPath": "skills/custom/run-local-mobile/SKILL.md",
+      "computedHash": "7df8072ade1112e88d0392a171c3fe8ea1dc160b07c5a8cb259854909582c4da"
     },
     "scaffold-exercises": {
       "source": "haisenberg-creator/skills",
@@ -184,32 +232,32 @@
     "security-guidance": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
-      "skillPath": ".agents/skills/security-guidance/SKILL.md",
-      "computedHash": "326b6fc3ad333204b4e7f13c3284c62344dc1b36b2f60bf0335bca026953fd77"
+      "skillPath": "skills/custom/security-guidance/SKILL.md",
+      "computedHash": "0168f2eaf954306a2e778942722d2213ec5247a5cd5fce9b356c403150657905"
     },
     "setup-matt-pocock-skills": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/setup-matt-pocock-skills/SKILL.md",
-      "computedHash": "91a64ff6b84297fc902d5c435436f9b5783e79c3f4e7073dd9d4af9c04a4ef50"
+      "computedHash": "47a98da41b2b21a06102e51732ebadb619d3e3a58fd6e03adc842bcf79c930ae"
     },
     "setup-pre-commit": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/misc/setup-pre-commit/SKILL.md",
-      "computedHash": "68ddf950f4848ae057b33a940533447d3b5ae34f21e09701e263879f973daa38"
+      "computedHash": "4ae1ad6988eb61dbc600627bc12e061215d96ced504632d00f0d9de5905eadfa"
     },
     "setup-ts-deep-modules": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/in-progress/setup-ts-deep-modules/SKILL.md",
-      "computedHash": "6dbd0830059a887ca6206dfa8c24baf7e28be7321471d2b899887fff9b77e34f"
+      "computedHash": "838c4a778918f9e0be1652e377875a563b63d8c0c6d718885891f5c89ccf5550"
     },
     "tdd": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/tdd/SKILL.md",
-      "computedHash": "140859ce43d1eb75823f67848c0cd0bc224ce7928ec33c55fa0c599f3bb3a4df"
+      "computedHash": "c1ed8cd854c64d4d226097255d3fa662dae4a758a1462fadd63cc10e413d88d7"
     },
     "teach": {
       "source": "haisenberg-creator/skills",
@@ -227,19 +275,19 @@
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/to-spec/SKILL.md",
-      "computedHash": "144cf30cf527faff7f9211ae81ad3de5aaa6390f639b87ca5a48f5e818a8d33e"
+      "computedHash": "0ee8caf20fc7df94db53e76f42588fb01eee88c6f8dc97e7a3a0565be8978e74"
     },
     "to-tickets": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/to-tickets/SKILL.md",
-      "computedHash": "e817ecc8ffbb51dd5edd7cc141fe209f31c298dfd66b886e0c6c9aba2dd70266"
+      "computedHash": "d921d92d2237145188b7b11b3a7d817957db8c43178624f9f27989c73d142223"
     },
     "triage": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/triage/SKILL.md",
-      "computedHash": "09768652e9e7b64f26a4e1af53b112230c9203ea77ba647fd9054a788fdc7607"
+      "computedHash": "39249ecfc25abc5608e35979e265a0ef8bdbc3c56b0149a08e80a0c44c1e7814"
     },
     "ubiquitous-language": {
       "source": "haisenberg-creator/skills",
@@ -247,29 +295,35 @@
       "skillPath": ".agents/skills/ubiquitous-language/SKILL.md",
       "computedHash": "36cde503a83a11b0fdcc76646a9922ab1c0fb0b6305cc5c08e492a0113c5cb3d"
     },
+    "visual-prototype": {
+      "source": "haisenberg-creator/skills",
+      "sourceType": "github",
+      "skillPath": "skills/design/visual-prototype/SKILL.md",
+      "computedHash": "ee45cb8d55c2ff72c88735200d270aa4a03c14d879f06b364c8cbea21628449e"
+    },
     "wait-what": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/productivity/wait-what/SKILL.md",
-      "computedHash": "4fcac9d0ef44743d9d3beca6236578a8f48429344bd2c063543be0be1bb2868e"
+      "computedHash": "179a857fabd08c894e8e5b30baa7488147760ee1d58696ebd24bd4f6ead21699"
     },
     "wayfinder": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/wayfinder/SKILL.md",
-      "computedHash": "d6f094c4d06e575818049adf8206670d1412c6a8afd011fe59434d414f9f17ed"
+      "computedHash": "f53b17850d8d4d68e8b861cfc7de69580335851d7fe7bc3acdf37505f46c9940"
     },
     "wizard": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/wizard/SKILL.md",
-      "computedHash": "7c72226e31b570d16d1f1d3861e7c8742e3f24330e9e0580b5141b39b3e8797c"
+      "computedHash": "6b98bd36db34eb5584d937b745e6e68a317afa0807a426fe8717ab196242ae70"
     },
     "writing-for-agents": {
       "source": "haisenberg-creator/skills",
       "sourceType": "github",
       "skillPath": "skills/productivity/writing-for-agents/SKILL.md",
-      "computedHash": "6af4c23e244dc0eab9c808672bb62eb9a8392fbf9c2f788943419d6e11d4aeb7"
+      "computedHash": "831e996c177c6c5233eb3bb472a33edee2b3ce1ee5a6d7e8b696c1c3fb4eda3d"
     },
     "writing-great-skills": {
       "source": "haisenberg-creator/skills",
